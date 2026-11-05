@@ -218,7 +218,14 @@ Deletes a dataset, marks it deleted in the database, and safely purges the isola
 
 ### 2.3 Automatic Profiler
 #### `POST /api/v1/profiling/{dataset_id}`
-Triggers or retrieves deterministic baseline profiling.
+Triggers deterministic baseline profiling for an ingested dataset. Computes descriptive statistics, distributions, missingness, duplicates, quality checks, relationships, and suggested analyses without any LLM dependency.
+- **Query Parameters**: `sheet_name` (optional for Excel workbooks)
+- **Headers**: `X-User-ID` (optional)
+- **Response**: `200 OK`
+
+#### `GET /api/v1/profiling/{dataset_id}`
+Retrieves cached baseline profiling results. If not previously computed, automatically generates the deterministic profile and caches the results.
+- **Headers**: `X-User-ID` (optional)
 - **Response**: `200 OK`
 ```json
 {
@@ -234,6 +241,7 @@ Triggers or retrieves deterministic baseline profiling.
       "memory_estimate_bytes": 3145728,
       "selected_sheet": null,
       "load_time_seconds": 0.12,
+      "profiling_duration_seconds": 0.08,
       "parsing_warnings": []
     },
     "columns": [
@@ -243,6 +251,7 @@ Triggers or retrieves deterministic baseline profiling.
         "inferred_type": "float",
         "semantic_role": "measure",
         "role_confidence": 0.98,
+        "role_uncertainty_reason": null,
         "non_null_count": 10450,
         "missing_count": 50,
         "missing_percentage": 0.48,
@@ -256,8 +265,17 @@ Triggers or retrieves deterministic baseline profiling.
           "q25": 115.0,
           "median": 150.0,
           "q75": 185.0,
-          "max": 850.0
+          "max": 850.0,
+          "iqr": 70.0,
+          "skewness": 1.25,
+          "kurtosis": 2.45,
+          "zeros_count": 0,
+          "zeros_percentage": 0.0,
+          "infinite_count": 0,
+          "nan_count": 50
         },
+        "categorical_summary": null,
+        "date_summary": null,
         "sample_values": [120.5, 95.0, 310.2]
       }
     ],
@@ -266,19 +284,76 @@ Triggers or retrieves deterministic baseline profiling.
       "missing_cells": 50,
       "overall_missing_percentage": 0.12,
       "per_column": { "amount": 0.48 },
-      "columns_with_missing": ["amount"]
+      "columns_with_missing": ["amount"],
+      "missingness_chart_data": [
+        { "column": "amount", "missing_count": 50, "missing_percentage": 0.48, "present_count": 10450 }
+      ],
+      "missingness_patterns": [
+        { "missing_columns": ["amount"], "row_count": 50, "percentage": 0.48 }
+      ]
     },
     "duplicates": {
       "exact_duplicate_rows_count": 0,
       "exact_duplicate_percentage": 0.0,
-      "candidate_duplicate_keys": ["id"]
+      "candidate_duplicate_keys": ["order_id"],
+      "duplicate_rows_sample": []
+    },
+    "distributions": {
+      "histograms": [
+        {
+          "column": "amount",
+          "bins": [
+            { "bin_start": 10.0, "bin_end": 94.0, "count": 1200, "percentage": 11.48 },
+            { "bin_start": 94.0, "bin_end": 178.0, "count": 6800, "percentage": 65.07 }
+          ]
+        }
+      ],
+      "boxplots": [
+        {
+          "column": "amount",
+          "min": 10.0,
+          "q25": 115.0,
+          "median": 150.0,
+          "q75": 185.0,
+          "max": 850.0,
+          "iqr": 70.0,
+          "lower_fence": 10.0,
+          "upper_fence": 290.0,
+          "outlier_count": 42,
+          "outliers_sample": [320.0, 450.0, 850.0]
+        }
+      ],
+      "categorical_frequencies": [],
+      "date_distributions": [],
+      "time_distributions": []
     },
     "quality_warnings": [],
-    "suggested_questions": [
-      "What is the distribution and outlier range of amount?",
-      "How does amount compare across different category groups?"
+    "relationships": {
+      "pearson": {
+        "columns": ["amount"],
+        "matrix": { "amount": { "amount": 1.0 } }
+      },
+      "spearman": {
+        "columns": ["amount"],
+        "matrix": { "amount": { "amount": 1.0 } }
+      },
+      "categorical_associations": [],
+      "warnings": [],
+      "excluded_columns": ["order_id", "category"]
+    },
+    "suggested_analyses": [
+      {
+        "title": "Investigate statistical outliers in amount",
+        "description": "Analyze 42 outlier observation(s) falling outside 1.5x IQR fences [10.0, 290.0].",
+        "operation": "outlier",
+        "columns": ["amount"],
+        "rationale": "42 points detected beyond upper fence 290.0."
+      }
     ],
-    "computed_at": "2026-11-04T18:30:00Z"
+    "suggested_questions": [
+      "What is the distribution and outlier range of amount?"
+    ],
+    "computed_at": "2026-11-05T01:30:00Z"
   }
 }
 ```

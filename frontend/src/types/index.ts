@@ -1,6 +1,6 @@
 /**
  * EDAgent API Contract & Domain Type Definitions
- * Strictly mirrors backend Pydantic schemas.
+ * Strictly aligns with Phase 0, 1, and 2 backend Pydantic specifications.
  */
 
 export type UUID = string;
@@ -37,22 +37,22 @@ export interface AuthTokens {
   expiresInSeconds: number;
 }
 
-// Dataset
+// Dataset Formats & Entity
 export type FileFormat = 'csv' | 'tsv' | 'xlsx' | 'xls' | 'parquet';
 
 export interface Dataset {
   id: UUID;
   userId?: UUID;
   name: string;
-  originalFilename: string;
+  originalFilename?: string;
   fileFormat: FileFormat;
   fileSizeBytes: number;
   rowCount?: number;
   columnCount?: number;
-  checksumSha256: string;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
+  checksumSha256?: string;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type DatasetResponse = Dataset;
@@ -115,7 +115,10 @@ export interface DatasetListResponse {
   page_size: number;
 }
 
-// Profiler
+// ==========================================
+// Profiler Types (Phase 2 Full Specifications)
+// ==========================================
+
 export type SemanticRole =
   | 'identifier'
   | 'measure'
@@ -136,10 +139,18 @@ export interface NumericSummary {
   median?: number;
   q75?: number;
   max?: number;
+  iqr?: number;
   skewness?: number;
   kurtosis?: number;
+  zeros_count?: number;
+  zeros_percentage?: number;
+  infinite_count?: number;
+  nan_count?: number;
+  // camelCase compatibility
   zerosCount?: number;
+  zerosPercentage?: number;
   infiniteCount?: number;
+  nanCount?: number;
 }
 
 export interface CategoricalTopValue {
@@ -149,73 +160,253 @@ export interface CategoricalTopValue {
 }
 
 export interface CategoricalSummary {
-  uniqueCount: number;
-  topValues: CategoricalTopValue[];
-  isHighCardinality: boolean;
+  unique_count: number;
+  most_frequent_value?: string;
+  most_frequent_count?: number;
+  most_frequent_percentage?: number;
+  top_values: CategoricalTopValue[];
+  is_high_cardinality: boolean;
+  // camelCase compatibility
+  uniqueCount?: number;
+  topValues?: CategoricalTopValue[];
+  isHighCardinality?: boolean;
+}
+
+export interface DateSummary {
+  parse_success_rate: number;
+  min_date?: string;
+  max_date?: string;
+  invalid_date_count: number;
+  date_range_days?: number;
+  timezone_warnings: string[];
 }
 
 export interface ColumnProfile {
   name: string;
-  storageDtype: string;
-  inferredType: string;
-  semanticRole: SemanticRole;
-  roleConfidence: number;
-  nonNullCount: number;
-  missingCount: number;
-  missingPercentage: number;
-  distinctCount: number;
-  isUnique: boolean;
+  storage_dtype: string;
+  inferred_type: string;
+  semantic_role: SemanticRole;
+  role_confidence: number;
+  role_uncertainty_reason?: string;
+  non_null_count: number;
+  missing_count: number;
+  missing_percentage: number;
+  distinct_count: number;
+  is_unique: boolean;
+  numeric_summary?: NumericSummary;
+  categorical_summary?: CategoricalSummary;
+  date_summary?: DateSummary;
+  sample_values: unknown[];
+  // camelCase compatibility
+  storageDtype?: string;
+  inferredType?: string;
+  semanticRole?: SemanticRole;
+  roleConfidence?: number;
+  nonNullCount?: number;
+  missingCount?: number;
+  missingPercentage?: number;
+  distinctCount?: number;
+  isUnique?: boolean;
   numericSummary?: NumericSummary;
   categoricalSummary?: CategoricalSummary;
-  sampleValues: unknown[];
+  dateSummary?: DateSummary;
+  sampleValues?: unknown[];
 }
 
 export interface QualityWarning {
   column?: string;
-  checkType: string;
+  check_type: string;
   severity: Severity;
   message: string;
+  affected_count?: number;
+  title?: string;
+  // camelCase compatibility
+  checkType?: string;
   affectedCount?: number;
 }
 
+export interface MissingnessChartItem {
+  column: string;
+  missing_count: number;
+  missing_percentage: number;
+  present_count: number;
+}
+
+export interface MissingnessPatternItem {
+  missing_columns: string[];
+  row_count: number;
+  percentage: number;
+}
+
 export interface MissingnessReport {
-  totalCells: number;
-  missingCells: number;
-  overallMissingPercentage: number;
-  perColumn: Record<string, number>;
-  columnsWithMissing: string[];
+  total_cells: number;
+  missing_cells: number;
+  total_missing_cells?: number;
+  overall_missing_percentage: number;
+  per_column: Record<string, number>;
+  columns_with_missing: string[];
+  missingness_chart_data?: MissingnessChartItem[];
+  missingness_patterns?: MissingnessPatternItem[];
+  // camelCase compatibility
+  totalCells?: number;
+  missingCells?: number;
+  overallMissingPercentage?: number;
+  perColumn?: Record<string, number>;
+  columnsWithMissing?: string[];
 }
 
 export interface DuplicatesReport {
-  exactDuplicateRowsCount: number;
-  exactDuplicatePercentage: number;
-  candidateDuplicateKeys: string[];
+  exact_duplicate_rows_count: number;
+  duplicate_row_count?: number;
+  exact_duplicate_percentage: number;
+  candidate_duplicate_keys: string[];
+  duplicate_rows_sample?: { row: Record<string, unknown>; occurrences: number }[];
+  // camelCase compatibility
+  exactDuplicateRowsCount?: number;
+  exactDuplicatePercentage?: number;
+  candidateDuplicateKeys?: string[];
 }
 
 export interface DatasetOverview {
-  datasetName: string;
-  totalRows: number;
-  totalColumns: number;
-  fileSizeBytes: number;
-  memoryEstimateBytes: number;
-  selectedSheet?: string;
-  loadTimeSeconds: number;
-  parsingWarnings: string[];
+  dataset_name: string;
+  total_rows: number;
+  total_columns: number;
+  file_size_bytes: number;
+  memory_estimate_bytes: number;
+  selected_sheet?: string;
+  load_time_seconds: number;
+  profiling_duration_seconds?: number;
+  parsing_warnings: string[];
+  // camelCase compatibility
+  datasetName?: string;
+  totalRows?: number;
+  totalColumns?: number;
+  fileSizeBytes?: number;
+  memoryEstimateBytes?: number;
+  loadTimeSeconds?: number;
+  parsingWarnings?: string[];
+}
+
+// Distribution Analysis Schemas
+export interface HistogramBin {
+  bin_start: number;
+  bin_end: number;
+  count: number;
+  percentage: number;
+}
+
+export interface NumericHistogram {
+  column: string;
+  bins: HistogramBin[];
+}
+
+export interface NumericBoxplot {
+  column: string;
+  min: number;
+  q25: number;
+  median: number;
+  q75: number;
+  max: number;
+  iqr: number;
+  lower_fence: number;
+  upper_fence: number;
+  outlier_count: number;
+  outliers_sample: number[];
+}
+
+export interface CategoricalFrequencyItem {
+  value: string;
+  count: number;
+  percentage: number;
+}
+
+export interface CategoricalFrequencyChart {
+  column: string;
+  categories: CategoricalFrequencyItem[];
+  other_count: number;
+  other_percentage: number;
+}
+
+export interface DateDistributionItem {
+  period: string;
+  count: number;
+}
+
+export interface DateDistributionChart {
+  column: string;
+  unit: string;
+  buckets: DateDistributionItem[];
+}
+
+export interface TimeDistributionChart {
+  column: string;
+  day_of_week: Record<string, number>;
+  hour_of_day: Record<string, number>;
+}
+
+export interface DistributionAnalysis {
+  histograms: NumericHistogram[];
+  boxplots: NumericBoxplot[];
+  categorical_frequencies: any;
+  date_distributions: DateDistributionChart[];
+  time_distributions: TimeDistributionChart[];
+  numeric_histograms?: Record<string, any>;
+}
+
+// Relationships Schemas
+export interface CorrelationMatrix {
+  columns: string[];
+  matrix: Record<string, Record<string, number | null>>;
+}
+
+export interface CategoricalAssociation {
+  column_x: string;
+  column_y: string;
+  cramers_v: number;
+  chi2: number;
+  p_value: number;
+}
+
+export interface RelationshipAnalysis {
+  pearson?: CorrelationMatrix;
+  spearman?: CorrelationMatrix;
+  categorical_associations: CategoricalAssociation[];
+  warnings: string[];
+  excluded_columns: string[];
+}
+
+export interface SuggestedAnalysis {
+  title: string;
+  description: string;
+  operation: string;
+  columns: string[];
+  rationale: string;
 }
 
 export interface ProfilerResult {
-  datasetId: UUID;
+  dataset_id?: UUID;
+  datasetId?: UUID;
   overview: DatasetOverview;
   columns: ColumnProfile[];
   missingness: MissingnessReport;
   duplicates: DuplicatesReport;
-  qualityWarnings: QualityWarning[];
-  suggestedQuestions: string[];
-  correlationMatrix?: Record<string, Record<string, number>>;
-  computedAt: string;
+  distributions?: DistributionAnalysis;
+  quality_warnings: QualityWarning[];
+  qualityWarnings?: QualityWarning[];
+  relationships?: RelationshipAnalysis;
+  suggested_analyses?: SuggestedAnalysis[];
+  suggested_questions?: string[];
+  suggestedQuestions?: string[];
+  correlation_matrix?: Record<string, Record<string, number | null>>;
+  correlationMatrix?: Record<string, Record<string, number | null>>;
+  computed_at: string;
+  computedAt?: string;
 }
 
-// Analysis & Tools
+// ==========================================
+// Analysis, Chat & Execution Schemas
+// ==========================================
+
 export type AnalysisOperation =
   | 'descriptive_stats'
   | 'histogram'
@@ -228,7 +419,10 @@ export type AnalysisOperation =
   | 'crosstab'
   | 'time_trend'
   | 'scatter_plot'
-  | 'custom_chart';
+  | 'custom_chart'
+  | 'outlier_scan'
+  | 'summary_query'
+  | string;
 
 export interface StructuredAnalysisPlan {
   operation: AnalysisOperation;
@@ -238,7 +432,7 @@ export interface StructuredAnalysisPlan {
   groupByColumn?: string;
   aggregation?: string;
   bins?: string;
-  missingPolicy?: 'exclude_and_report' | 'exclude_silent' | 'fail_on_missing';
+  missingPolicy?: 'exclude_and_report' | 'exclude_silent' | 'fail_on_missing' | string;
   scope?: 'full_dataset' | 'sample';
   chartType?: string;
   parameters?: Record<string, unknown>;
@@ -246,7 +440,7 @@ export interface StructuredAnalysisPlan {
 
 export interface AnalysisResult {
   id: UUID;
-  requestId: UUID;
+  requestId?: UUID;
   operationType: string;
   summaryText: string;
   executionCode: string;
@@ -264,9 +458,12 @@ export interface AnalysisResult {
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface ChatMessage {
+  id?: string;
   role: MessageRole;
   content: string;
-  resultId?: UUID;
+  analysisPlan?: StructuredAnalysisPlan;
+  analysisResult?: AnalysisResult;
+  suggestedQuestions?: string[];
   createdAt?: string;
 }
 
@@ -282,30 +479,29 @@ export interface ChatResponse {
 
 // Reports
 export type ReportSection =
-  | 'cover'
   | 'executive_summary'
-  | 'dataset_structure'
+  | 'dataset_overview'
   | 'data_quality'
-  | 'univariate_analysis'
-  | 'bivariate_multivariate'
-  | 'time_geography'
-  | 'user_requested_analyses'
-  | 'limitations'
-  | 'appendix';
+  | 'univariate_distributions'
+  | 'bivariate_relationships'
+  | 'user_analyses'
+  | 'limitations_appendix';
 
 export interface ReportConfig {
-  sessionId: UUID;
+  sessionId?: UUID;
+  datasetId?: UUID;
   title: string;
-  format: 'pdf' | 'html';
+  format: 'pdf' | 'html' | 'markdown';
   conciseMode: boolean;
   includedSections: ReportSection[];
+  anonymizeRecords?: boolean;
 }
 
 export interface ReportResponse {
   reportId: UUID;
-  sessionId: UUID;
+  sessionId?: UUID;
   title: string;
-  format: 'pdf' | 'html';
+  format: 'pdf' | 'html' | 'markdown';
   downloadUrl: string;
   datasetFingerprint: string;
   createdAt: string;

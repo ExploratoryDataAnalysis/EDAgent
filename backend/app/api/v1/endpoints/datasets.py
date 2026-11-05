@@ -32,6 +32,7 @@ from app.schemas.dataset import (
 from app.schemas.common import APIResponse
 from app.services.ingestion.validator import IngestionValidator, IngestionValidationError
 from app.services.ingestion.parser import IngestionService, ParsedDatasetResult
+from app.services.profiler.profiler_engine import ProfilerEngine
 
 router = APIRouter()
 
@@ -171,14 +172,29 @@ async def upload_dataset(
         is_deleted=False,
     )
 
+    # Automatic profiling when ingestion is complete
+    profile_data = {}
+    if not requires_sheet_selection and parsed_result:
+        try:
+            profile_data = ProfilerEngine.profile_dataset(
+                file_path=abs_dest_path,
+                format_str=format_enum.value,
+                sheet_name=parsed_result.selected_sheet if parsed_result else None,
+                delimiter=parsed_result.delimiter if parsed_result else None,
+                encoding=parsed_result.encoding if parsed_result else None,
+                parsing_warnings=parsed_result.parsing_warnings if parsed_result else [],
+            )
+        except Exception:
+            profile_data = {}
+
     metadata_model = DatasetMetadata(
         id=uuid.uuid4(),
         dataset_id=dataset_id,
         inferred_schema=parsed_result.inferred_types if parsed_result else {},
-        summary_statistics={},
-        missingness_report={},
-        duplicates_report={},
-        quality_warnings=[{"message": w} for w in (parsed_result.parsing_warnings if parsed_result else [])],
+        summary_statistics=profile_data,
+        missingness_report=profile_data.get("missingness", {}),
+        duplicates_report=profile_data.get("duplicates", {}),
+        quality_warnings=profile_data.get("quality_warnings", [{"message": w} for w in (parsed_result.parsing_warnings if parsed_result else [])]),
         parsed_sheets=detected_sheets,
         sample_preview={
             "column_names": parsed_result.headers if parsed_result else [],
@@ -285,10 +301,24 @@ async def select_excel_sheet(
     dataset.row_count = parsed.row_count
     dataset.column_count = parsed.column_count
 
+    # Run automatic profiling on selected sheet
+    try:
+        profile_data = ProfilerEngine.profile_dataset(
+            file_path=abs_path,
+            format_str=FileFormatEnum.XLSX.value,
+            sheet_name=payload.sheet_name,
+            parsing_warnings=parsed.parsing_warnings,
+        )
+    except Exception:
+        profile_data = {}
+
     # Update metadata
     if dataset.metadata_entry:
         dataset.metadata_entry.inferred_schema = parsed.inferred_types
-        dataset.metadata_entry.quality_warnings = [{"message": w} for w in parsed.parsing_warnings]
+        dataset.metadata_entry.summary_statistics = profile_data
+        dataset.metadata_entry.missingness_report = profile_data.get("missingness", {})
+        dataset.metadata_entry.duplicates_report = profile_data.get("duplicates", {})
+        dataset.metadata_entry.quality_warnings = profile_data.get("quality_warnings", [{"message": w} for w in parsed.parsing_warnings])
         dataset.metadata_entry.sample_preview = {
             "column_names": parsed.headers,
             "inferred_types": parsed.inferred_types,
@@ -349,9 +379,25 @@ async def confirm_ingestion(
     dataset.row_count = parsed.row_count
     dataset.column_count = parsed.column_count
 
+    # Run automatic profiling with confirmed parameters
+    try:
+        profile_data = ProfilerEngine.profile_dataset(
+            file_path=abs_path,
+            format_str=format_enum.value,
+            sheet_name=payload.sheet_name,
+            delimiter=payload.delimiter,
+            encoding=payload.encoding,
+            parsing_warnings=parsed.parsing_warnings,
+        )
+    except Exception:
+        profile_data = {}
+
     if dataset.metadata_entry:
         dataset.metadata_entry.inferred_schema = parsed.inferred_types
-        dataset.metadata_entry.quality_warnings = [{"message": w} for w in parsed.parsing_warnings]
+        dataset.metadata_entry.summary_statistics = profile_data
+        dataset.metadata_entry.missingness_report = profile_data.get("missingness", {})
+        dataset.metadata_entry.duplicates_report = profile_data.get("duplicates", {})
+        dataset.metadata_entry.quality_warnings = profile_data.get("quality_warnings", [{"message": w} for w in parsed.parsing_warnings])
         dataset.metadata_entry.sample_preview = {
             "column_names": parsed.headers,
             "inferred_types": parsed.inferred_types,
