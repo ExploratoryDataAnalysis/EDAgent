@@ -18,6 +18,7 @@ import { Badge } from '../components/ui/Badge';
 import { QualityWarningsPanel } from '../components/profiler/QualityWarningsPanel';
 import { MissingnessChart } from '../components/profiler/MissingnessChart';
 import { ColumnInventoryTable } from '../components/profiler/ColumnInventoryTable';
+import { CorrelationMatrixTable } from '../components/profiler/CorrelationMatrixTable';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export const OverviewPage: React.FC = () => {
@@ -119,7 +120,7 @@ export const OverviewPage: React.FC = () => {
         <MetricCard
           title="Memory Footprint"
           value={`${Math.round((overview.memory_estimate_bytes || 2048) / 1024)} KB`}
-          subtitle="In-Memory Estimate"
+          subtitle={`File: ${Math.round((overview.file_size_bytes || activeDataset?.file_size_bytes || activeDataset?.fileSizeBytes || 1024) / 1024)} KB`}
           icon={<Clock className="w-4 h-4 text-emerald-500" />}
         />
         <MetricCard
@@ -197,6 +198,9 @@ export const OverviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Pairwise Relationships & Correlation Matrix */}
+      <CorrelationMatrixTable relationships={profile.relationships} />
 
       {/* Suggested Analyses (Deterministic Recommendations) */}
       {suggestions.length > 0 && (

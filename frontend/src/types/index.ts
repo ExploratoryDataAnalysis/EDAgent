@@ -43,16 +43,26 @@ export type FileFormat = 'csv' | 'tsv' | 'xlsx' | 'xls' | 'parquet';
 export interface Dataset {
   id: UUID;
   userId?: UUID;
+  user_id?: UUID;
   name: string;
   originalFilename?: string;
+  original_filename?: string;
   fileFormat: FileFormat;
+  file_format?: FileFormat;
   fileSizeBytes: number;
+  file_size_bytes?: number;
   rowCount?: number;
+  row_count?: number;
   columnCount?: number;
+  column_count?: number;
   checksumSha256?: string;
+  checksum_sha256?: string;
   isDeleted?: boolean;
+  is_deleted?: boolean;
   createdAt?: string;
+  created_at?: string;
   updatedAt?: string;
+  updated_at?: string;
 }
 
 export type DatasetResponse = Dataset;

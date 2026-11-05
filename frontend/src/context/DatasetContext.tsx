@@ -15,6 +15,8 @@ import {
   DEMO_SAMPLE_DATASETS,
 } from '../services/demoData';
 
+const SESSION_STORAGE_KEY = 'edagent_active_dataset_id';
+
 interface DatasetContextType {
   activeDataset: Dataset | null;
   profile: ProfilerResult | null;
@@ -29,6 +31,7 @@ interface DatasetContextType {
   selectDataset: (id: UUID) => Promise<void>;
   loadDemoBenchmark: (sampleId?: string) => void;
   setUploadedDataset: (dataset: Dataset, prof?: ProfilerResult, prev?: DatasetPreview) => void;
+  triggerProfiling: (datasetId?: UUID) => Promise<void>;
   clearError: () => void;
 }
 
@@ -45,19 +48,63 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const clearError = () => setError(null);
 
+  // Fetch available datasets from backend API
   const refreshDatasets = useCallback(async () => {
     try {
       const res = await datasetService.listDatasets();
       setDatasets(res.items || []);
     } catch {
-      // Backend may be offline or in demo mode; fall back gracefully
+      // Backend may be offline or unreachable; fall back gracefully
     }
   }, []);
 
+  // Hydrate session from localStorage on initial mount
   useEffect(() => {
-    refreshDatasets();
+    const hydrateSession = async () => {
+      refreshDatasets();
+      const savedId = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (!savedId) return;
+
+      // Check if savedId is a demo benchmark
+      const isBenchmark = DEMO_SAMPLE_DATASETS.some((s) => s.id === savedId) || savedId === DEMO_DATASET.id;
+      if (isBenchmark) {
+        loadDemoBenchmark(savedId);
+        return;
+      }
+
+      // Saved ID is a real dataset from backend
+      try {
+        setIsLoading(true);
+        const datasetObj = await datasetService.getDataset(savedId);
+        let [profData, prevData] = await Promise.all([
+          profilingService.getProfile(savedId).catch(() => null),
+          datasetService.getPreview(savedId).catch(() => null),
+        ]);
+
+        // If profile was not yet computed, trigger it deterministically
+        if (!profData) {
+          profData = await profilingService.triggerProfile(savedId).catch(() => null);
+        }
+
+        if (datasetObj) {
+          setActiveDataset(datasetObj);
+          if (profData) setProfile(profData);
+          if (prevData) setPreview(prevData);
+          setIsDemoMode(false);
+        }
+      } catch {
+        // Saved dataset not found on backend (e.g. database reset); revert to benchmark
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        loadDemoBenchmark();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    hydrateSession();
   }, [refreshDatasets]);
 
+  // Select dataset handler
   const selectDataset = async (id: UUID) => {
     // Check if selecting a demo sample
     const sample = DEMO_SAMPLE_DATASETS.find((s) => s.id === id);
@@ -70,15 +117,21 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setError(null);
     try {
       const datasetObj = await datasetService.getDataset(id);
-      const [profData, prevData] = await Promise.all([
+      let [profData, prevData] = await Promise.all([
         profilingService.getProfile(id).catch(() => null),
         datasetService.getPreview(id).catch(() => null),
       ]);
 
+      // If profiling was not pre-calculated, compute it now
+      if (!profData) {
+        profData = await profilingService.triggerProfile(id).catch(() => null);
+      }
+
       setActiveDataset(datasetObj);
-      setProfile(profData || DEMO_PROFILER_RESULT);
-      setPreview(prevData || DEMO_PREVIEW);
+      if (profData) setProfile(profData);
+      if (prevData) setPreview(prevData);
       setIsDemoMode(false);
+      localStorage.setItem(SESSION_STORAGE_KEY, id);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load dataset';
       setError(msg);
@@ -87,6 +140,7 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Switch to demo mode benchmark
   const loadDemoBenchmark = (sampleId?: string) => {
     setIsDemoMode(true);
     setError(null);
@@ -101,8 +155,10 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
     setProfile(DEMO_PROFILER_RESULT);
     setPreview(DEMO_PREVIEW);
+    localStorage.setItem(SESSION_STORAGE_KEY, targetSample.id);
   };
 
+  // Update context after new file upload
   const setUploadedDataset = (
     dataset: Dataset,
     prof?: ProfilerResult,
@@ -112,7 +168,26 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (prof) setProfile(prof);
     if (prev) setPreview(prev);
     setIsDemoMode(false);
+    localStorage.setItem(SESSION_STORAGE_KEY, dataset.id);
     refreshDatasets();
+  };
+
+  // On-demand profiler re-run
+  const triggerProfiling = async (datasetId?: UUID) => {
+    const targetId = datasetId || activeDataset?.id;
+    if (!targetId || isDemoMode) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const prof = await profilingService.triggerProfile(targetId);
+      setProfile(prof);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Profiling computation failed';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -131,6 +206,7 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
         selectDataset,
         loadDemoBenchmark,
         setUploadedDataset,
+        triggerProfiling,
         clearError,
       }}
     >
@@ -146,3 +222,5 @@ export const useDataset = (): DatasetContextType => {
   }
   return context;
 };
+
+export default DatasetContext;
