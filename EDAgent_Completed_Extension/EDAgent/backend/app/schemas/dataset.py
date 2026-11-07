@@ -102,3 +102,11 @@ class DatasetListResponse(BaseSchema):
     total: int
     page: int
     page_size: int
+
+
+class DatasetRecoveryCandidate(BaseSchema):
+    dataset_id: uuid.UUID
+    name: str
+    file_format: FileFormatEnum
+    file_size_bytes: int
+    modified_at: datetime

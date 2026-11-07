@@ -5,8 +5,11 @@ All routes require a signed-in user and are scoped to that user's datasets. A da
 belongs to someone else is reported as "not found" so its existence is never revealed.
 """
 
+import asyncio
 import os
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
@@ -24,6 +27,7 @@ from app.schemas.dataset import (
     DatasetListItem,
     DatasetListResponse,
     DatasetPreview,
+    DatasetRecoveryCandidate,
     DatasetResponse,
     DatasetUploadResponse,
     DatasetURLImportRequest,
@@ -59,6 +63,7 @@ async def _ingest_saved(
     checksum: str,
     sheet_name: Optional[str],
     message: str,
+    remove_on_failure: bool = True,
 ) -> APIResponse[DatasetUploadResponse]:
     """Shared tail of upload / URL import / sample: ingest, and clean the folder up on failure."""
     try:
@@ -67,7 +72,8 @@ async def _ingest_saved(
             display_name=display_name, fmt=fmt, size=size, checksum=checksum, sheet_name=sheet_name,
         )
     except Exception:
-        svc.remove_dataset_files(rel_path)
+        if remove_on_failure:
+            svc.remove_dataset_files(rel_path)
         raise
     return APIResponse(
         success=True,
@@ -95,6 +101,47 @@ async def _check_quota(db: AsyncSession, user: User) -> None:
             f"You have reached the limit of {settings.MAX_DATASETS_PER_USER} datasets. Delete one to upload another.",
             error_code="QUOTA_EXCEEDED",
         )
+
+
+def _find_recovery_file(
+    user_id: uuid.UUID, dataset_id: uuid.UUID
+) -> tuple[str, str, FileFormatEnum, int, datetime] | None:
+    """Finds one supported, unregistered upload in this user's storage folder."""
+    try:
+        storage_root = Path(svc.absolute_path("")).resolve()
+        owner_root = Path(svc.absolute_path(str(user_id)))
+    except IngestionValidationError:
+        return None
+    if owner_root.is_symlink() or not owner_root.is_dir():
+        return None
+    try:
+        owner_root.resolve().relative_to(storage_root)
+    except ValueError:
+        return None
+
+    dataset_dir = owner_root / str(dataset_id)
+    if dataset_dir.is_symlink() or not dataset_dir.is_dir():
+        return None
+
+    candidates = []
+    for path in dataset_dir.iterdir():
+        if path.is_symlink() or not path.is_file():
+            continue
+        try:
+            fmt = IngestionValidator.validate_extension(path.name)
+            absolute = Path(svc.absolute_path(svc.storage_subpath(user_id, dataset_id, path.name)))
+        except IngestionValidationError:
+            continue
+        if absolute.resolve() != path.resolve():
+            continue
+        candidates.append((path, fmt))
+
+    if len(candidates) != 1:
+        return None
+    path, fmt = candidates[0]
+    stat = path.stat()
+    rel_path = svc.storage_subpath(user_id, dataset_id, path.name)
+    return rel_path, path.name, fmt, stat.st_size, datetime.fromtimestamp(stat.st_mtime, UTC)
 
 
 @router.post("/upload", response_model=APIResponse[DatasetUploadResponse], summary="Upload Tabular Dataset")
@@ -171,6 +218,67 @@ async def load_sample_dataset(sample_id: str, user: User = Depends(get_current_u
     return await _ingest_saved(
         db, user, dataset_id=dataset_id, rel_path=rel, original_filename=sample_id, display_name=svc.clean_name(sample_id),
         fmt=fmt, size=os.path.getsize(dest), checksum=checksum, sheet_name=None, message="Sample dataset loaded.",
+    )
+
+
+@router.get("/recoverable", response_model=APIResponse[list[DatasetRecoveryCandidate]], summary="List Stored Uploads Not Registered")
+async def list_recoverable_uploads(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Lists supported files in the signed-in user's storage that are missing from the database."""
+    owner_root = Path(svc.absolute_path(str(user.id)))
+    if owner_root.is_symlink() or not owner_root.is_dir():
+        candidates = []
+    else:
+        candidates = []
+        for folder in owner_root.iterdir():
+            if folder.is_symlink() or not folder.is_dir():
+                continue
+            try:
+                dataset_id = uuid.UUID(folder.name)
+            except ValueError:
+                continue
+            if folder.name != str(dataset_id) or await db.get(Dataset, dataset_id):
+                continue
+            stored = _find_recovery_file(user.id, dataset_id)
+            if stored is None:
+                continue
+            _, filename, fmt, size, modified_at = stored
+            candidates.append(
+                DatasetRecoveryCandidate(
+                    dataset_id=dataset_id,
+                    name=filename,
+                    file_format=fmt,
+                    file_size_bytes=size,
+                    modified_at=modified_at,
+                )
+            )
+    return APIResponse(success=True, message="Recoverable stored uploads.", data=candidates)
+
+
+@router.post("/{dataset_id}/recover", response_model=APIResponse[DatasetUploadResponse], summary="Restore Stored Upload")
+async def recover_stored_upload(dataset_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Registers and profiles an orphaned file from this user's storage without moving or deleting it."""
+    if await db.get(Dataset, dataset_id):
+        raise IngestionValidationError("Stored upload not found.", error_code="FILE_NOT_FOUND")
+    stored = _find_recovery_file(user.id, dataset_id)
+    if stored is None:
+        raise IngestionValidationError("Stored upload not found.", error_code="FILE_NOT_FOUND")
+    await _check_quota(db, user)
+    rel_path, filename, fmt, size, _ = stored
+    IngestionValidator.validate_file_size(size)
+    checksum = await asyncio.to_thread(IngestionService.compute_sha256, svc.absolute_path(rel_path))
+    return await _ingest_saved(
+        db,
+        user,
+        dataset_id=dataset_id,
+        rel_path=rel_path,
+        original_filename=filename,
+        display_name=svc.clean_name(filename),
+        fmt=fmt,
+        size=size,
+        checksum=checksum,
+        sheet_name=None,
+        message="Stored dataset restored successfully.",
+        remove_on_failure=False,
     )
 
 

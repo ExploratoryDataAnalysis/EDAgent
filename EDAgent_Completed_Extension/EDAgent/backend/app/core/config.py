@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     EXPORTS_STORAGE_PATH: str = "./data/exports"
     # Ships inside the backend package so samples are found no matter where the server is started.
     SAMPLES_PATH: str = str(Path(__file__).resolve().parents[2] / "data" / "samples")
-    MAX_UPLOAD_SIZE_MB: int = 100
+    MAX_UPLOAD_SIZE_MB: int = 200
     # Generated files (reports, bundles) older than this are purged on startup.
     EXPORT_RETENTION_HOURS: int = 72
 

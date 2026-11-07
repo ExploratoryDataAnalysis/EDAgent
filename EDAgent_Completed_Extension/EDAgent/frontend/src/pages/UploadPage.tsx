@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UploadCloud,
@@ -14,7 +14,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { datasetService } from '../services/api';
-import { DatasetUploadResult, DatasetPreview, SheetInfo } from '../types';
+import { DatasetRecoveryCandidate, DatasetUploadResult, DatasetPreview, SheetInfo } from '../types';
 import { useDataset } from '../context/DatasetContext';
 import { Modal } from '../components/ui/Modal';
 import { Tabs } from '../components/ui/Tabs';
@@ -28,6 +28,8 @@ export const UploadPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [recoverableFiles, setRecoverableFiles] = useState<DatasetRecoveryCandidate[]>([]);
+  const [recoveringDatasetId, setRecoveringDatasetId] = useState<string | null>(null);
 
   // Staged multi-sheet and preview states
   const [uploadResult, setUploadResult] = useState<DatasetUploadResult | null>(null);
@@ -42,6 +44,16 @@ export const UploadPage: React.FC = () => {
   const [customEncoding, setCustomEncoding] = useState<string>('utf-8');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    datasetService.listRecoverable()
+      .then((files) => { if (active) setRecoverableFiles(files); })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof Error ? err.message : 'Could not check for stored uploads.');
+      });
+    return () => { active = false; };
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -100,6 +112,22 @@ export const UploadPage: React.FC = () => {
     setError(null);
     const dsId = await loadSample(id);
     if (dsId) navigate('/overview');
+  };
+
+  const handleRecover = async (candidate: DatasetRecoveryCandidate) => {
+    setError(null);
+    setIsUploading(true);
+    setRecoveringDatasetId(candidate.dataset_id);
+    try {
+      const result = await datasetService.recover(candidate.dataset_id);
+      setRecoverableFiles((files) => files.filter((file) => file.dataset_id !== candidate.dataset_id));
+      await afterIngest(result);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not restore the stored upload.');
+    } finally {
+      setIsUploading(false);
+      setRecoveringDatasetId(null);
+    }
   };
 
   const processFileUpload = async (file: File) => {
@@ -207,6 +235,37 @@ export const UploadPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {recoverableFiles.length > 0 && (
+        <section className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60">
+          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-1 flex items-center space-x-1.5">
+            <RefreshCw className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Restore saved uploads</span>
+          </h3>
+          <p className="text-[11px] text-slate-500 mb-3">
+            These files are already stored for your account but are not registered on the dashboard.
+          </p>
+          <ul className="space-y-2">
+            {recoverableFiles.map((file) => (
+              <li key={file.dataset_id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="min-w-0 flex items-center gap-2 text-xs">
+                  <FileText className="w-4 h-4 shrink-0 text-indigo-500" />
+                  <span className="truncate font-semibold text-slate-800 dark:text-slate-200">{file.name}</span>
+                  <span className="shrink-0 text-[11px] text-slate-500">{(file.file_size_bytes / (1024 * 1024)).toFixed(1)} MB</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRecover(file)}
+                  disabled={isUploading}
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {recoveringDatasetId === file.dataset_id ? 'Restoring…' : 'Restore'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Error Banner */}
       {error && (

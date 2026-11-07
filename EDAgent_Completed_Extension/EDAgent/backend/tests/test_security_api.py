@@ -80,7 +80,7 @@ def test_upload_limits_and_type_checks(client, monkeypatch):
     monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE_MB", 0)
     assert client.post("/api/v1/datasets/upload", files={"file": ("big.csv", io.BytesIO(b"a,b\n1,2\n"), "text/csv")}).status_code == 413
     traversal = None
-    monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE_MB", 100)
+    monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE_MB", 200)
     r = client.post("/api/v1/datasets/upload", files={"file": ("../../etc/evil.csv", io.BytesIO(b"a,b\n1,2\n"), "text/csv")})
     assert r.status_code == 200 and ".." not in r.json()["data"]["storage_uri"]
 

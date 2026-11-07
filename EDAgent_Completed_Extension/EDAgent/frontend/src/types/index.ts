@@ -108,6 +108,14 @@ export interface DatasetListResponse {
   page_size: number;
 }
 
+export interface DatasetRecoveryCandidate {
+  dataset_id: UUID;
+  name: string;
+  file_format: FileFormat;
+  file_size_bytes: number;
+  modified_at: string;
+}
+
 // ==========================================
 // Profiler Types (Phase 2 Full Specifications)
 // ==========================================

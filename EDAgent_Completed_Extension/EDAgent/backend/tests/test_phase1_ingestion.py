@@ -81,6 +81,41 @@ def test_valid_csv_upload_and_preview(client: TestClient):
     assert meta["checksum_sha256"] is not None
 
 
+def test_recover_orphaned_upload_for_owning_user_only(client: TestClient, second_user: dict):
+    dataset_id = uuid.uuid4()
+    owner_dir = os.path.join(settings.LOCAL_STORAGE_PATH, client.current_user["id"], str(dataset_id))
+    os.makedirs(owner_dir)
+    with open(os.path.join(owner_dir, "Crash_dataset.csv"), "w", encoding="utf-8") as f:
+        f.write("crash_id,severity\n1,minor\n2,major\n")
+
+    candidates = client.get("/api/v1/datasets/recoverable").json()["data"]
+    assert len(candidates) == 1
+    assert candidates[0]["dataset_id"] == str(dataset_id)
+    assert candidates[0]["name"] == "Crash_dataset.csv"
+
+    foreign_candidates = client.get("/api/v1/datasets/recoverable", headers=second_user["headers"]).json()["data"]
+    assert foreign_candidates == []
+    assert client.post(f"/api/v1/datasets/{dataset_id}/recover", headers=second_user["headers"]).status_code == 404
+
+    restored = client.post(f"/api/v1/datasets/{dataset_id}/recover")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["data"]["dataset_id"] == str(dataset_id)
+    assert client.get("/api/v1/datasets/recoverable").json()["data"] == []
+
+    listed = client.get("/api/v1/datasets").json()["data"]["items"]
+    assert any(item["id"] == str(dataset_id) for item in listed)
+    profile = client.get(f"/api/v1/profiling/{dataset_id}")
+    assert profile.status_code == 200, profile.text
+    assert profile.json()["data"]["overview"]["total_rows"] == 2
+    session_id = client.post("/api/v1/sessions", json={"dataset_id": str(dataset_id)}).json()["data"]["id"]
+    analysis = client.post(
+        "/api/v1/analysis/execute",
+        json={"session_id": session_id, "plan": {"operation": "frequency", "column": "severity"}},
+    )
+    assert analysis.status_code == 200, analysis.text
+    assert analysis.json()["data"]["operation"] == "frequency"
+
+
 # ==============================================================================
 # 2. Valid TSV Upload and Delimiter Sniffing
 # ==============================================================================

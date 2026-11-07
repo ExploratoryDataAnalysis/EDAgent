@@ -38,7 +38,7 @@ Prerequisites: Python 3.11+, Node.js 18+ and npm.
 scripts/setup.sh                 # Windows: scripts\setup.ps1
 
 # 2. Run API (http://127.0.0.1:8000) and web client (http://localhost:5173)
-scripts/dev.sh
+scripts/dev.sh                   # Windows: scripts\dev.ps1
 ```
 
 Manual equivalent:
@@ -53,6 +53,7 @@ cd frontend && npm ci && npm run dev                                   # web cli
 ```
 
 Open `http://localhost:5173`, create an account, then upload a file or launch a sample dataset. The Vite dev server proxies `/api` to port 8000.
+If an upload file is still present in `backend/data/uploads` but is missing from your dataset list, open **Ingest Dataset** and use **Restore saved uploads**. Only files stored under the signed-in account can be restored.
 
 Tables are created automatically on start-up. To manage a database with migrations instead, run `alembic upgrade head` from `backend/`.
 
@@ -76,6 +77,7 @@ All settings are environment variables; `.env.example` lists every name with com
 | `MAX_UPLOAD_SIZE_MB`, `MAX_DATASETS_PER_USER`, `*_RATE_LIMIT_PER_MINUTE` | Limits. |
 
 Secrets are read server-side only; no endpoint or frontend bundle exposes them.
+The environment template defaults to `LLM_PROVIDER=mock`, so adding a key alone does not enable chat. Set `LLM_PROVIDER=openai` for an OpenAI-compatible API or `anthropic` for Anthropic, choose the matching model (and optional base URL), then restart the backend.
 
 ### AI and privacy
 

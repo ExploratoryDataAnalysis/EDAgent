@@ -3,7 +3,7 @@
 import { apiClient, downloadFile } from './apiClient';
 import {
   AIStatus, AnalysisResult, APIResponse, AuthToken, ChatResponse, DatasetListResponse, DatasetPreview, DatasetResponse,
-  DatasetUploadResult, JobStatusResponse, ProfilerResult, ReportConfig, ReportResponse, SampleDataset, SessionDetail, SessionSummary,
+  DatasetRecoveryCandidate, DatasetUploadResult, JobStatusResponse, ProfilerResult, ReportConfig, ReportResponse, SampleDataset, SessionDetail, SessionSummary,
   SheetInspectionResponse, StructuredAnalysisPlan, SuggestedAnalysisPlan, ToolSpec, User, UUID,
 } from '../types';
 
@@ -29,6 +29,8 @@ export const datasetService = {
   },
   importUrl: async (url: string, dataset_name?: string) => unwrap<DatasetUploadResult>(await apiClient.post('/datasets/import-url', { url, dataset_name })),
   listSamples: async () => unwrap<SampleDataset[]>(await apiClient.get('/datasets/samples')),
+  listRecoverable: async () => unwrap<DatasetRecoveryCandidate[]>(await apiClient.get('/datasets/recoverable')),
+  recover: async (id: UUID) => unwrap<DatasetUploadResult>(await apiClient.post(`/datasets/${id}/recover`)),
   loadSample: async (id: string) => unwrap<DatasetUploadResult>(await apiClient.post(`/datasets/samples/${encodeURIComponent(id)}`)),
   inspectSheets: async (id: UUID) => unwrap<SheetInspectionResponse>(await apiClient.get(`/datasets/${id}/sheets`)),
   selectSheet: async (id: UUID, sheet_name: string) => unwrap<DatasetPreview>(await apiClient.post(`/datasets/${id}/select-sheet`, { sheet_name })),
