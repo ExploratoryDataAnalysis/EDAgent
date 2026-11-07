@@ -1,5 +1,6 @@
 # EDAgent .gitignore
-
+# Ignore large datasets
+EDAgent_Completed_Extension/EDAgent/backend/data/uploads/
 # Python
 __pycache__/
 *.py[cod]
