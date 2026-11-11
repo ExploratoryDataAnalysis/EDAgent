@@ -57,6 +57,14 @@ class DatasetURLImportRequest(BaseSchema):
     dataset_name: Optional[str] = None
 
 
+class DatasetRecoveryCandidate(BaseSchema):
+    dataset_id: uuid.UUID
+    name: str
+    file_format: FileFormatEnum
+    file_size_bytes: int
+    modified_at: datetime
+
+
 class DatasetPreview(BaseSchema):
     dataset_id: uuid.UUID
     selected_sheet: Optional[str] = None

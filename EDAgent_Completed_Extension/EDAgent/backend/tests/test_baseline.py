@@ -23,6 +23,22 @@ def test_configuration_defaults():
     assert settings.JOB_TIMEOUT_SECONDS >= 60
 
 
+def test_export_cleanup_preserves_placeholder(tmp_path, monkeypatch):
+    from app.services.export_storage import purge_old_exports
+
+    monkeypatch.setattr(settings, "EXPORTS_STORAGE_PATH", str(tmp_path))
+    placeholder = tmp_path / ".gitkeep"
+    old_export = tmp_path / "old.pdf"
+    placeholder.touch()
+    old_export.touch()
+    os.utime(placeholder, (0, 0))
+    os.utime(old_export, (0, 0))
+
+    assert purge_old_exports() == 1
+    assert placeholder.exists()
+    assert not old_export.exists()
+
+
 def test_ingestion_service_validation(sample_csv_path: str):
     """Verifies file format verification and checksum generation."""
     assert IngestionService.validate_file_format("data.csv") == "csv"
