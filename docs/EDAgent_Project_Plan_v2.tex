@@ -1,0 +1,860 @@
+\documentclass[11pt,a4paper,openany]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[english]{babel}
+\usepackage[a4paper,margin=26mm,headheight=15pt,headsep=8mm,footskip=13mm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref,xurl}
+\usepackage{etoolbox}
+\usepackage{needspace}
+\usepackage{listings}
+\usepackage{lastpage}
+\usepackage{ragged2e}
+\definecolor{ink}{HTML}{192F44}
+\definecolor{muted}{HTML}{586675}
+\definecolor{lightline}{HTML}{C3CBD3}
+\definecolor{pale}{HTML}{F2F5F7}
+\hypersetup{colorlinks=true,linkcolor=ink,urlcolor=ink,citecolor=ink,pdftitle={EDAgent Project Master Plan Version 2.0},pdfauthor={EDAgent project documentation},pdfsubject={Integrated project plan, executed v6 baseline, geospatial road safety and deployment}}
+\setlength{\parskip}{.34em}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.18}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\small\mdseries\scshape Chapter \thechapter}{8pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\normalfont\large\bfseries\color{ink}}{\thesection}{.7em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{.7em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\scshape EDAgent -- Project Master Plan}
+\fancyhead[R]{\footnotesize Version 2.0 | 11 November 2026}
+\fancyfoot[C]{\footnotesize\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\footnotesize\thepage\ of \pageref{LastPage}}\renewcommand{\headrulewidth}{0pt}}
+\newcommand{\status}[1]{\textsf{\textbf{#1}}}
+\newcommand{\pathcode}[1]{\nolinkurl{#1}}
+\newcommand{\qnote}[1]{\begin{quote}\itshape #1\end{quote}}
+\newcommand{\headnote}[2]{\vspace{.25em}\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textbf{#1}\quad #2}}\vspace{.4em}}
+\newcommand{\tightlist}{\setlist[itemize]{leftmargin=1.35em,itemsep=2pt,topsep=3pt}\setlist[enumerate]{leftmargin=1.65em,itemsep=2pt,topsep=3pt}}
+\tightlist
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,framesep=6pt,rulecolor=\color{lightline},backgroundcolor=\color{pale},columns=fullflexible,keepspaces=true,showstringspaces=false}
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{22mm}
+{\large\scshape Project Master Plan\par}
+\vspace{13mm}
+{\Huge\bfseries EDAgent\par}
+\vspace{6mm}
+{\Large Allegheny County Road Safety Intelligence\par}
+{\Large and Decision Support System\par}
+\vspace{15mm}
+\rule{.79\textwidth}{.6pt}\par\vspace{9mm}
+{\large Research specification, executed analytical evidence,\\system architecture, repository blueprint, and end-to-end implementation roadmap\par}
+\vspace{10mm}\rule{.79\textwidth}{.6pt}\par
+\vspace{16mm}
+{\Large\bfseries Version 2.0 --- Complete Standalone Revision\par}
+\vspace{3mm}
+{\normalsize 11 November 2026\par}
+\vfill
+\begin{minipage}{.87\textwidth}
+\begin{tabularx}{\linewidth}{@{}L{40mm}Y@{}}
+\textbf{Repository} & EDAgent (unchanged)\\
+\textbf{Canonical analysis} & \pathcode{analysis/EDA_v6.ipynb}; executed 2004--2024 baseline\\
+\textbf{Active application} & \pathcode{EDAgent_Completed_Extension/EDAgent/}; confirm once against root copies\\
+\textbf{Source scope} & WPRDC cumulative crash extract 2004--2024; separate 2025 resource excluded\\
+\textbf{Current stage} & V6 analytical baseline accepted for research review; geography/site matching and production release remain gated\\
+\end{tabularx}
+\end{minipage}
+\vspace{14mm}
+{\small A completely rewritten, self-contained operating document. The earlier plan is \emph{not} appended; its substantive scope, decisions, methods, deliverables and source record are integrated here.}
+\end{titlepage}
+\pagenumbering{roman}
+\chapter*{Document control and reading guide}
+\addcontentsline{toc}{chapter}{Document control and reading guide}
+\begin{tabularx}{\linewidth}{@{}L{37mm}Y@{}}
+\toprule
+Document purpose & Single governing plan for the remaining EDAgent project: research, data acquisition, implementation, verification, deployment and demonstration.\\
+Document version & 2.0; prepared 11 November 2026. Supersedes the 10 November 2026 planning baseline.\\
+Evidence examined & Executed \pathcode{EDA_v6(3).ipynb}; final \pathcode{EDA_v6 output(2).zip} and its manifest, tables and model files; executed v5 notebook and v5 comparison; original 49-page project plan.\\
+Status & The v6 research execution is accepted as an \emph{analytical baseline with stated limitations}. The model outputs remain \pathcode{NOT_APPROVED_FOR_PRODUCTION} and the site-level calculator is not yet operational.\\
+Replacement rule & This document stands alone. Keep it with the latest canonical notebook, outputs and data-source records. The earlier plan can be archived after an ordinary backup check.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Three kinds of statements.} This plan distinguishes (i) \emph{observed evidence} from stored v5/v6 execution outputs, (ii) \emph{fixed team decisions}, and (iii) \emph{proposed or conditional work} requiring new inputs or tests. A successful notebook run is not proof that an external source was verified or that a model has been approved for the public website.
+
+\textbf{Evidence boundary.} The final ZIP and notebook were audited for this plan, but the author did not independently rerun the full 116.6 MB source CSV. Numerical values therefore refer to the executed v6 record and its exports, not an independent replication of those calculations. All dates and metrics below use that provenance unless stated otherwise.
+
+\textbf{How the chapters fit.} Chapters 1--2 define the goal and scope; 3--6 establish the existing evidence and methodological design; 7--10 define spatial screening, the calculator, the website and its hosting; 11--14 give repository instructions, execution stages, optional work, testing and governance; 15--16 define handoff, release rules, sources and the plan for continuation. The appendices retain the essential definitions, exact external links and reproducibility contracts.
+
+\chapter*{Executive decision and immediate direction}
+\addcontentsline{toc}{chapter}{Executive decision and immediate direction}
+\textbf{Central objective.} Use historical Allegheny County reported-crash records, roadway characteristics and appropriately validated statistical/machine-learning methods to identify road locations meriting further safety investigation and support transparent, evidence-informed intervention scenarios.
+
+The v6 notebook is \textbf{complete enough to freeze as the current research baseline}, not complete enough to deploy a site-level crash-risk or intervention-benefit predictor. It covers 248,810 records (2004--2024), 191 source fields, 44 executed code cells, four formal categorical association tests, a chronological severity model comparison, temporal uncertainty analysis, actual county-boundary screening and transparent coordinate diagnostics. The best retrospective classifier has average precision about 0.155 against serious/fatal test prevalence about 0.0444. It does \emph{not} forecast accident occurrence.
+
+The highest-priority unresolved geographic evidence is 238,517 candidate police/state coordinate comparisons: median difference 4.16 m, but 2,146 pairs (0.90\%) differ by more than 500 m. That police-text conversion remains a diagnostic hypothesis until official format verification. The existing mapping source remains the accepted state-route decimal fields; no unverified police-coordinate substitution is authorised.
+
+The next substantive development step is \textbf{site identification and defensible road-network matching}, with a quantified AADT/exposure feasibility decision. Only after a valid site baseline and applicable CMF evidence should the flagship Intervention Simulator become an operational domain feature. The existing React/Vite--FastAPI application remains the foundation, with offline training and approved model loading at backend startup, not retraining per request.
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Executive direction and project decisions}
+\section{Overall direction and central contribution}
+EDAgent evolves from a general exploratory data-analysis application into a \textbf{domain-specific road-safety intelligence and decision-support system}. Its success depends on defensible findings, meaningful site attribution, transparent prediction boundaries and an evidence-backed intervention workflow, not on the number of charts or the training time of a model. The core activities are to (1) describe reported-crash patterns; (2) test severity associations; (3) locate priority facilities; (4) train models only where the target/data support them; and (5) quantify clearly labelled intervention scenarios using externally reviewed evidence.
+
+\qnote{How can historical crash data, roadway characteristics and predictive modelling be used to identify priority road locations and support evidence-based road-safety interventions in Allegheny County?}
+
+\section{Locked decisions}
+\small
+\begin{longtable}{@{}L{35mm}L{18mm}L{91mm}@{}}
+\toprule Decision & State & Operating rule\\\midrule\endfirsthead
+\toprule Decision & State & Operating rule\\\midrule\endhead
+Dataset years & Fixed & Use the cumulative WPRDC crash extract for 2004--2024. Do not import the separately published 2025 resource.\\
+Notebook & Fixed & One canonical \pathcode{analysis/EDA_v6.ipynb} containing EDA, statistics, geography, and all conditional ML training/evaluation.\\
+Repository & Fixed & Keep project name EDAgent.\\
+Application & Verify once & Extend \pathcode{EDAgent_Completed_Extension/EDAgent/} unless source/configuration reconciliation shows another canonical entry point. Never develop root and nested copies independently.\\
+General AI analyser & Preserve & Keep the already completed arbitrary-dataset feature operational; do not expand it as the project centrepiece.\\
+Crash Data Assistant & Limited domain role & Explain approved charts, model outputs, site profiles and CMF records without inventing facts.\\
+Main simulator & Core priority & Evidence-backed road-safety intervention what-if calculator, not physical traffic simulation.\\
+Frequency model & Conditional & Build site-year models only with an eligible zero-inclusive site population, reliable attribution and aligned traffic exposure.\\
+Live 1--3 hour forecast & Not committed & Require historical timestamps, relevant context, non-event exposure and defensible future-period validation before any probability claim.\\
+Routing / replay & Stretch & Do not replace Google Maps or Waze; replay historical records only if inexpensive and useful after core acceptance.\\
+Deep learning & Not core & No LSTM, Transformer or graph model merely to create long training runs. Require a research need and suitable data.\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Four connected layers and success conditions}
+\begin{enumerate}
+\item \textbf{EDA and statistical evidence:} what the reported data contain, how recording changes over time, which associations survive adjustment and uncertainty checks.
+\item \textbf{Spatial and predictive analysis:} validated crash locations and site types; honest severity ranking; site-year crash frequency only after its data gate.
+\item \textbf{Intervention evaluation:} an appropriate facility/crash-type baseline paired with a reviewed Crash Modification Factor (CMF).
+\item \textbf{Website and user experience:} accessible maps, location profiles, evidence narratives, model limitations and transparent what-if scenarios.
+\end{enumerate}
+Completion requires a reproducible notebook, a screened and traceable site inventory, validated scenario logic, a functioning domain website, and documented acceptance tests. Optional live, route and deep-learning features are not needed for a strong release.
+
+\chapter{Project context, questions and scope}
+\section{Problem context and users}
+The Western Pennsylvania Regional Data Center (WPRDC) cumulative Allegheny County crash resource describes police-reported crashes during 2004--2024, including severity, vehicles, people, recorded roadway and environmental context and location fields \cite{WPRDC}. Its data availability, reporting thresholds, historical definitions and privacy-related omission of exact crash dates limit what can be inferred.
+
+The intended users include road-safety analysts, project reviewers, and community users who want to understand \emph{reported} historical patterns and examine evidence-backed countermeasures. The existing general-data analyser is already implemented by the team; the new domain module should add subject-matter depth without replacing that general feature.
+
+\section{Five research questions}
+\begin{enumerate}
+\item Which spatial, temporal, environmental, collision and road-user patterns are visible in 2004--2024 reported crashes?
+\item Which recorded circumstances are associated with serious/fatal outcomes among known-severity crashes, especially since the 2016 definition change?
+\item Which locations or roadway facilities warrant investigation after auditing coordinate quality, unique-crash attribution, site type and available exposure?
+\item Which statistical or machine-learning methods reliably estimate the precise selected target under chronological and spatial validation?
+\item Which intervention countermeasures have externally supported CMFs applicable to the reviewed site and crash type, and what does the arithmetic imply?
+\end{enumerate}
+
+\section{Committed scope and exclusions}
+\textbf{Included:} comprehensive EDA, source/variable audits, historical coding checks, severity analysis, statistical inference and uncertainty, county-polygon spatial concentration, road-network attribution feasibility, the existing severity classifiers, conditional site-year frequency/EB screening, evidence-backed CMF scenarios and integration in the completed application.
+
+\textbf{Excluded from the core:} the 2025 crash resource, an unsupported near-term crash forecast from the public extract, a navigation replacement, traffic microsimulation, a multi-agent reinvention of the completed general analyser, and deep learning without clear need. No new model or mapping can quietly expand the committed source period.
+
+\section{Professor feedback and its practical implications}
+An animated historical replay is acceptable as presentation, but is not a strong research contribution alone. A one-week generic crash forecast is not useful; any actionable alternative would require a nearer horizon and genuine time-aligned historical weather/traffic data, which the current public file lacks. A route-comparison view may be interesting, but should use an existing route provider and acknowledge that directing many travellers to a supposedly safer road may itself change traffic distribution and exposure. These inputs reinforce the choice of a \emph{site screening plus intervention} core product.
+
+\chapter{Dataset, provenance and the executed v6 research baseline}
+\section{Source identity, size and execution record}
+The executed v6 source manifest identifies WPRDC resource \pathcode{2c13021f-74a9-4289-a1e5-fe0472c89881} and local file \pathcode{2c13021f-74a9-4289-a1e5-fe0472c89881.csv}. The CSV contains 248,810 rows and 191 source columns, occupies 116,560,683 bytes, and covers every year from 2004 through 2024. Its SHA-256 digest is:
+\begin{lstlisting}
+c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511
+\end{lstlisting}
+The final run manifest was generated 11 November 2026 at 03:13:38 UTC; the environment reported Python 3.13.18, pandas 2.2.3 and scikit-learn 1.6.1. This precise environment is a reproducibility record, not a demand that every future installation use these versions without validation. Every one of the 44 code cells executed with no stored exception. There are 105 notebook cells in total; the analysis stays in one notebook.
+
+\begin{table}[htbp]\centering\small
+\caption{Verified dataset and run summary from final v6 exports.}
+\begin{tabular}{@{}lr@{}}\toprule Measure & Final execution\\\midrule
+Total reported crashes & 248,810\\
+Source columns & 191\\
+Distinct crash identifiers & 248,810\\
+Exact duplicate records / repeated CRNs & 0 / 0\\
+Known binary severity outcomes & 205,544 (82.61\%)\\
+Unknown or excluded severity outcomes & 43,266 (17.39\%)\\
+County-screened crash points & 238,281\\
+Formal categorical association tests & 4\\
+Exported severity model files & 5\\
+Stored notebook exceptions & 0\\
+\bottomrule\end{tabular}
+\end{table}
+
+\section{Progress from v3/v4/v5 to v6}
+The executed v5 notebook was an extension of v4, preserving much descriptive analysis and adding missingness audits, historical coding checks, severity-standard diagnostics, chronological model comparisons, exploratory clustering and spatial DBSCAN. The accompanying v5 comparison found three prominent gaps: unfinished conclusions, large chained DBSCAN clusters and unstable adjusted logistic estimates. V6 retains the useful charts and established loader, introduces a source checksum, completes the written findings, checks injury-component consistency, replaces the county rectangle with a county polygon, demotes density-connected clusters, reports inferential effect sizes with appropriate pooling, reworks adjusted severity models, adds temporal uncertainty and exports review-only artefacts.
+
+V6 does \emph{not} independently solve countywide site attribution, historical codebook verification, traffic exposure, Empirical Bayes screening or intervention evidence. Its accepted status is a precise baseline and evidence register, not confirmation that these remaining stages are done.
+
+\section{Missing values, historical definitions and data quality}
+Across the original fields v5/v6 report 4,793,642 missing source values. Fields such as \pathcode{SPEC_JURIS_CD} and \pathcode{RDWY_SURF_TYPE_CD} are approximately 99.4\% missing; \pathcode{TOT_INJ_COUNT} about 63.4\%; closure estimates about 65.3\%; route, segment and offset fields respectively about 41.1\%, 44.3\% and 38.6\% missing. Such gaps must not be globally filled with zero for descriptive work. The eight-field co-missingness audit finds 216,378 crashes missing none, 12,380 missing one, 18,457 missing two and 1,595 missing three or more of the selected fields.
+
+The 2024 data contain only 387 valid hours from 10,228 records (3.78\%), and no nonmissing illumination values. Time recording also heaps on whole/half-hours; code 9999 appears 3,781 times as a likely unknown-time sentinel. The 02:00 pattern therefore warrants a measurement-quality caveat, particularly for 2024. The exact crash date is absent, preventing credible reconstruction of time-aligned traffic/weather inputs for real-time occurrence forecasting \cite{WPRDC}.
+
+The 2016 adoption of the revised injury-severity standard is material. In 2015 the \emph{possible injury} class was approximately 21.9\% of known-severity crashes; in 2016 it was 13.8\%. The \emph{minor injury} class rose from 8.5\% to 15.1\%. Long-run serious-injury comparisons spanning that boundary require explicit harmonisation or separate eras \cite{PennDOT2016}. Primary severity modelling therefore uses 2016 onward. Fatal-only longer trends may be described separately with due caution.
+
+The weather and road-surface old/new coding maps retain an assumed 2018/2019 transition, but official year-specific codebooks have \emph{not} been attested in the run manifest. Formal grouped inference on them remains disabled; unknown/unmapped values remain visible. \pathcode{URBAN_RURAL} also changes raw-code composition around 2022--2023 and is excluded from unverified models. These are gates to resolve, not reasons to invent harmonised labels.
+
+\section{Injury-component reconciliation}
+The new audit compares overall injury/fatality counts to available component fields and checks logical constraints without changing original values. Among 182,782 eligible comparisons, 743 \pathcode{INJURY_COUNT} records disagree with the available component sum (about 0.41\%), concentrated in early years. The \pathcode{TOT_INJ_COUNT} comparison has 24,954 eligible records and no disagreements, while one record has injury count above person count and none has fatality count above person count. Eligibility depends on component availability; untested later years cannot be described as internally consistent. Compare flagged records and official field definitions before explaining the mechanism.
+
+\section{Geographic audit: what is confirmed and what remains provisional}
+Actual county-boundary screening retains 238,281 of 248,810 crashes. Accepted state-route decimal coordinates cover 238,556 records before polygon filtering, with 275 of those outside the county boundary. The 2024 Census 500k boundary for GEOID 42003 was used; the original rectangle-only method is no longer interpreted as county membership. The grid screening exports 38,332 cells whose crash counts sum to 238,281, not a traffic-exposure-normalised risk surface.
+
+A candidate parser for police GPS strings such as \texttt{40 19:05.530} and \texttt{79 54:27.197} produced 238,517 comparable police/state coordinate pairs. The median difference was 4.16 m; the 95th percentile 36.91 m, 99th percentile 398.91 m and maximum 48.47 km. Exactly 2,146 candidate pairs (0.8997\%) differ by more than 500 m and are exported for review. \emph{The candidate DMS interpretation has not been verified against official documentation}; the operational manifest correctly records zero \emph{officially verified} police/state pairs. These two different counts must never be conflated.
+
+\section{Statistical inference and model evidence}
+Four post-2016 categorical association tests pass rare-category pooling and expected-cell checks with false-discovery-rate adjustment. Collision type has the largest Cram\'er's $V=0.2020$; time period has $V=0.0483$, illumination $V=0.0371$ and intersection type $V=0.0222$. The latter three are very small effect sizes despite significant tests. The tests use 77,476 known-severity records from 2016--2023, and pooled categories must be named when interpreting them.
+
+The adjusted regression on 77,476 records and 3,233 serious/fatal outcomes reports an estimated odds ratio about 10.63 for pedestrian collision versus angle collision, approximately 2.74 for head-on and 0.45 for rear-end; speed-limit odds ratio is about 1.006 per mph. The historical v5 separation problem is addressed with low-event diagnostics and penalisation safeguards. These are \emph{observational adjusted associations}, not causal effects. Other covariates, selection and historical recording still matter.
+
+\begin{table}[htbp]\centering\small
+\caption{Final executed v6 severity classifier comparison: test years 2022--2024; $N=27{,}697$, positive prevalence 4.4445\%.}
+\begin{tabular}{@{}L{54mm}rrrr@{}}\toprule
+Classifier & AP & ROC--AUC & Bal. acc. & Brier\\\midrule
+HistGradientBoosting + collision & \textbf{.1548} & .6921 & .6333 & .2028\\
+Random Forest + collision & .1420 & .6900 & .6301 & .1711\\
+Logistic Regression + collision & .1393 & \textbf{.6990} & \textbf{.6381} & .2132\\
+Random Forest without collision & .0517 & .5461 & .5279 & .1995\\\bottomrule
+\end{tabular}
+\end{table}
+
+Average precision (AP) is the primary ranking measure for rare serious/fatal outcomes. HistGradientBoosting reaches AP 0.1548 against a test prevalence 0.0444. Its top 5\% captures 310 serious/fatal crashes (25.18\% recall) at 22.38\% precision. The restricted-feature forest is much weaker (AP 0.0517). The apparent gain is heavily dependent on \emph{collision type}, which is recorded after a crash and therefore cannot justify a pre-crash occurrence prediction.
+
+Year-month-block bootstrap AP intervals (300 valid replicates) are 0.1320--0.1810 for HistGradientBoosting, 0.1256--0.1621 for the collision-based forest, 0.1216--0.1606 for logistic regression and 0.0471--0.0587 without collision. Small differences should be interpreted relative to these intervals, not just rank-ordered point estimates. The 2022--2024 holdout has already been inspected across v5/v6 iterations, so it is not independent \emph{new} external validation.
+
+The uncalibrated Brier scores are poor relative to a constant-prevalence reference (about 0.04248); a chronologically calibrated logistic model achieves about 0.0405 and is exported separately. The latter is a modest improvement in probability quality, not proof that probabilities are fit for unrestricted public deployment. Review-only saved models require further artifact and feature-contract testing.
+
+Exploratory MiniBatch K-means yields sampled silhouette 0.1172 for $k=4$ (weaker for $k=6,8$) and adjusted Rand stability about 0.826 between fits. These archetypes may help describe types of recorded crashes but are not screening priorities. The former large DBSCAN chain is no longer presented as a severity hotspot.
+
+\section{Baseline approval boundaries}
+The manifest records \pathcode{NOT_APPROVED_FOR_PRODUCTION}; \pathcode{codebook_team_attested=false}, \pathcode{police_gps_format_verified=false}, and \pathcode{conditional_site_frequency_gate=false}. Five \pathcode{joblib} artefacts were generated for review, not public prediction. No site-year frequency model, EB estimate, suitable CMF table or website integration test is evidenced by this run. These distinctions are central to every later chapter.
+
+\chapter{Methodological principles and data limitations}
+\section{Reported crashes are not travel exposure}
+The file describes reportable recorded crashes, not all trips, near misses, kilometres travelled or unreported events. A dense crash cell can simply have high traffic throughput. Counts require an explicitly labelled time window and eligible population; exposure-adjusted facility comparisons require measures such as traffic volume, road length, observation days and suitable user-group exposure. For pedestrians or cyclists, car AADT alone is not an adequate denominator for individual-level risk.
+
+\section{CRN uniqueness, site types and intersection double-counting}
+PennDOT's crash primer distinguishes state-route county/route/segment/offset references from local-road locations \cite{Primer}. Intersection records can be associated with multiple roads. Attributing them to every link and summing them again would duplicate crashes even if each \pathcode{CRASH_CRN} is unique in the source. A site model must define (a) roadway segment sites and (b) intersection sites, then select one primary attribution unit for county totals or explicitly maintain nonadditive secondary associations.
+
+\section{Temporal, missingness and coding safeguards}
+The severity standard changes in 2016; 2024 has severe hour/illumination missingness; weather/road codebooks and \pathcode{URBAN_RURAL} require year-specific verification. A numeric storage type does not make a categorical code a continuous measurement. Unknown severity codes (8,9, missing or unrecognised) must remain excluded from binary outcomes, and no missing injury component may silently become zero. Time-of-day comparisons are analyses of \emph{recorded} hours with possible heaping. Any retrospective association must disclose coverage and its analytical population.
+
+\section{Statistical, model and causal interpretation}
+Report denominators and effect sizes beside significance tests; pool sparse levels using a documented mapping, show adjusted confidence intervals, control multiple testing where appropriate, and use prior-period validation for model development. Class imbalance makes plain accuracy misleading. No classification model trained on only crash rows can establish a future crash-occurrence probability; no adjustment or CMF scenario alone establishes a local causal effect of a treatment.
+
+\section{Data-access and forecast boundary}
+Because the WPRDC public crash extract omits actual dates, it cannot be reliably joined to historical hourly weather, traffic or roadwork for a 1--3 hour event forecast. Even with a current live feed, training would also need non-crash space-time intervals, historical exposure, aligned input coverage and a future-period holdout. Until that evidence exists, an optional live view means \emph{current road-condition context}, never validated crash prediction.
+
+\chapter{Prediction tasks, statistical models and evaluation strategy}
+\section{Task A: severity among already reported crashes}
+\textbf{Question:} Given a crash with recorded known severity, can we rank cases that are serious/fatal? The binary target is $1$ for severity codes 1 or 2; $0$ for codes 0,3,4; unknown/other codes and missing severity are excluded. The main comparable modelling era is 2016 onward.
+
+\textbf{Feature policy:} separate a retrospective model including post-crash collision type from a restricted-feature version that excludes collision type. For each feature record when it becomes available. Neither variant may be marketed as a validated \emph{pre-crash} model without stronger input-time evidence. Exclude injury-derived targets, unverified \pathcode{URBAN_RURAL}, and historically disputed environmental groupings.
+
+\textbf{Validation:} 2016--2021 training with 2022--2024 chronological test; calibrate and tune only using earlier years (forward-chaining or equivalent). The former test period has been consulted during iterations; a new fully external validation study would be needed to support stronger generalisation claims. Keep the original Random Forest benchmark for continuity; Logistic Regression, Random Forest and HistGradientBoosting are sufficient challenger families until a defined need justifies additions.
+
+\textbf{Measures:} AP/PR curve primary, ROC--AUC secondary; threshold precision/recall, confusion matrices, top-5/10/20\% capacity-constrained review, balanced accuracy, Brier score, prevalence baseline, reliability plots, permutation importance and temporal-block intervals. Calibrated probabilities and uncalibrated decision scores must be distinguished on every interface.
+
+\section{Task B: eligible site-year crash-frequency modelling}
+\textbf{Question:} Which eligible road segments or intersections have greater expected \emph{reported-crash counts} per defined period, conditional on their facility attributes and traffic exposure? The unit is one \pathcode{SITE_ID}--year per \emph{eligible} facility, including zero-crash site-years. Grouping crash rows alone is not a suitable panel: it would omit every road segment with zero observed events.
+
+\textbf{Required inputs:} complete or intentionally bounded eligible network, stable site IDs, unique crash attribution, observation years, segment lengths, roadway classes, AADT or compatible intersection exposure, valid road predictors such as lanes/speed limit and credible alignment of year to reference data. Maintain separate intersection and segment models if exposure/target definitions differ.
+
+\textbf{Baseline formulation:}
+\begin{equation}\log \mu_{s,t}=\beta_0+\boldsymbol\beta^{\mathsf T}\mathbf X_{s,t}+\log E_{s,t},\end{equation}
+where $\mu_{s,t}$ is a site-year expected count and $E_{s,t}$ is justified exposure. For a roadway segment one conceptual choice is $E_{s,t}=\mathrm{AADT}_{s,t}\times L_s\times D_t$ (consistent units required). Intersection exposure needs a facility-appropriate alternative; an offset is not merely decorative.
+
+\textbf{Models:} Poisson GLM baseline; Negative Binomial if dispersion warrants it; boosted count objective only after the panel is reliable and extra complexity is justified. Evaluate with future site-years: MAE, RMSE, Poisson deviance, residual/dispersion diagnostics, observed--expected calibration, priority ranking stability and uncertainty. Audit both temporal and spatial leakage. Never use a random crash-row split as sole evaluation.
+
+\section{Fallback if the frequency-model gate fails}
+A documented \emph{no-go} outcome is acceptable if the network is incomplete or AADT linkage inadequate. Instead deliver county and site-screened historical crash counts with stated periods, known-severity denominators and match confidence; restrict analysis to valid state-route subsets if needed; separate intersections and segments; consider FHWA network-screening measures including crash-type concentration where a suitable reference comparison exists \cite{FHWA_screen}. Call such outputs \emph{historical concentration} or \emph{screening priority}, not per-vehicle crash risk.
+
+\section{Empirical Bayes is a separate conditional method}
+EB blends observed crash history with an estimate from an appropriate safety-performance function (SPF), reducing sensitivity to random high/low years and regression to the mean \cite{FHWA_EB}. It needs an applicable reference facility population, fitted/calibrated SPF and credible exposure; a coded formula without these ingredients is not an EB result. Treat it as a distinct network-screening method, not another classifier or an automatic step after any Poisson regression.
+
+\chapter{The consolidated EDA\_v6 notebook: specification and handoff}
+\section{Single-file rule and present state}
+The research notebook is exactly \pathcode{analysis/EDA_v6.ipynb}. It is not split into separate geography and ML notebooks. Every code cell executed in the final v6 record; the saved notebook contains its outputs, and the ZIP contains selected review tables, maps, model pipelines and the provenance manifest. \emph{Analytical acceptance} authorises documentation and downstream research use. It does not override the manifest's production-restriction field.
+
+\section{Section-by-section v6 specification}
+The following sequence is the notebook's existing 0--22 narrative. The code-cell references are zero-based positions in the 105-cell file, so they can be located even if a notebook interface does not display numbered headings. Original v5 work is retained where still correct.
+\small
+\begin{longtable}{@{}L{9mm}L{48mm}L{17mm}L{67mm}@{}}\toprule
+No. & Notebook section & Cells & Method, product and interpretation\\\midrule\endfirsthead
+\toprule No. & Notebook section & Cells & Method, product and interpretation\\\midrule\endhead
+0 & Title, scope and definitions & 0 & Research questions, v6 lineage, 2004--2024 lock, retrospective versus conditional targets, limitations.\\
+1 & Environment and setup & 1--2 & Imports, seeds, package/version reporting, helper functions and paths; no hidden runtime state.\\
+2 & Load and validate & 3--5 & Fixed resource ID, complete CSV, year and CRN checks, source checksum, metadata.\\
+3 & Initial inspection & 6--8 & Shape, types, unique IDs and per-year counts; numeric codes not averaged as quantities.\\
+4 & Variable roles/dictionary & 9--11 & Counts, measurements, categorical codes, identifiers, roadway references and leakage/timing roles.\\
+5 & Missingness/coverage & 12--19 & Field-wise, year-wise and co-missingness; downstream denominator rules.\\
+6 & Duplicate/consistency audit & 20--23 & Exact and CRN duplicate checks, injury components, fatality and logical constraints.\\
+7 & Historical code harmonisation & 24--28 & Audits weather/road code maps, Missing versus Unknown/Unmapped; official verification gates.\\
+8 & Cleaning and derived features & 29--32 & Nullable severe target, valid speed/hour, recorded time bands and road-user flags.\\
+9 & Severity and temporal EDA & 33--41 & Severity and crash-time charts, 2016 break, 02:00 heaping and 2024 coverage.\\
+10 & Environment and roadway EDA & 42--48 & Weather, road surface, lighting, collision, intersection, raw road-context groups.\\
+11 & People, vehicles, road users & 49--54 & Counts and vulnerable-road-user descriptive coverage; preserve plausible tails.\\
+12 & Statistical associations & 55--71 & IQR flags, correlations, rates, cross-tabulations, rare-cell pooling, effect sizes, FDR, adjusted regression.\\
+13 & County coordinate audit & 72--73 & Candidate police DMS parsing, state-route decimal comparison, placeholders, official-source gate, county polygon.\\
+14 & Spatial concentration & 74--78 & County-clipped maps and grid aggregation, known-severity denominators, no chained DBSCAN hotspot claim.\\
+15 & Road-network feasibility & 79--80 & Route/segment/offset coverage; conditional verified crosswalk, centreline matching and attribution policy.\\
+16 & Severity classifier training & 81--87 & Original benchmark and enhanced chronological models, with/without collision type, correct feature gates.\\
+17 & Model evaluation & 88--93 & PR/AP, ROC, confusion, Brier/calibration, top-$k$, temporal-block intervals, exploratory cluster stability.\\
+18 & Site-year frequency (conditional) & 94--95 & Complete eligible zero-inclusive panel and exposure gate; Poisson/NB only if feasible.\\
+19 & EB screening (conditional) & 96--97 & Requires appropriate SPF/reference facility inputs and acceptance; otherwise skipped.\\
+20 & CMF evidence/what-if & 98--99 & Reviewed CMF schema, deterministic scenarios, no invented efficacy.\\
+21 & Evidence-based findings & 100--101 & Eight current-execution findings with evidence, interpretation, limitation and action.\\
+22 & Reproducibility and exports & 102--104 & Structured CSV/model exports, version manifest, approval controls and release checklist.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{What counts as v6 acceptance}
+The final execution meets the core reproducibility conditions: intended 2004--2024 source, 248,810 distinct CRNs, reported duplicates/missingness, unknown severity preserved, 2016 boundary explained, 2024 time/lighting gaps stated, county polygon filtering, chronological severity comparisons, complete run outputs and a written findings ledger. It also completed the 44-cell run with no stored exception.
+
+The acceptance has \emph{reservations}: historical weather/surface maps are not officially verified; the DMS police candidate encoding is not officially attested and 2,146 significant differences need review; site crosswalk and AADT are missing; the test period has been iteratively inspected; and model artefacts remain review-only. These reservations are part of the accepted research record and may only be closed by supporting evidence and reruns, not by deleting warnings.
+
+\section{New execution evidence and exported artefact contract}
+The final ZIP contains exactly the following logical output classes, organised for archival under \pathcode{analysis/outputs/}:
+\begin{itemize}
+\item \textbf{Provenance:} \pathcode{run_manifest.json} with source ID, checksum, environment, splits, approval gates and coordinate diagnostics.
+\item \textbf{EDA:} \pathcode{source_missingness.csv}, \pathcode{severity_by_year.csv}, \pathcode{injury_reconciliation.csv}, \pathcode{association_tests.csv}, \pathcode{association_pooling_audit.csv}, \pathcode{variable_roles.csv}, \pathcode{findings_review.csv}.
+\item \textbf{Spatial:} \pathcode{county_points_review.csv}, \pathcode{historical_grid_screening.csv}, \pathcode{coordinate_coverage_by_year.csv}, \pathcode{police_coordinate_encoding_audit.csv}, \pathcode{candidate_coordinate_comparison_summary.csv}, \pathcode{candidate_coordinate_disagreements_review.csv}.
+\item \textbf{Model metrics:} \pathcode{severity_model_comparison.csv}, \pathcode{severity_ap_temporal_intervals.csv}.
+\item \textbf{Models (private review):} Random Forest with/without collision, Logistic Regression, temporally calibrated Logistic Regression and HistGradientBoosting (five \pathcode{.joblib} artefacts).
+\item \textbf{Intervention evidence:} presently empty and intentionally not populated with fictional CMFs.
+\end{itemize}
+The ZIP happened to use \pathcode{model_artefacts/}; the repository canonical spelling is \pathcode{model_artifacts/}. Normalise on extraction. All data/report/model promotion must share the same run identifier and source checksum.
+
+\chapter{Geography and site-level road-safety screening}
+\section{Geographical evidence hierarchy}
+Use a documented priority ordering:
+\begin{enumerate}
+\item For valid state-route records, prefer route/segment/offset references supported by PennDOT conventions and a compatible roadway reference network.
+\item Decode police GPS \emph{only as a candidate diagnostic} until official source-format documentation establishes degrees/minutes/seconds and hemisphere rules; then compare validated police and state-route pairs.
+\item Use county-polygon-vetted coordinates to propose nearest centreline matches, with defensible distance cutoffs and ambiguity detection; do not force every point onto a road.
+\item For local roads, use municipality, normalised street names and intersections as supporting evidence, not as a guarantee of precise historical segment identity.
+\item Preserve source, conversion rule, raw values, precision, match distance, competing candidates, final decision, reviewer and unique CRN throughout the pipeline.
+\end{enumerate}
+The present Census 2024 boundary is a county screening polygon; its coarseness and time mismatch do not confer roadway-level precision. The PASDA Allegheny County street-centreline layer \cite{PASDA} is a candidate \emph{current} reference. It is not automatically the road network for 2004 or a complete local-road historical record.
+
+\section{Immediate coordinate review work package}
+\begin{enumerate}
+\item Obtain the official PennDOT/WPRDC description of \pathcode{LATITUDE}, \pathcode{LONGITUDE}, \pathcode{DEC_LAT} and \pathcode{DEC_LONG}, including raw text encoding, direction and historical differences.
+\item Review \pathcode{candidate_coordinate_disagreements_review.csv} (2,146 rows): check implausible source values, repeated coordinate points, location changes, road class and year distribution. Do not automatically label the police or state source wrong.
+\item Characterise the full matched-distance distribution; keep count of zero/one/both coordinate sources, out-of-county and placeholder points by year.
+\item Specify a reproducible source-selection policy: reliability evidence, acceptable disagreement, whether to flag/withhold ambiguous points, and what the website may display.
+\item Rerun only the necessary geography and outputs after authorising the source conversion. Keep the previous baseline as an immutable audited run.
+\end{enumerate}
+The current observed median 4.16 m makes the text-decoding hypothesis promising but does not settle exceptional mismatches up to 48.47 km. A small percentage of large errors is important when assigning individual crash records to road segments.
+
+\section{Intersection and segment-site definition}
+Create stable \pathcode{SITE_ID}, \pathcode{SITE_TYPE} and \pathcode{SITE_VERSION} fields. \pathcode{SEGMENT} sites require a directional/route or centreline geometry definition; \pathcode{INTERSECTION} sites require a node/junction geometry and a rule for crashes on approaches. Include \pathcode{CRASH_CRN}, \pathcode{ASSIGNMENT_STATUS} (matched / ambiguous / unmatched), \pathcode{MATCH_SOURCE}, distance, confidence, review flag and observation era. Preserve a single primary attribution per crash for additive totals, even when multiple nearby roads are relevant.
+
+\section{Traffic exposure and network feasibility}
+PennDOT's TIRe resources publish traffic counts at many but not all road locations and on differing years/cycles \cite{TIRe}. Obtain candidate AADT reference features with site IDs, count year, traffic directions, facility classification and measurement metadata. Document unmatched facilities and temporal alignment rather than extrapolating a single present AADT value across 2004--2024 as fact. A true count model must include eligible network sites with \emph{zero} observed crashes. The team should first quantify whether those sites and exposures can be defined reliably; only then decide whether to train Task B or publish an explicitly bounded screening fallback.
+
+\section{Site screening outputs and interpretation}
+A reviewable site profile should include identifier, geometry, source, site type, time window, raw crash count, severe/fatal numerator and known-severity denominator, vulnerable-road-user counts, crash-type distribution, missing-location/unknown-severity counts, matching confidence, and exposure-based metrics \emph{only if available}. Report how rankings respond to time window, site size and source exclusions. A historically busy junction is a candidate for engineering investigation, not automatically the most dangerous junction per traveller.
+
+\chapter{Flagship Road-Safety Intervention What-if Calculator}
+\section{Purpose and user journey}
+The simulator translates a reviewed site crash profile and appropriate baseline into an evidence-informed hypothetical change under a named safety countermeasure. It is \emph{not} a 3D traffic simulation, an observed local treatment evaluation or a guarantee of prevented crashes.
+\begin{enumerate}
+\item Select a validated priority intersection or segment from the site register.
+\item Inspect source, observation interval, crash-type mix, severity, vulnerable users, data gaps and baseline type.
+\item Choose only countermeasures appropriate to that site and target crash type.
+\item Retrieve a curated external CMF and explain quality, target population, facility, source and uncertainty.
+\item Calculate before/after estimates, show arithmetic and caveats, or return ``no applicable evidence selected'' if not supported.
+\end{enumerate}
+
+\section{Deterministic CMF arithmetic and denominators}
+A Crash Modification Factor describes a multiplicative relationship for the \emph{applicable} crash type/facility under the study conditions \cite{CMF}. For an eligible expected baseline count $N_{\mathrm{before}}$ and a matched factor $c$,
+\begin{align}
+N_{\mathrm{after}} &= N_{\mathrm{before}}c,\\
+\Delta N &= N_{\mathrm{before}}(1-c).
+\end{align}
+For illustration only, a genuinely applicable $c=0.80$ applied to a baseline expectation of 10 target-type crashes per year yields 8/year and a difference of 2/year. Neither number is a measured Allegheny intervention benefit. If a CMF interval $[c_L,c_U]$ is available, the scenario range may be obtained by applying its endpoints to a clearly defined fixed baseline, with separate treatment of baseline uncertainty if supported. Do not imply a joint interval has been validated without an appropriate combination method.
+
+\section{Evidence selection and candidate countermeasures}
+Investigate two or three interventions matched to the strongest validated site types: pedestrian crossings/refuges, lighting improvements for relevant conditions, speed-management measures, or intersection-control/geometric improvements. Select evidence from the FHWA CMF Clearinghouse or comparable reviewed sources; record stable ID/URL, exact treatment, facility type, rural/urban context, lanes, target crash type, estimate, uncertainty, quality rating, publication, caveats and reviewer decision. A pedestrian CMF must not be applied to all crash types, and multiple CMFs must not be multiplied merely because multiple treatments are selected.
+
+\section{Decision gates and outputs}
+Before enabling a scenario, require: \emph{site reviewed} $\land$ \emph{baseline justified} $\land$ \emph{CMF source approved} $\land$ \emph{facility/crash applicability passed}. Display site, source years, observed count versus modelled expectation (distinct labels), eligible crash type, factor, study quality, arithmetic, sensitivity bounds and a visible non-causal disclaimer. If the baseline is only an observed historical count, use a descriptive comparison or block the expected-benefit claim until a suitable expected-frequency method is available.
+
+\chapter{Website experience, software architecture and hosting}
+\section{Four core experiences and optional live view}
+\small
+\begin{tabularx}{\linewidth}{@{}L{38mm}Y L{19mm}@{}}\toprule
+Experience & Contents & Priority\\\midrule
+Road Safety Overview & EDA, severity definition and missingness, source-year coverage, the eight documented findings, static/retrievable charts. & Core\\
+Safety Locations & County map, site/geometry quality, historical concentration, validated segment/intersection profiles and screening evidence. & Core\\
+Predictive Intelligence & Retrospective severity model comparison/limitations; site-year expectations only after data gate and validation. & Core\\
+Intervention Simulator & Reviewed site, target crash type, appropriate CMF, before/after scenario, assumptions and uncertainty. & Flagship\\
+Live Safety Explorer & Optional approved incidents, roadworks and winter conditions contextualised alongside historical counts, not probabilities. & Optional\\
+\bottomrule\end{tabularx}
+\normalsize
+
+\section{Canonical codebase and development boundaries}
+Use the existing React/Vite frontend and FastAPI backend in \pathcode{EDAgent_Completed_Extension/EDAgent/}. Root-level earlier/foundational \pathcode{backend/} and \pathcode{frontend/} copies may remain in the workspace but must not be treated as another live application. Once, compare Git history, Docker configuration, active server routes, environment variables and deployment entrypoints. Record the canonical decision in a short README and only extend the selected application. Preserve authentication, charting, jobs, reporting and the completed general AI analyser where already present.
+
+\section{Recommended hosting design (proposal, not deployment evidence)}
+The following service mix is appropriate for a moderately sized academic application; alternative providers may be selected following a cost, access and privacy review. These names do \emph{not} imply that subscriptions, servers, DNS records or databases have already been created.
+\begin{enumerate}
+\item \textbf{Frontend:} host the built React/Vite static bundle on \emph{Vercel} or another static HTTPS host/CDN. Configure environment-based API URL and map licence; never expose backend secrets in browser variables. Refer to the Vite deployment guide \cite{Vite}.
+\item \textbf{Python API/model serving:} containerise the existing FastAPI app with a Dockerfile; deploy on a persistent CPU-capable web service such as \emph{Render}, or an equivalent container host that supports memory, health checks, environment secrets and predictable startup \cite{Render}. This is the service that loads an approved trained model and answers inference requests. It is \emph{not} a separate large ML training server.
+\item \textbf{Operational database:} use managed \emph{PostgreSQL with PostGIS} (e.g. Supabase Postgres with extension enabled) for facilities, spatial geometries, site profiles, version metadata, intervention evidence and audit records. Use spatial indexes and SQL migrations; do not put large historical CSVs into ad-hoc request memory \cite{Supabase}.
+\item \textbf{Model/data artefacts:} use a private, versioned object store (e.g. Cloudflare R2 or another S3-compatible store) for approved \pathcode{joblib} pipelines, GeoJSON/Parquet/CSV releases and manifests. The API must verify allowed artifact ID, hash and approval state before loading \cite{R2}.
+\item \textbf{Developer and release automation:} GitHub (or existing Git provider) for source control and CI checks; Docker Compose for local full-stack integration; a container registry for reproducible backend images. Prefer minimal services rather than a new queue/microservice system.
+\end{enumerate}
+The provider choices are implementation proposals. Check current free-tier limits, geographic region, storage egress, cold-start behaviour, SSL, backups, quotas and rates before final selection; no hosting cost is guaranteed in this plan.
+
+\section{How trained ML actually runs on the website}
+\textbf{Offline training:} the canonical v6 notebook (or a reviewed follow-on run within the same research process) trains preprocessing and classifier together, evaluates the defined target and produces a versioned artifact plus metadata. A reviewer either marks that exact artifact \pathcode{APPROVED_FOR_INFERENCE} or keeps the default review-only state.
+
+\textbf{Deployment:} the backend container starts, fetches the \emph{approved} artifact from private storage, checks checksum and feature/version contract, and loads the trusted pipeline once per application process or worker. Every subsequent HTTP request validates inputs and runs \pathcode{predict_proba} or prediction in memory. There is \emph{no model fitting} on a normal user request. Multiple workers can load separate copies, so memory sizing and cold-start behaviour must be tested.
+
+\textbf{Safety and compatibility:} loading \pathcode{joblib}/pickle may execute code; load only internally produced, integrity-checked artifacts, never user-submitted models. Match Python, scikit-learn, NumPy and other package versions to the training environment or formally retest a compatible export. Scikit-learn does not guarantee cross-version pickle compatibility \cite{Sklearn}. For small deployments it may be better to serve only precomputed results and enable model inference later after approval.
+
+\textbf{Model-role boundary:} the current model including collision type estimates severity among already \emph{reported} crashes. A public ``your crash probability in the next hour'' field must not be derived from it. Serve a retrospective analytics dashboard first; enable inference only with an honest input-availability statement and a validated scenario.
+
+\section{Minimum database entities and approval fields}
+Create migrations for \texttt{analysis\_runs} (source hash, notebook version, export timestamp, status), \texttt{sites} (ID/type/geometry/valid years), \texttt{crash\_site\_matches} (CRN, site, method, distance, status), \texttt{site\_year\_stats} (observation, zero years, exposure, coverage), \texttt{model\_registry} (model hash, features, packages, metric provenance, approval), \texttt{cmf\_evidence} (source, applicability, rating) and \texttt{intervention\_scenarios} (versioned inputs, outputs, disclaimers). Keep a separate read-only publish schema/view for approved website content where helpful.
+
+\section{Suggested API and frontend modules}
+Retain the app's established authentication and error conventions. Proposed endpoints:
+\begin{lstlisting}
+GET  /api/v1/road-safety/summary
+GET  /api/v1/road-safety/locations
+GET  /api/v1/road-safety/locations/{site_id}
+GET  /api/v1/road-safety/models
+POST /api/v1/road-safety/interventions/evaluate
+GET  /api/v1/road-safety/live-events     # optional
+GET  /api/v1/health/ready
+\end{lstlisting}
+Suggested backend domain services: \pathcode{data_service.py}, \pathcode{spatial_service.py}, \pathcode{screening_service.py}, \pathcode{model_service.py}, \pathcode{intervention_service.py} and optional \pathcode{live_context_service.py}. Frontend pages: Road Safety Overview, Safety Locations, Predictive Intelligence and Intervention Simulator, with reusable CrashMap, LocationProfile, ModelEvaluationPanel and InterventionCalculator components. These are design additions, not claims of existing files.
+
+\section{LLM-assisted Crash Data Assistant}
+The completed general-purpose AI analyser remains functional but frozen. The domain assistant retrieves only approved outputs, source metadata and relevant limitations, then explains them. It must not fabricate county statistics, pretend an unverified site is dangerous, infer a CMF effect without a reviewed factor, or call a retrospective severity score a live crash-occurrence probability. Require cited provenance and clear fallback responses when no supported evidence exists.
+
+\chapter{Repository structure, file ownership and reproducible handoff}
+\section{Canonical project tree}
+Retain existing files not listed below. This is a \emph{target layout}, subject only to one-time reconciliation of the actual active application path. The canonical research notebook is never duplicated across several analysis directories.
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+EDAgent/
+|-- .env.example                    # public template, no secrets
+|-- .gitignore
+|-- .gitattributes
+|-- README.md
+|-- docs/
+|   |-- EDAgent_Project_Plan_v2.pdf
+|   |-- v6_comparison.pdf
+|   `-- sources_and_decisions.md
+|-- analysis/
+|   |-- EDA_v6.ipynb              # ONE canonical research notebook
+|   |-- README.md                 # reproduce, inspect, freeze
+|   `-- outputs/
+|       |-- run_manifest.json
+|       |-- eda_summary/
+|       |-- spatial/
+|       |-- model_metrics/
+|       |-- model_artifacts/      # private/review-only until approved
+|       `-- intervention_evidence/ # currently empty: expected
+|-- data/
+|   |-- raw/
+|   |   `-- 2c13021f-74a9-4289-a1e5-fe0472c89881.csv
+|   |-- reference/
+|   |   |-- municipal_boundaries/
+|   |   |-- street_centerlines/
+|   |   |-- codebooks/
+|   |   |-- traffic_counts/
+|   |   `-- cmf/
+|   |-- processed/
+|   `-- samples/
+|-- scripts/
+|-- backend/                      # older/foundational; reconcile
+|-- frontend/                     # older/foundational; reconcile
+|-- EDAgent.zip                   # package only for releases
+|-- EDAgent_Completed_Extension.zip
+`-- EDAgent_Completed_Extension/
+    `-- EDAgent/                 # intended active application
+        |-- backend/
+        |   |-- app/api/v1/endpoints/
+        |   |-- app/services/road_safety/
+        |   |-- app/models/
+        |   |-- app/schemas/
+        |   |-- alembic/
+        |   |-- tests/
+        |   `-- Dockerfile
+        |-- frontend/
+        |   |-- src/pages/road-safety/
+        |   |-- src/components/road-safety/
+        |   |-- src/services/
+        |   `-- package.json
+        |-- docs/
+        |-- tests/
+        `-- docker-compose.yml
+\end{lstlisting}
+
+\section{Colab versus repository input path}
+For interactive Google Colab, activate the runtime and upload the complete 2004--2024 CSV with the exact resource-ID filename to:
+\begin{lstlisting}
+/content/2c13021f-74a9-4289-a1e5-fe0472c89881.csv
+\end{lstlisting}
+The notebook detects the intended Colab working directory, checks uniqueness, years, columns and source metadata, and refuses ambiguous or wrong resource matches. In the repository, keep the same filename at \pathcode{data/raw/}; run the notebook from the root or \pathcode{analysis/} according to its documented path resolution. The Colab runtime is transient: files under \pathcode{/content/} are not durable storage after the runtime disappears.
+
+\section{Saving the accepted executed notebook and ZIP}
+\begin{enumerate}
+\item Download the newest executed v6 notebook and preserve an immutable archival copy with the manifest time in a private release folder if desired. For the \emph{live canonical repository path}, use only \pathcode{analysis/EDA_v6.ipynb}.
+\item Download \pathcode{EDA_v6 output(2).zip}; extract its contents and discard only the extraneous top-level \pathcode{EDA_v6 output/} wrapper. Copy child directories and \pathcode{run_manifest.json} into \pathcode{analysis/outputs/}.
+\item Rename ZIP folder \pathcode{model_artefacts/} to \pathcode{model_artifacts/}, matching the notebook and repository. Do not maintain two near-identical directories.
+\item Retain the full spatial candidate-coordinate disagreement CSV even though only 0.90\% of pairs exceed 500 m; this is unresolved quality evidence for the next phase. Keep \pathcode{candidate_coordinate_comparison_summary.csv} beside it.
+\item Verify exported row counts and checksums, including \pathcode{source_missingness.csv}, \pathcode{association_tests.csv}, \pathcode{findings_review.csv}, \pathcode{severity_model_comparison.csv} and the five review-only pipelines.
+\item Save this PDF as \pathcode{docs/EDAgent_Project_Plan_v2.pdf} and the related report as \pathcode{docs/v6_comparison.pdf}. Both must refer to the same latest run.
+\item Create a short \pathcode{analysis/README.md} documenting dataset placement, Python dependencies, optional reference input locations, reproduction steps and current verification gates.
+\end{enumerate}
+
+\section{Versioning and archival policy}
+Every approved analytical release has: source hash, notebook revision/commit, manifest timestamp, exported file inventory, pipeline hashes, declared feature list, test-period policy and reviewer sign-off. Large raw data should not be committed without licence/repository review. Keep credentials exclusively in secrets/environment variables and commit only \pathcode{.env.example}. Ignore runtime caches, outputs that contain sensitive records unless access-controlled, SQLite WAL/SHM by-products, transient Colab archives and duplicated notebook variants. Update packaged ZIPs deliberately at release milestones, not after routine edits.
+
+\section{Source-reconciliation protocol}
+Before beginning website work, compare root and nested app Git histories, dependency manifests, routes, Docker Compose files, database migrations, client-side API configuration and deployment command. Identify the actual \emph{running} entry point and write a decision record. The default expectation is \pathcode{EDAgent_Completed_Extension/EDAgent/}; a contrary decision requires concrete evidence. Then forbid routine parallel edits to both copies.
+
+\chapter{Execution roadmap and dependencies}
+\section{Dependency principle}
+Each stage must produce evidence needed by the following stage. A future step must not silently assume that a previous data-verification task succeeded. The four critical gates are: (a) reproducible v6 baseline; (b) trustworthy road/site references; (c) scientifically appropriate model target/exposure; and (d) reviewed CMF evidence tied to a real site baseline.
+
+\section{Stage 0 --- scope, source and repository freeze (substantially done)}
+\textbf{Done/evidenced:} use the full 2004--2024 source, exclude 2025, capture the current v5 lineage and executed v6 SHA-256/manifest, preserve the one-notebook rule. \textbf{Still required:} once-only active-app reconciliation, current public codebooks, coordinate-format source record, street-centreline metadata and AADT inventory. \textbf{Outputs:} source register, environment record, canonical-app decision and access/feasibility log.
+
+\section{Stage 1 --- complete the v6 research baseline (analytical acceptance)}
+The latest 105-cell/44-code-cell notebook executes and exports eight findings, association tests and model comparisons. The 2016 standard, 2024 gaps, injury-component checks, actual county polygon and county grid are documented. The model registry remains review-only. The remaining official GPS/codebook checks are recorded as open tasks; analytical acceptance must not be rewritten into false \emph{full} field verification. \textbf{Outputs:} canonical executed \pathcode{EDA_v6.ipynb}, frozen ZIP extract, \pathcode{v6_comparison.pdf} and this plan.
+
+\section{Stage 2 --- reviewed geographic sites and screening (next milestone)}
+\begin{enumerate}
+\item Verify police GPS source encoding with official documentation and examine the 2,146 candidate disagreements; record which source wins and where matching is withheld.
+\item Acquire PASDA centreline reference with metadata and a compatible PennDOT route/segment reference; normalise coordinate reference systems.
+\item Create stable \pathcode{SITE_ID}s, separate intersections and segments, and define one-crash/one-primary-site attribution rules.
+\item Construct reproducible crash-to-site crosswalk; report matched, ambiguous, unmatched, local-road limitations and distance/road-type strata by year.
+\item Produce geographically valid site profiles, historical ranking and coverage caveats.
+\item Survey TIRe/AADT availability, roadway class, count years and site matching; write an explicit go/no-go for complete site-year exposure.
+\end{enumerate}
+\textbf{Outputs:} site inventory, versioned crosswalk, QA report, reviewable map layers, screening-priority methodology, AADT feasibility decision.
+
+\section{Stage 3 --- ML and network-screening validation}
+The already executed severity classifiers remain in v6; review feature timing, temperature/calibration and trusted artifact serving before promotion. If Stage 2 delivers the requisite complete panel, perform chronological site-year Poisson modelling and evaluate overdispersion, NB challengers, residuals and uncertainty. Where an appropriate calibrated SPF and reference facility population exist, evaluate EB separately. If the gate fails, publish a bounded historical-site screening fallback and document the rejected modelling path. Never disguise a crash-only grouping as a valid network frequency model.
+
+\section{Stage 4 --- evidence curation and intervention arithmetic}
+Review two or three countermeasures appropriate to the strongest verified site profiles, obtain actual FHWA CMF entries (with study applicability/quality), validate baseline definitions, write before/after tests and reject mismatched scenarios. The current empty \pathcode{intervention_evidence} output directory is a correct consequence of lacking reviewed CMFs. \textbf{Outputs:} approved evidence table, applicability checklist, scenario calculator contract, test vectors and failure behaviour.
+
+\section{Stage 5 --- domain website integration and deployment}
+Reconcile the active app once, then implement Overview, Safety Locations, Predictive Intelligence and Intervention Simulator in the nested React/Vite--FastAPI application. Import only approved versioned CSV/GeoJSON/Parquet/model artefacts. Add map handling, filtering, per-site provenance, a constrained Crash Data Assistant and calculator checks. Set up staging via Docker Compose then an agreed static frontend host, persistent FastAPI service, managed PostGIS and private artifact store. \textbf{Outputs:} versioned API, frontend UI, migrations, environment configuration, deployment manifest and smoke tests.
+
+\section{Stage 6 --- tests, external validation and demonstration}
+Fresh restart/run-all; artifact integrity; count and geographic reconciliation; backend schema/performance tests; model load and probability tests; intervention applicability, unit and arithmetic tests; frontend edge cases; authentication; data-rights and privacy review; accessible/map legend disclaimers; demo with several real reviewed sites and at least one clearly hypothetical scenario. Publish known limits and a reproducibility checklist. A deployed web service is not a final research claim without this acceptance evidence.
+
+\section{Stage 7 --- optional features only after core acceptance}
+Live PennDOT incident/roadwork overlay with authorised feed; a current-context indicator not labelled crash probability; route comparison using existing provider geometry and independent scoring; simple historical replay; or genuine near-term prediction only after all new data/time-interval requirements are met. These tasks are explicitly secondary to successful completion of Stages 2--6.
+
+\section{Dependency matrix}
+\small
+\begin{longtable}{@{}L{37mm}L{50mm}L{55mm}@{}}\toprule Output & Prerequisite & Why needed\\\midrule\endfirsthead
+\toprule Output & Prerequisite & Why needed\\\midrule\endhead
+V6 EDA and provenance & Fixed resource, checksums, year/CRN rules & Prevents analysis on wrong extract or undocumented edits.\\
+Statistical results & Known severity, year-aware codes, valid denominators & Prevents misleading historical trends and sparse-category claims.\\
+Spatial maps & County polygon, coordinate and placeholder audit & Prevents false county inclusion and hidden location quality problems.\\
+Site crosswalk & Centreline/route references, site definitions, unique CRN rule & Avoids segment attribution errors and intersection double counts.\\
+AADT-adjusted model & Eligible zero-crash site-years, matched exposure & Required to estimate expected frequency for a network population.\\
+Severity inference & Feature-timing audit, chronological test and calibration & Stops a retrospective severity model from being a pre-crash claim.\\
+EB network screening & Calibrated facility-specific SPF/reference group & Required for meaningful shrinkage and regression-to-mean treatment.\\
+Site priorities & Valid geometry, screening method, stated years/denominator & Makes the ranking auditable and appropriately labelled.\\
+CMF scenario & Reviewed site baseline, target crash type, applicable source & Prevents fictitious or misapplied crash reduction claims.\\
+Website deployment & Stable APIs, reviewed artifacts, migrations and QA & Keeps UI consistent with underlying evidence and approval.\\
+Live context & Feed rights, source acknowledgement and mapping & Live data is not automatically a validated prediction input.\\
+Near-term forecast & Historical exact events, aligned predictors, non-event exposure & Essential for a genuinely trainable future-horizon task.\\
+Route comparison & Provider geometry, road-site crosswalk, cost/licensing & Necessary for a defensible historical concentration overlay.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\chapter{Optional live, routing and replay extensions}
+\section{Live Road Safety Context Explorer}
+PennDOT Road Condition Reporting System (RCRS) transportation feeds can supply incident, work-zone and winter-road context subject to its access process and acknowledgement obligations \cite{RCRS}. A permitted overlay can show current conditions near historical screening locations but must never label the combination a validated future crash probability. Audit positional accuracy, data update frequency, API terms and failure behaviour.
+
+\section{Requirements for a genuine one-to-three-hour forecast}
+A go decision requires all seven: (1) approved historical event timestamps, (2) historical traffic volume/speed or a defensible interval exposure, (3) aligned weather/visibility/road conditions, (4) roadwork and closure history where relevant, (5) explicit non-crash site-time intervals, (6) equivalent live inference inputs, and (7) spatial and chronological validation including later periods. The current public cumulative crash extract lacks exact crash dates; an available live API alone does not satisfy historical training needs. In the absence of these conditions, stop at current-context exploration.
+
+\section{Candidate route comparison and feedback}
+A future extension may use Google Routes API or OpenStreetMap-compatible routing to obtain routes and then attach independent, clearly labelled historical concentration metrics \cite{GoogleRoutes}. Do not construct a navigation replacement or assert the ``safest route'' without appropriate exposure. Many users receiving the same static recommendation may shift traffic, changing congestion and exposure; this route-choice feedback is related to, but not identical with, Braess's paradox. A simple three-route/100-driver numerical example may illustrate the concern, but it is not a calibrated traffic assignment without real demand/capacity data.
+
+\section{Historical replay}
+A simple animation of existing precomputed year/month/geographic records may aid the presentation, subject to privacy and aggregation, but is secondary. It should not be mistaken for event-level chronological replay if exact dates are unavailable, or for ML prediction.
+
+\chapter{Quality assurance, scientific risks and viva readiness}
+\section{Risk register with mitigation}
+\small
+\begin{longtable}{@{}L{33mm}L{50mm}L{59mm}@{}}\toprule Risk & Failure mode & Control / decision\\\midrule\endfirsthead
+\toprule Risk & Failure mode & Control / decision\\\midrule\endhead
+Severity coding change & Spurious long-term serious-injury trend & 2016 boundary; compare like definitions; disclose pre/post eras.\\
+Weather/surface mapping & Unverified historical category meaning & Official year-specific codebooks; unknown/unmapped visible; gate inferential use.\\
+URBAN\_RURAL shift & Feature meaning changes by year & Exclude until verified for each era.\\
+Missing exact crash date & Unsupported time-aligned live forecast & No near-term prediction from current public data.\\
+Missingness/time heaping & Biased or overprecise patterns & Per-year coverage; null distinct from zero; 2024 warning.\\
+GPS disagreements & Wrong road assignment & Review 2,146 candidate pairs over 500 m; official encoding verification; withhold ambiguity.\\
+Double-counted intersections & Inflated network totals & One primary CRN attribution and separate intersection sites.\\
+Incomplete AADT & Misleading expected site rates & Match/coverage diagnostics; bound network or no-go.\\
+Crash-only panel & Omits zero-count sites & Eligible network-based site-year design required.\\
+Logistic separation & Unstable odds ratios/intervals & Sparse-event checks, grouping, penalised fitting, diagnostics.\\
+Class imbalance & Misleading ordinary accuracy & AP/PR, top-$k$, calibration and prevalence baseline.\\
+Repeated test inspection & Overstated performance ranking & Temporal uncertainty; disclose reused years; fresh evaluation for final promotion.\\
+CMF mismatch & False impact estimates & Review site, crash type, evidence quality, uncertainty; permit no-result.\\
+Untrusted model files & Code execution / bad probabilities & Private approved hashed artifacts, pinned versions, never load user uploads.\\
+AI hallucinations & Fabricated road claims or statistics & Retrieval from approved outputs with source context and fallback.\\
+Duplicate app trees & Implementation drift & One-time canonical reconciliation and single ownership.\\
+Scope creep & Flagship feature unfinished & Gate optional live/routing/deep learning until core accepted.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Notebook/data tests}
+\begin{itemize}
+\item Fresh restart and run all; no hidden state; source ID, year range, row count, file hash, expected source columns, duplicates and CRN uniqueness.
+\item Compare missingness, injury components and historical maps by year; preserve missing/unknown values and 2016 severity boundary.
+\item Check time data for sentinel/recording artefacts; disclose 2024 hourly and lighting coverage.
+\item Check county polygon, coordinate encodings/units, placeholders, out-of-county observations, matched/ambiguous/unmatched site statuses and unique-count reconciliation.
+\item If Task B proceeds, assert complete eligible zero-crash site-years and exposure units, dates, aggregation/grain and single CRN attribution.
+\end{itemize}
+
+\section{Statistical/model tests}
+\begin{itemize}
+\item State target population, input-time availability, baseline, train/validation/test years and class prevalence for each model.
+\item Run pipeline/feature-schema tests: exact category handling, nulls, unseen one-hot levels, probability shape, package/version compatibility, leakage inspection, calibration and inference-time latency.
+\item Report AP/PR, ROC, threshold metrics, confusion, top-$k$, Brier and constant-prevalence reference. Include temporal uncertainty and avoid claiming the previously inspected test era is fresh validation.
+\item For count models examine dispersion, residuals, calibration, spatial dependence and future-year ranking; do not train if panel/exposure gate fails.
+\item Verify artifact hash, trusted provenance and approved release ID before any \pathcode{joblib.load} or public inference call.
+\end{itemize}
+
+\section{Website and intervention tests}
+\begin{itemize}
+\item Check API validation, CORS/auth rules, rate limits, map payload size, site filters, GeoJSON CRS, loading/empty/error states and accessibility.
+\item Test unknown and ambiguous location data; never silently fabricate a mapped road. Check all map legends/labels distinguish counts from risk or modelled expected values.
+\item Test no-CMF and mismatched-CMF cases, exact before/after arithmetic, source/units, confidence ranges and noncausal disclaimers.
+\item Verify health/readiness endpoints, model load at startup, no training in HTTP handlers, rollback to previous trusted version, database migrations/backups and privacy/security controls.
+\item Conduct end-to-end demonstration with real reviewed site data and one explicitly hypothetical intervention scenario; record release approver and known limitations.
+\end{itemize}
+
+\section{Viva readiness: questions and correct distinctions}
+\small
+\begin{longtable}{@{}L{67mm}L{80mm}@{}}\toprule Question & Answer concept\\\midrule\endfirsthead
+\toprule Question & Answer concept\\\midrule\endhead
+Why are crash counts not risk? & No per-trip/vehicle-mile exposure; reporting threshold; high-volume roads may have more events.\\
+Why 2016 onward for severity? & PennDOT changed injury-severity definitions 1 January 2016.\\
+Why are there unknown outcomes? & Missing/unmapped severity is excluded from known-crash binary classification, not assumed non-severe.\\
+Why not random-only split? & Temporal leakage and future-period generalisation; test years have also been iteratively inspected.\\
+Why use AP instead of accuracy alone? & Rare positive class (4.44\% on test); precision--recall is informative for ranked review.\\
+Why is balanced accuracy about .63 acceptable but modest? & More informative than chance-level .50 at a fixed threshold, but not strong general-purpose classification.\\
+Why no pre-crash severity prediction? & Collision type is observed after the crash; retrospective target differs from crash occurrence.\\
+Why Poisson/NB? & Crash counts, exposure offset and overdispersion; zero-count site-years essential.\\
+Why is the coordinate audit provisional? & Candidate DMS agrees often but lacks official format verification and has 2,146 large pair discrepancies.\\
+Why treat intersections separately? & One crash may reference two roads; prevent duplicated primary counts.\\
+What is EB? & Combines observed history with facility-appropriate SPF expectation to reduce regression-to-mean bias.\\
+What is a CMF and what is not proven? & External multiplicative estimate for applicable facility/crash type; a local scenario is not a guaranteed causal outcome.\\
+Why not train ML on each user request? & Train offline; persist approved pipeline; load trusted version into memory at backend startup and infer quickly.\\
+Why live feed is not crash prediction? & No paired historical outcomes/exposures and held-out future validation.\\
+How could route recommendations backfire? & Route choices shift traffic and change exposure; a static historical score cannot account for that.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\chapter{Workstreams, deliverables and release acceptance}
+\section{Ownership model}
+\begin{description}[style=nextline,leftmargin=0pt,topsep=2pt,itemsep=4pt]
+\item[Statistical analysis.] Maintain v6 source, source-data dictionary, year-aware codebook checks, inference and full findings/reproducibility documentation.
+\item[Geospatial analysis.] Own county boundary, police/state coordinates, centreline mapping, route/segment/offset rules, intersection attribution, AADT coverage and site screening evidence.
+\item[ML and evaluation.] Own precise target/features, training/validation boundaries, severe-class models and conditional count models, uncertainty, calibration, registry and serving contract.
+\item[Website and integration.] Own nested canonical FastAPI/React pages, SQL/PostGIS migrations, map services, CMF calculation API, deployment security and tests.
+\item[Data steward/release integrator.] Maintain CRN/site/unit definitions, run IDs, source hashes, documentation, accepted outputs and traceable review decisions across workstreams.
+\end{description}
+One named owner is responsible for acceptance of each deliverable, though several members may implement or review it. Every member should be able to explain the data target, denominator, validation policy and simulation limits.
+
+\section{Deliverables register (D0--D15, current evidence and acceptance)}
+\small
+\begin{longtable}{@{}L{10mm}L{42mm}L{29mm}L{62mm}@{}}\toprule ID & Deliverable & Current status & Evidence needed for acceptance\\\midrule\endfirsthead
+\toprule ID & Deliverable & Current status & Evidence needed for acceptance\\\midrule\endhead
+D0 & Scope/source feasibility & Mostly done & 2004--2024 and 2025 exclusion fixed; close codebook/source access register.\\
+D1 & Canonical application decision & Pending confirmation & Record root/nested Git/config/deployment entrypoint comparison.\\
+D2 & One executed v6 notebook & Analytical baseline accepted & 44 executed code cells, no exception, source/metrics/findings exported, open gates documented.\\
+D3 & Statistical findings report & Substantially done & Eight evidence-linked findings, denominators and effect sizes; review final text and provenance.\\
+D4 & Road-network matching report & Partial & Reviewed police encoding, 2,146 disagreements, crosswalk, match categories, site definitions and mapped counts.\\
+D5 & Severity classifier comparison & Baseline complete & Chronological comparison, AP/PR, calibration, top-$k$, feature timing, temporal intervals; review-only artifact status remains.\\
+D6 & Site-year frequency model & Conditional no-go now & Go only with complete sites, zero-crash years and exposure; else formal feasible-subset/fallback decision.\\
+D7 & Site-level screening results & Pending & Real site IDs, geometry, methodology, observation years, denominators, match quality and priorities.\\
+D8 & Curated CMF evidence & Pending & Real relevant source entries, applicability, quality, interval and reviewer approval.\\
+D9 & Intervention calculator & Pending & Tested before/after units, scenario validation, rejection and noncausal caveats.\\
+D10 & Core website experiences & Pending & Four domain experiences integrated in canonical app, tested APIs/maps/model status.\\
+D11 & Release QA/demo & Pending & Notebook, API, frontend, artifacts, calculator, security and reproducible demo tests.\\
+D12 & Live Safety Explorer & Optional & RCRS feed rights and mapping, source acknowledgement and integration checks.\\
+D13 & Short-horizon forecast & Conditional optional & Exact historical timestamps, aligned past conditions, non-event exposure and robust validation.\\
+D14 & Route comparison & Stretch & Provider licence, candidate geometries, exposure-aware scoring and route-feedback caveats.\\
+D15 & Historical replay & Low priority & Cheap presentation of precomputed, properly labelled historical data.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Release acceptance rules}
+A core final demonstration requires D0--D5 and D7--D11 to be accepted with documented evidence. D6 may be approved after a valid count-model assessment or formally rejected with a clear feasibility decision and useful fallback screening. D12--D15 are outside core acceptance. D2's \emph{analytical baseline approval} is not D5 model-serving approval, nor D10 website acceptance, nor D9 CMF approval. Maintain a separate decision timestamp and reviewer for each gate.
+
+\chapter{Final operating rules and continuation}
+\section{Rules that should remain stable}
+\begin{enumerate}
+\item One repository (EDAgent), one canonical \pathcode{analysis/EDA_v6.ipynb}, one cumulative 2004--2024 WPRDC source and explicitly no 2025 branch.
+\item The nested completed extension is the intended canonical application after one evidence-based reconciliation; do not maintain root and nested copies as separate products.
+\item Existing general AI data-analysis capability remains operational; new effort focuses on the domain-specific crash data module.
+\item Reported crashes, historical concentration, post-crash known-severity ranking, conditional expected site-year frequency, and CMF scenario arithmetic are \emph{different} quantities; label them precisely.
+\item Do not call raw counts or grid intensity ``risk'' without valid exposure. Do not convert unknown severity to non-severe or silently fill missing injury components with zero.
+\item Official coordinate format, codebook, complete site/exposure, SPF and CMF gates remain visible. Missing evidence is a valid blocked state.
+\item Keep severity ML training and evaluation inside the consolidated notebook. Train offline; load only reviewed, trusted, version-pinned pipelines on backend startup; do not retrain with user requests.
+\item Maintain source hashes, run manifests, exact feature versions, tested artifacts, approved site/CMF evidence and deployment IDs for auditability.
+\item Do not broaden into route guidance, deep learning or live occurrence forecasting at the expense of road-site attribution and intervention evidence.
+\item A smaller, defensible system with explicit limits is better than a large, unvalidated algorithm collection.
+\end{enumerate}
+
+\section{The project's complete evidence chain}
+\begin{center}
+\fbox{\begin{minipage}{.83\linewidth}\centering
+Reported police crash records (source-locked)\\[4pt]
+$\Downarrow$\\[4pt]
+Reproducible cleaning, coding audits and EDA\\[4pt]
+$\Downarrow$\\[4pt]
+Statistical interpretation + county geography + verified site attribution\\[4pt]
+$\Downarrow$\\[4pt]
+Leakage-aware models and/or properly bounded historical screening\\[4pt]
+$\Downarrow$\\[4pt]
+Reviewed site baseline + applicable CMF evidence\\[4pt]
+$\Downarrow$\\[4pt]
+Transparent intervention what-if calculator and EDAgent website
+\end{minipage}}
+\end{center}
+
+\section{Immediate handoff and decommissioning note}
+Freeze the current v6 notebook and exports under canonical names; keep the ZIP and source hash in a backed-up release archive. Complete official GPS/text-format and historic codebook verification while the geospatial team assembles a site crosswalk and AADT inventory. Decide whether site-year modelling passes its population/exposure gate. Only then populate the CMF table and implement the flagship calculator, followed by website integration and QA. The prior 49-page v1 plan is not attached to this file; its substantive research questions, constraints, data definitions, architecture, roadmap, optional work, deliverable IDs, QA/viva coverage and original public references are already incorporated into the preceding chapters and the sources below. The present document may serve alone as the governing plan.
+
+\appendix
+\chapter{Sources, provenance and reference library}
+\section{Primary project artefacts}
+\begin{description}[style=nextline,leftmargin=0pt,itemsep=5pt]
+\item[B1 -- Earlier analytical baseline.] \pathcode{EDA_Vishesh_Updated_v5_executed(2).ipynb}; 82 cells including 31 code cells, retained outputs and the full 2004--2024 dataset baseline. The accompanying seven-page \pathcode{v5_comparison(2).pdf}, dated 3 November 2026, compares v3/v4/v5 cell by cell. A 20-record sample preview mentioned in the earlier plan was a \emph{sample}, not the full CSV.
+\item[B2 -- Original planning record.] \pathcode{EDAgent_Project_Plan(1).pdf}, version 1.0, 10 November 2026, 49 physical pages (44 numbered substantive pages). Its goals, technical scope, roadmap and source references are rewritten into the present integrated plan; this PDF is not an appended replacement extract.
+\item[B3 -- Current executed evidence.] \pathcode{EDA_v6(3).ipynb}, 105 cells/44 code cells, and \pathcode{EDA_v6 output(2).zip}, final manifest 11 November 2026 03:13:38 UTC. Includes seven EDA tables, six spatial outputs, two model-metric tables, five private review-only model files and an empty intervention-evidence directory. Counts and metrics in Chapter 3 are from these stored outputs. No separate independent CSV rerun was conducted while writing this document.
+\item[B4 -- Companion report.] \pathcode{v6_comparison.pdf}, eight-page cell-wise v5-to-v6 review, delivered with the earlier documentation package; its fixed analytical benchmark should be read alongside the updated operating rules in this plan.
+\item[B5 -- Team/repository context.] The description of root and nested application copies, completed general analyser, professor's feedback, one-notebook decision and current research constraints supplied by the team; file paths are operating expectations until the one-time source reconciliation is actually logged.
+\end{description}
+
+\section{Official/public sources and role of each reference}
+The following citations preserve the original public source record. URLs may move and should be reopened when the relevant stage is implemented. Inclusion means the source was identified for the project; it does not mean every codebook, dataset, feed or facility SPF has been downloaded or formally verified.
+
+\begin{thebibliography}{99}
+\bibitem{WPRDC}\textbf{R1.} Western Pennsylvania Regional Data Center. \emph{Allegheny County Crash Data}: dataset description, privacy constraints, 2004--2024 source and codebook/resource information.\par\url{https://data.wprdc.org/dataset/allegheny-county-crash-data}
+
+\bibitem{PASDA}\textbf{R2.} Pennsylvania Spatial Data Access. \emph{Allegheny County Street Centerlines}: maintained county reference data, REST service and completeness/accuracy caveats.\par\url{https://www.pasda.psu.edu/uci/DataSummary.aspx?dataset=1224}\par\url{https://mapservices.pasda.psu.edu/server/rest/services/pasda/AlleghenyCounty/MapServer}
+
+\bibitem{Primer}\textbf{R3.} PennDOT/WPRDC. \emph{Crash Data Introduction / Database Primer}, including crash counting, state-route location references and intersection double-counting cautions.\par\url{https://data.wprdc.org/dataset/3130f583-9499-472b-bb5a-f63a6ff6059a/resource/c884d6da-588d-45ec-b029-8aaec8018500/download/database-primer-4-15.pdf}
+
+\bibitem{PennDOT2016}\textbf{R4.} Pennsylvania Department of Transportation. \emph{2016 Crash Facts and Statistics} and Pennsylvania Crash Information Tool; the 1 January 2016 injury-severity-standard change.\par\url{https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/travelinpa/safety/documents/2016_CFB_linked.pdf}\par\url{https://crashinfo.penndot.pa.gov/PCIT/}
+
+\bibitem{TIRe}\textbf{R5.} PennDOT. \emph{Traffic Information and Traffic Information Repository (TIRe)}; count-site coverage and collection cycles.\par\url{https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information}\par\url{https://gis.penndot.pa.gov/TIRe}
+
+\bibitem{FHWA_screen}\textbf{R6.} Federal Highway Administration. \emph{Screening Your Network to Improve Roadway Safety Performance}; network-screening measures and methods.\par\url{https://highways.dot.gov/safety/data-analysis-tools/systemic/screening-your-network-imp}
+
+\bibitem{FHWA_EB}\textbf{R7.} Federal Highway Administration. \emph{Project Evaluation Using Empirical Bayes}; regression to the mean and appropriate SPF use.\par\url{https://highways.dot.gov/safety/learn-safety/noteworthy-practices/project-evaluation-us}
+
+\bibitem{CMF}\textbf{R8.} Federal Highway Administration. \emph{Crash Modification Factors Clearinghouse}, user guide and FAQs; CMF interpretation, applicability and evidence quality.\par\url{https://cmfclearinghouse.fhwa.dot.gov/}\par\url{https://cmfclearinghouse.fhwa.dot.gov/userguide_CMF.php}\par\url{https://cmfclearinghouse.fhwa.dot.gov/faqs.php}
+
+\bibitem{RCRS}\textbf{R9.} PennDOT. \emph{Request Access to Transportation-Related Data Feeds} and API documentation; RCRS access and attribution.\par\url{https://www.pa.gov/services/penndot/request-access-to-transportation-related-data-feeds}\par\url{https://www.pa.gov/agencies/penndot/programs-and-doing-business/online-services/developer-resources-documentation-api}
+
+\bibitem{GoogleRoutes}\textbf{R10.} Google Maps Platform. \emph{Routes API}; route/matrix capabilities for a potential provider-backed candidate comparison.\par\url{https://developers.google.com/maps/documentation/routes}
+
+\bibitem{Vite}\textbf{H1.} Vite. \emph{Deploying a Static Site}; frontend build/deployment options.\par\url{https://vite.dev/guide/static-deploy}
+
+\bibitem{Render}\textbf{H2.} Render. \emph{Web Services / FastAPI deployment / health checks}; Docker images, environment variables, health and web application hosting.\par\url{https://render.com/docs/web-services}\par\url{https://render.com/docs/deploy-fastapi}\par\url{https://render.com/docs/health-checks}
+
+\bibitem{Supabase}\textbf{H3.} Supabase. \emph{PostGIS: Geo Queries}; managed PostgreSQL/PostGIS geospatial data and indexing.\par\url{https://supabase.com/docs/guides/database/extensions/postgis}
+
+\bibitem{R2}\textbf{H4.} Cloudflare. \emph{R2 S3-Compatible API}; a candidate private model/data object store.\par\url{https://developers.cloudflare.com/r2/get-started/s3/}
+
+\bibitem{Sklearn}\textbf{H5.} scikit-learn. \emph{Model persistence}; trusted loading, version compatibility, ONNX and \texttt{joblib} caveats.\par\url{https://scikit-learn.org/stable/model_persistence.html}
+\end{thebibliography}
+
+\section{Interpretation of source citations}
+B1--B4 are observed project artefacts and inform what was executed; R1--R10 are public research/technical references, inherited from the original plan; H1--H5 are proposed hosting and model-serving technical references. They are not approvals of a specific vendor, an assertion of current commercial pricing, or evidence that a particular route/network/traffic dataset has been obtained. Record date of access and exact downloaded version for every externally derived research input.
+
+\chapter{Data and output contracts for implementation}
+\section{Definitions to use everywhere}
+\small
+\begin{longtable}{@{}L{43mm}L{99mm}@{}}\toprule Term & Operational meaning\\\midrule\endfirsthead
+\toprule Term & Operational meaning\\\midrule\endhead
+CRASH\_CRN & Unique source record identifier. Count unique crash IDs before summing across segments or intersections.\\
+Reported crash & Crash meeting the source reporting/capture process, not a random travel interval.\\
+Known severity & Source code 0,1,2,3,4; severe binary flag is 1 only for codes 1/2.\\
+Unknown severity & Codes 8,9, missing, other/unmapped; excluded from binary numerator and denominator.\\
+Site & Validated road segment or intersection with persistent identifier, geometry and attribution rules.\\
+Eligible site-year & Site/year in a predeclared network observation population, including observed crash count zero.\\
+Historical concentration & Recorded count in a region/time frame, not an exposure-adjusted probability.\\
+Exposure & Defensible AADT/length/duration or facility-equivalent denominator aligned with site and year.\\
+SPF & Safety Performance Function estimating expected crash frequency for a defined facility reference class.\\
+EB estimate & SPF-based and observed-history-adjusted estimate with calibrated reference model.\\
+CMF & External factor for an appropriate treatment/facility/crash type; scenario arithmetic, not guaranteed outcome.\\
+Candidate police coordinate & DMS-text-decoded location for diagnostic testing; not yet official source verification.\\
+Operational coordinate & Coordinate allowed for mapping under the recorded source-priority, format and exclusion policy.\\
+Review-only artifact & Stored pipeline/CSV unapproved for inference or public impact claims.\\
+Approval record & Explicit model/site/CMF evidence version, reviewer, timestamp, source and checks.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Suggested minimum exchange schemas}
+\textbf{Site record.} \pathcode{SITE_ID}, \pathcode{SITE_TYPE}, \pathcode{GEOMETRY}, \pathcode{NETWORK_VERSION}, \pathcode{ROAD_CLASS}, \pathcode{MUNICIPALITY}, \pathcode{START_YEAR}, \pathcode{END_YEAR}, \pathcode{SITE_QUALITY}. Add length/approaches/lanes/traffic data only with defined units and source.
+
+\textbf{Crash-to-site crosswalk.} \pathcode{CRASH_CRN}, \pathcode{SITE_ID}, \pathcode{CRASH_YEAR}, \pathcode{PRIMARY_ATTRIBUTION}, \pathcode{SOURCE_COORDINATE_TYPE}, \pathcode{MATCH_METHOD}, \pathcode{MATCH_DISTANCE_M}, \pathcode{MATCH_STATUS}, \pathcode{AMBIGUITY_COUNT}, \pathcode{REVIEW_STATUS}. Enforce no accidental duplicate primary CRN assignments.
+
+\textbf{Site-year panel.} \pathcode{SITE_ID}, \pathcode{YEAR}, \pathcode{ELIGIBLE}, \pathcode{CRASH_COUNT}, \pathcode{KNOWN_SEVERITY_N}, \pathcode{SEVERE_N}, \pathcode{EXPOSURE}, \pathcode{EXPOSURE_UNIT}, \pathcode{EXPOSURE_YEAR}, \pathcode{SITE_FEATURES}, \pathcode{MISSINGNESS_FLAGS}, \pathcode{PANEL_VERSION}. Every eligible zero-count site-year is represented.
+
+\textbf{Model artifact.} \pathcode{MODEL_ID}, \pathcode{RUN_ID}, \pathcode{ARTIFACT_SHA256}, \pathcode{SOURCE_SHA256}, \pathcode{PYTHON_VERSION}, \pathcode{PACKAGE_LOCK}, \pathcode{FEATURE_SCHEMA}, \pathcode{TARGET}, \pathcode{TRAIN_YEARS}, \pathcode{TEST_YEARS}, \pathcode{METRICS}, \pathcode{APPROVAL_STATE}. Do not serve \pathcode{NOT_APPROVED_FOR_PRODUCTION} files.
+
+\textbf{CMF evidence/scenario.} \pathcode{EVIDENCE_ID}, \pathcode{SOURCE_URL}, \pathcode{TREATMENT}, \pathcode{FACILITY_TYPE}, \pathcode{TARGET_CRASH_TYPE}, \pathcode{CMF}, \texttt{CMF\_LOWER/UPPER}, \pathcode{STUDY_QUALITY}, \pathcode{APPLICABILITY_DECISION}, \pathcode{BASELINE_TYPE}, \pathcode{BASELINE_PERIOD}, \pathcode{SCENARIO_OUTPUT}, \pathcode{DISCLAIMER}.
+
+\section{Status gates as machine-readable decisions}
+Use explicit states \pathcode{MISSING_INPUT}, \pathcode{UNVERIFIED}, \pathcode{REVIEW_ONLY}, \pathcode{APPROVED_FOR_ANALYSIS}, \pathcode{APPROVED_FOR_INFERENCE} and \pathcode{REJECTED} where relevant. Stages should check data availability and approved statuses in code/API rather than interpreting the mere existence of a CSV or \pathcode{joblib} file as scientific validity. A model trained after a new source-codebook decision needs a new run ID and must not silently reuse an old approval.
+
+\chapter{Operational handoff checklist and decision log}
+\section{Checklist for the next project meeting}
+\begin{enumerate}
+\item Confirm the source CSV hash, final \pathcode{EDA_v6.ipynb} and extracted \pathcode{analysis/outputs/} manifest refer to the same run; correct the \pathcode{model_artifacts} spelling once.
+\item Record which official PennDOT source describes police DMS text and inspect the candidate 2,146 rows with more than 500 m disagreement; decide source precedence and exclusions.
+\item Retrieve authoritative 2018/2019 weather/road-surface code definitions and document tested year-specific mapping.
+\item Compare root/nested completed extension once and record which FastAPI/React app is live.
+\item Obtain centreline and state-route metadata, define segment/intersection \pathcode{SITE_ID}, and produce a match-quality report (matched/ambiguous/unmatched).
+\item Investigate TIRe/AADT and feasible zero-inclusive panel; accept or formally reject Stage 3 count modelling, with fallback.
+\item Select actual reviewed CMF entries suitable for the priority site types, or retain ``no applicable evidence''.
+\item Set up Docker Compose development, a proposed frontend host, a persistent FastAPI container host, PostGIS and private model storage; first deploy only static/approved research content.
+\item Run cross-system tests, document privacy/licensing/approval, and prepare a transparent demonstration.
+\end{enumerate}
+
+\section{Decision log fields}
+For each consequential change record the issue, affected source fields or site types, proposed choices, evidence, test performed, selected policy, decision owner, date, affected \pathcode{RUN_ID}, and rollback rule. In particular, record a formal \emph{yes/no} decision for each of: official DMS conversion; codebook transition; intersection attribution; AADT sufficiency; frequency model; SPF suitability; CMF selection; model promotion; production deployment; and optional live/routing features. Without this record the web layer risks appearing more certain than the source evidence permits.
+
+\begin{center}
+\rule{.62\linewidth}{.5pt}\\[5pt]
+\textsc{End of EDAgent Project Master Plan, Version 2.0}\\[3pt]
+\small Standalone integrated plan --- 11 November 2026
+\end{center}
+\end{document}

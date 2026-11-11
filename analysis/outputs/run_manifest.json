@@ -1,0 +1,53 @@
+{
+  "notebook": "EDA_v6.ipynb",
+  "notebook_version": "6.1-targeted-corrections",
+  "generated_utc": "2026-11-11T03:13:38.038283+00:00",
+  "review_status": "NOT_APPROVED_FOR_PRODUCTION",
+  "data": {
+    "resource_id": "2c13021f-74a9-4289-a1e5-fe0472c89881",
+    "filename": "2c13021f-74a9-4289-a1e5-fe0472c89881.csv",
+    "source_url": "https://data.wprdc.org/dataset/allegheny-county-crash-data/resource/2c13021f-74a9-4289-a1e5-fe0472c89881",
+    "sha256": "c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511",
+    "size_bytes": 116560683,
+    "rows": 248810,
+    "columns": 191,
+    "first_year": 2004,
+    "last_year": 2024,
+    "source_checked_utc": "2026-11-11T03:10:35.772757+00:00",
+    "reference_baseline_v5_rows": 248810
+  },
+  "python_version": "3.13.18",
+  "package_versions": {
+    "numpy": "2.4.6",
+    "pandas": "2.2.3",
+    "matplotlib": "3.10.0",
+    "seaborn": "0.13.2",
+    "scipy": "1.16.3",
+    "statsmodels": "0.15.0",
+    "scikit-learn": "1.6.1",
+    "shapely": "2.2.0",
+    "geopandas": "1.2.0",
+    "joblib": "1.6.0"
+  },
+  "severity_target": "1,2 -> 1; 0,3,4 -> 0; other/missing -> excluded",
+  "severity_model_training_years": "2016-2021",
+  "severity_model_final_test_years": "2022-2024",
+  "county_boundary_source": "U.S. Census, 2024 county 500k boundary (GEOID 42003)",
+  "codebook_team_attested": false,
+  "police_gps_format_verified": false,
+  "police_gps_format": "unverified",
+  "paired_police_state_coordinates_n": 0,
+  "candidate_dms_pairs_n": 238517,
+  "candidate_dms_disagreements_over_500m_n": 2146,
+  "candidate_dms_officially_verified": false,
+  "test_period_reuse_notice": "2022\u20132024 has been examined in previous v5/v6 analyses; not fresh external validation",
+  "association_inference_years": "2016\u20132023",
+  "conditional_site_frequency_gate": false,
+  "spatial_rule": "actual county polygon, single CRN; no rectangular county filter",
+  "limitations": [
+    "reported crashes not exposure",
+    "no exact crash dates or near-term crash forecasting",
+    "uncertainty estimates are method dependent",
+    "no causal CMF claims without applicable reviewed external evidence"
+  ]
+}
