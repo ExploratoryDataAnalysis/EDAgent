@@ -1,3 +1,0 @@
-"""
-EDAgent Backend Application Package
-"""
