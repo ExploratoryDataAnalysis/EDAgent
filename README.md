@@ -18,5 +18,5 @@ Open the [web client](http://localhost:5173) or the [API documentation](http://1
 
 - [`analysis/`](analysis/README.md) contains the canonical v6 notebook, reproduction instructions, and frozen research outputs.
 - [Project Plan v2](docs/EDAgent_Project_Plan_v2.pdf) governs the road-safety work.
-- The root `backend/`, `frontend/`, and `docker-compose.yml` belong to the legacy EDA prototype. Use the nested app for development, tests, and Compose.
+- The nested app is the application entry point; use its PowerShell scripts for setup and development.
 - The [legacy generic EDA roadmap](docs/implementation_plan.md) records the earlier prototype plan.
