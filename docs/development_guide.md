@@ -1,5 +1,7 @@
 # EDAgent Development & Testing Guide
 
+This is a historical guide for the removed root prototype. For the active app, see the [environment setup guide](environment_setup.md) and [nested documentation](../EDAgent_Completed_Extension/EDAgent/README.md).
+
 Run application commands from `EDAgent_Completed_Extension/EDAgent/` after following the [environment setup guide](environment_setup.md).
 
 This guide describes development workflows, coding standards, testing instructions, and validation procedures for contributors to EDAgent.

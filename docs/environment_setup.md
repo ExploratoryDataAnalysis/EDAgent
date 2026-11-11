@@ -1,6 +1,6 @@
 # EDAgent environment setup
 
-All application commands in this guide use the [nested FastAPI and React app](../EDAgent_Completed_Extension/EDAgent/README.md). The root backend, frontend, and Compose file are legacy.
+Use the PowerShell scripts in the [nested FastAPI and React app](../EDAgent_Completed_Extension/EDAgent/README.md) as the entry point for setup and development.
 
 ## Windows PowerShell
 
