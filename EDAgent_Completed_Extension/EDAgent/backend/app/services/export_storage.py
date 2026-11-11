@@ -44,6 +44,9 @@ def purge_old_exports() -> int:
     removed = 0
     for dirpath, _dirs, files in os.walk(root):
         for f in files:
+            # The tracked placeholder keeps an empty export directory in the repository.
+            if f == ".gitkeep":
+                continue
             p = os.path.join(dirpath, f)
             try:
                 if os.path.getmtime(p) < cutoff:

@@ -30,9 +30,9 @@ def test_api_health(client: TestClient):
     assert data["app_name"] == "EDAgent"
 
 
-def test_csv_upload_preview_and_profiling(client: TestClient):
+def test_csv_upload_preview_and_profiling(client: TestClient, sample_csv_path: str):
     """Verifies CSV upload, auto-profiling, and preview data consistency."""
-    with open("data/samples/baseline_benchmark.csv", "rb") as f:
+    with open(sample_csv_path, "rb") as f:
         csv_bytes = f.read()
 
     files = {"file": ("baseline_benchmark.csv", io.BytesIO(csv_bytes), "text/csv")}
