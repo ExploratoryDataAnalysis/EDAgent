@@ -46,8 +46,9 @@ def _error_body(message: str, errors=None, code: str | None = None, detail=None)
 async def lifespan(app: FastAPI):
     assert_production_secret()
     # Tables are created automatically for the SQLite dev setup; production uses Alembic migrations.
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if engine.dialect.name == "sqlite":
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     try:
         removed = purge_old_exports()
         if removed:
