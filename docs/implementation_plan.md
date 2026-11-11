@@ -1,4 +1,6 @@
-# EDAgent Phased Implementation Roadmap
+# Legacy generic EDA implementation roadmap
+
+This historical roadmap describes the original EDA prototype. [Project Plan v2](EDAgent_Project_Plan_v2.pdf) governs the road-safety project. See the [environment setup guide](environment_setup.md) for the active application.
 
 This implementation plan is derived directly from Section 13 of the project blueprint. It structures the delivery of EDAgent into distinct, verifiable phases.
 

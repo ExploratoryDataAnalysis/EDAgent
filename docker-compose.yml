@@ -1,3 +1,4 @@
+# Legacy root prototype. Use EDAgent_Completed_Extension/EDAgent/docker-compose.yml.
 services:
   postgres:
     image: postgres:16-alpine

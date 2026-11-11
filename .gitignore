@@ -33,6 +33,7 @@ ENV/
 
 # Node & Frontend
 node_modules/
+*.tsbuildinfo
 dist/
 dist-ssr/
 *.local
@@ -48,16 +49,22 @@ pnpm-debug.log*
 *.key
 
 # Data & Local Storage (never commit uploaded datasets or generated reports)
-data/uploads/*
-!data/uploads/.gitkeep
-data/exports/*
-!data/exports/.gitkeep
+**/data/uploads/*
+!**/data/uploads/.gitkeep
+**/data/exports/*
+!**/data/exports/.gitkeep
 data/parquet/*
 !data/parquet/.gitkeep
 *.duckdb
 *.db
 *.sqlite
 *.sqlite3
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
 
 # IDE & Editor
 .vscode/

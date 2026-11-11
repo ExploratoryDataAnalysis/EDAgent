@@ -1,4 +1,6 @@
-# EDAgent Folder Structure Documentation
+# Legacy EDA prototype folder structure
+
+This layout describes the original root prototype. See the [environment setup guide](environment_setup.md) for the active nested application.
 
 This document defines the physical directory layout, module boundaries, and separation of concerns across the frontend and backend codebases.
 

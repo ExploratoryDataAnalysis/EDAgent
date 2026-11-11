@@ -1,102 +1,41 @@
-# EDAgent Environment Setup Instructions
+# EDAgent environment setup
 
-This document provides step-by-step instructions to configure, run, and verify the EDAgent development environment.
+All application commands in this guide use the [nested FastAPI and React app](../EDAgent_Completed_Extension/EDAgent/README.md). The root backend, frontend, and Compose file are legacy.
 
----
+## Windows PowerShell
 
-## 1. Prerequisites
+Install Python 3.11 or later and Node.js 18 or later with npm. From the repository root, set up the app and start both servers:
 
-Ensure the following tools are installed on your workstation:
+```powershell
+Set-Location .\EDAgent_Completed_Extension\EDAgent
+.\scripts\setup.ps1
+.\scripts\dev.ps1
+```
 
-| Tool | Recommended Version | Verify Command |
-| :--- | :--- | :--- |
-| **Python** | `3.11+` or `3.13` | `python --version` |
-| **Node.js** | `v18.0+` or `v22.0+` | `node --version` |
-| **npm** | `v9.0+` or `v10.0+` | `npm --version` |
-| **PostgreSQL** (Optional for local dev)| `15+` or `16+` | `psql --version` |
-| **Redis** (Optional for local dev)| `7.0+` | `redis-server --version` |
-| **Docker & Docker Compose** (Optional)| `v24+` | `docker compose version` |
+Run setup on first use and after dependency changes. It installs the backend dependencies into the nested `.venv`, installs the frontend dependencies from the npm lockfile, and creates `backend/.env` from the nested template if needed. Local development uses SQLite and local file storage. Edit the nested `backend/.env` to configure an optional LLM provider.
 
-> [!NOTE]
-> For zero-dependency local development, SQLite and an in-memory/eager Celery mode are preconfigured in `.env.example`. PostgreSQL and Redis are recommended for production parity.
+- [Web client](http://localhost:5173)
+- [API documentation](http://127.0.0.1:8000/api/v1/docs)
+- [API health check](http://127.0.0.1:8000/api/v1/health)
 
----
+## Verify the application
 
-## 2. Workspace Setup
+From `EDAgent_Completed_Extension/EDAgent/`, after setup:
 
-### 2.1 Clone and Environment Configuration
-1. Clone the repository and navigate into the root directory:
-   ```bash
-   cd EDA-Dashboard
-   ```
-2. Create your local environment file from the template:
-   ```bash
-   cp .env.example .env
-   ```
-3. Inspect and adjust `.env` variables if required (e.g. database credentials or OpenAI API key).
+```powershell
+.\.venv\Scripts\python.exe -m pytest backend/tests
+Push-Location frontend
+npm run build
+Pop-Location
+```
 
----
+## Docker Compose
 
-## 3. Backend Setup (FastAPI + Python)
+With Docker running, use the nested [Compose file](../EDAgent_Completed_Extension/EDAgent/docker-compose.yml). From the repository root:
 
-1. Create a dedicated Python virtual environment:
-   ```bash
-   python -m venv .venv
-   ```
-2. Activate the virtual environment:
-   - **Windows PowerShell**:
-     ```powershell
-     .venv\Scripts\Activate.ps1
-     ```
-   - **Linux / macOS**:
-     ```bash
-     source .venv/bin/activate
-     ```
-3. Install production and development dependencies:
-   ```bash
-   pip install --upgrade pip
-   pip install -r backend/requirements.txt
-   pip install -r backend/requirements-dev.txt
-   ```
-4. Verify the baseline test suite:
-   ```bash
-   python -m pytest backend/tests -v
-   ```
-5. Launch the FastAPI development server:
-   ```bash
-   uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
-   ```
-   - The interactive OpenAPI documentation will be accessible at: `http://127.0.0.1:8000/api/v1/docs`
-   - Health check diagnostic: `http://127.0.0.1:8000/api/v1/health`
-
----
-
-## 4. Frontend Setup (React + TypeScript)
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Launch the Vite development server:
-   ```bash
-   npm run dev
-   ```
-   - The frontend application will be available at: `http://localhost:5173`
-
----
-
-## 5. Dockerized Environment (All-in-One)
-
-If Docker is available on your machine, you can run the complete stack (PostgreSQL, Redis, FastAPI, Celery Worker, and Vite Frontend) with a single command:
-
-```bash
+```powershell
+Set-Location .\EDAgent_Completed_Extension\EDAgent
 docker compose up --build
 ```
-- Frontend: `http://localhost:5173`
-- Backend API Docs: `http://localhost:8000/api/v1/docs`
-- PostgreSQL: `localhost:5432`
-- Redis: `localhost:6379`
+
+This starts PostgreSQL, FastAPI, and the web client.

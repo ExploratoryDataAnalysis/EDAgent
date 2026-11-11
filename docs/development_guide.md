@@ -1,5 +1,7 @@
 # EDAgent Development & Testing Guide
 
+Run application commands from `EDAgent_Completed_Extension/EDAgent/` after following the [environment setup guide](environment_setup.md).
+
 This guide describes development workflows, coding standards, testing instructions, and validation procedures for contributors to EDAgent.
 
 ---
@@ -32,7 +34,7 @@ python -m pytest backend/tests -v
 python -m pytest backend/tests/test_baseline.py -k test_profiler_engine_on_known_dataset
 
 # Run security and SSRF tests
-python -m pytest backend/tests/test_baseline.py -k test_ssrf_security_guardrail
+python -m pytest backend/tests/test_security_api.py
 ```
 
 ### 2.3 Test Coverage Report
