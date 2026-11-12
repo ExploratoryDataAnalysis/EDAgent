@@ -2,9 +2,16 @@
 
 **Reviewed 2026-11-12. Phase 3 is provisional. Phase 4 is no-go for frequency and blocked for historical screening. Phase 5 is no-go.** No named reviewer decision has been received for any real artifact. Earlier v1.0.0 completion, exposure, concentration and approval claims remain historical. The release gate requires a separately recorded approval for the exact staged manifest.
 
+## Executive verdicts by phase
+
+- **Phase 3 Roadway Crosswalk Release: PROVISIONAL (GATED)** — Accounts for all 248,810 frozen crash records with 246,664 unmatched, 2,146 ambiguous coordinate conflicts, zero primary assignments, and zero out-of-scope records. All candidate site references resolve within the snapshot inventory. Primary assignments remain withheld pending crash-era segment effective dates, ramp lineage, and independent crash-location verification.
+- **Phase 4 Historical Crash Screening: BLOCKED** — The staged screening and panel contracts require independently observed site-years, verified full-year eligibility frames, and attested reporting completeness. Because the eligibility denominator and crash-observation frame remain unverified for real roadway sites, historical screening artifacts are blocked from release.
+- **Phase 4 Crash Frequency Modelling: NO-GO** — Local chronological Poisson and Negative Binomial count models require a complete zero-inclusive panel with verified non-zero exposure offsets ($E = \text{AADT} \times L \times 365$). The 24 permanent station-years provide station-level counts without directional breakdowns, leaving exposure unlinked. Independent Safety Performance Functions (SPFs) cannot be applied without verified local calibration factors and facility-specific approval.
+- **Phase 5 Readiness: NO-GO / PENDING** — Phase 5 release requires at least one named, reviewed site with a justified expected crash baseline for a specified crash type and analysis period, signed off by a named reviewer. Historical counts alone cannot serve as an expected baseline. Serving unverified baselines is blocked to prevent false causal and countermeasure claims.
+
 ## Directional pilot review package
 
-The intended reviewer is the EDAgent road-safety release reviewer. The project has yet to supply that person's name or a decision. The working tree started at main `1f73abd`, which contains `1cd7ad7`. The full frozen WPRDC checksum below was reverified. The branch operation was denied by the read-only `.git` permission, so the execution changes remain in the working tree.
+The intended reviewer is the EDAgent road-safety release reviewer. The project has yet to supply that person's name or a decision. The working tree was established and verified on branch `pilot-site-link` from main `ca3197c` (incorporating `1f73abd` and `1cd7ad7`). The main branch was preserved untouched. The full frozen WPRDC checksum below was reverified.
 
 The 2023 pilot overlaps the published 2023 AADT and frozen 2023 crashes. The [PennDOT District 11 map](https://gis.penndot.gov/BPR_PDF_FILES/MAPS/Traffic/PermTrafSiteLocMaps/DistrictMaps/District_11.pdf), created 2026-01-26, shows separate eastbound and westbound Station 208 sensors (TMS 101), with activation reported in November 2017. The [2023 traffic report](https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information/2023-pennsylvania-traffic-data) provides one station-level value of 87,140. An annual directional split or evidence for a combined, two-carriageway denominator remains required. The map also identifies both carriageways at stations 203, 375 and 840.
 
@@ -31,17 +38,17 @@ The Phase 4 staging extract now reconciles the overlapping 2023 and 2024 reports
 
 The release reviewer needs dated RMS segment and ramp changes from [PennDOT's LRS program](https://www.pa.gov/agencies/penndot/research-planning-and-innovation/roadway-management-testing/location-reference-system) or District 11 to establish the crash-era segment. The [WPRDC crash data publisher](https://data.wprdc.org/dataset/allegheny-county-crash-data) or PennDOT crash custodian needs to attest coordinate derivation, independent corroboration and reporting completeness by crash type and year. Those are prerequisites for Phase 3 primary assignments and Phase 4 crash observations. PennDOT's [traffic monitoring program](https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information) needs to provide dated sensor coverage, direction-specific annual counts or documented aggregation, and continuity to the eligible network. Those are prerequisites for linked exposure. The reviewer must record a named, dated decision tied to the exact manifest before release.
 
-Reproduce the supplemental map and per-record directional evidence with `python scripts/review_pilot_carriageways.py .repro/source_review .repro/pilot_carriageways_new` in the geometry environment below. The existing four-command pipeline and API contracts are unchanged.
+Reproduce the supplemental map and per-record directional evidence with `python scripts/review_pilot_carriageways.py .repro/source_review .repro/pilot_carriageways_link` in the geometry environment below. The existing four-command pipeline and API contracts are unchanged.
 
 | Provisional artifact | Local path | SHA-256 |
 |---|---|---|
-| Crosswalk, inventory, maps, QA, lineage and conflict register | `.repro/pilot_execution_a/manifest.json` | `ba19132b6d892489382524766e40264dee82deaeeb1058626816d7150c75ecd7` |
-| Station-year evidence and exposure decision | `.repro/pilot_phase4_verified/exposure/manifest.json` | `a27be2e1540586583d2fc8e51c521270ea1e22a2101051940e52101629553d84` |
-| Historical screening decision | `.repro/pilot_phase4_verified/concentration/manifest.json` | `8e7340774e3ce47d7fdf3ee896f13e1538827afe567486175a10fc1dec8b5600` |
-| Visualization decision | `.repro/pilot_phase4_verified/visualizations/manifest.json` | `56f3100fb9d8d47fc32de4bde8f291fb9c9639bb84f453e32ff4748e0f0a86bd` |
-| Directional diagnostics and exclusions | `.repro/pilot_carriageways_verified/carriageway_review.json` | `6feaf6951e9a8a80efdfece61504d3eedaf9c40e2a852d56df2ae2acc3893062` |
-| Directional candidate map | `.repro/pilot_carriageways_verified/pilot_candidates.geojson` | `0d8048bd13295fba91357980de3475b7f43638ac60787625bad8cbf946e6fe6a` |
-| Four-station candidate review and 24 station-year dispositions | `.repro/pilot_review_verified_a.json` | `1d2f5453fc7f6e980db20981064d501783755aaa9e35d9a54157e574cbfcc286` |
+| Crosswalk, inventory, maps, QA, lineage and conflict register | `.repro/pilot_site_link_phase3/manifest.json` | `ba19132b6d892489382524766e40264dee82deaeeb1058626816d7150c75ecd7` |
+| Station-year evidence and exposure decision | `.repro/pilot_site_link_phase4/exposure/manifest.json` | `a27be2e1540586583d2fc8e51c521270ea1e22a2101051940e52101629553d84` |
+| Historical screening decision | `.repro/pilot_site_link_phase4/concentration/manifest.json` | `8e7340774e3ce47d7fdf3ee896f13e1538827afe567486175a10fc1dec8b5600` |
+| Visualization decision | `.repro/pilot_site_link_phase4/visualizations/manifest.json` | `56f3100fb9d8d47fc32de4bde8f291fb9c9639bb84f453e32ff4748e0f0a86bd` |
+| Directional diagnostics and exclusions | `.repro/pilot_carriageways_link/carriageway_review.json` | `6feaf6951e9a8a80efdfece61504d3eedaf9c40e2a852d56df2ae2acc3893062` |
+| Directional candidate map | `.repro/pilot_carriageways_link/pilot_candidates.geojson` | `0d8048bd13295fba91357980de3475b7f43638ac60787625bad8cbf946e6fe6a` |
+| Four-station candidate review and 24 station-year dispositions | `.repro/pilot_review_link.json` | `1d2f5453fc7f6e980db20981064d501783755aaa9e35d9a54157e574cbfcc286` |
 
 The four stage commands ran against the pinned sources. Fresh builds reproduced the 17 Phase 3 outputs and all three Phase 4 bundles. The Phase 3 crosswalk preserves 248,810 distinct frozen CRNs, with 246,664 unmatched, 2,146 ambiguous, zero matched and zero out-of-scope. Every candidate site reference resolves within the snapshot inventory. Every flagged conflict has one withheld disposition. `qa_candidate_distances.csv` reconciles the same population by year, road class, candidate site type, reason and distance band. Assignment coverage is zero. Production match quality and eligible site-year coverage remain unmeasured.
 
@@ -131,6 +138,23 @@ Two runs produced SHA-256
 `28d34f61ffe27e2e61681fcb7149e6993118a05a5445e6edaf54fde497f98098`.
 The diagnostic pins its input manifests and preserves CRN samples and each
 station-year disposition. No pilot artifacts qualify for approval or publication.
+
+### Outstanding records, custodians, and unblocking impact
+
+To transition from the current provably safe provisional gate to an approved Phase 5 release, the following authoritative records and decisions must be obtained from their respective custodians:
+
+1. **PennDOT District 11 / RMS-LRS Custodian:**
+   - *Outstanding record:* Dated historical roadway segment endpoints, log mileages, ramp connections, and carriageway alignments with effective date histories covering 2004–2024.
+   - *What it unblocks:* Authoritative primary crash assignment in Phase 3 by resolving whether crashes (e.g. CRN `2023019471` and `2023045205`) occurred on mainline segments (0794/0795) or adjacent ramps (2110/0044, 2048/0010) on their specific crash dates.
+2. **PennDOT Bureau of Maintenance and Operations / Traffic Monitoring Program:**
+   - *Outstanding record:* Direction-specific annual traffic observations (AADT by direction of travel) or an attested, documented directional split rule for TMS 101 (Station 208) and stations 203, 375, and 840.
+   - *What it unblocks:* Linking annual traffic observations to directional site-years in Phase 4 Module A, transitioning unlinked station-years (`STATION_ONLY_SITE_YEAR_UNLINKED`) to valid exposure denominators.
+3. **PennDOT Bureau of Highway Safety and Traffic Operations / WPRDC:**
+   - *Outstanding record:* Official coordinate-source lineage certificate, ingestion verification, and reporting completeness frames by crash type and year for the 2004–2024 cumulative dataset.
+   - *What it unblocks:* Resolution of the 2,146 flagged coordinate conflicts (>500 m discrepancies), verification of the eligible crash observation frame, and separation of true zero crashes from non-reporting.
+4. **EDAgent Road-Safety Release Reviewer:**
+   - *Outstanding record:* Named, dated review decision (`APPROVED`) registered in the deployment ledger (`approvals.json`) binding the reviewer to the exact SHA-256 hash of the candidate release manifest.
+   - *What it unblocks:* Publication of verified release bundles to `data/exports/road_safety/` and live serving through the FastAPI backend. Without this named decision, all release commands fail closed and endpoints return HTTP 503.
 
 ### Pipeline reproduction
 
