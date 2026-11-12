@@ -1,0 +1,15 @@
+{
+  "verified": true,
+  "format": "dms_text",
+  "source_name": "PennDOT Crash Data Dictionary (2026)",
+  "source_url": "https://gis.penndot.pa.gov/gishub/crashZip/Crash_Data_Dictionary_2026.pdf",
+  "specification_text": "LATITUDE: GPS Latitude determined by PennDOT, Length 12, Constraints: DD MM:SS.ddd; LONGITUDE: GPS Longitude determined by PennDOT (in negative degrees), Length 12, Constraints: DD MM:SS.ddd",
+  "latitude_hemisphere": "N",
+  "longitude_hemisphere": "W",
+  "conversion_formula": "decimal_degrees = degrees + minutes/60.0 + seconds/3600.0 (negated for longitude in Western hemisphere)",
+  "unresolved_caveats": [
+    "2,146 candidate paired records disagree with state route decimal coordinates by >500m (up to 48.47 km)",
+    "Local road crashes prior to 2008 frequently lack geocoded coordinates",
+    "Field-level operational selection policy between police DMS and state decimal coordinates remains gated pending site-level discrepancy review in Phase 3 Module B"
+  ]
+}
