@@ -58,6 +58,7 @@ class TestTrafficCoverageAssessment:
     def sample_crosswalk_path(self):
         return "data/exports/crosswalk/crosswalk_v1.0.0.csv.gz"
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_compute_metrics(self, sample_crosswalk_path):
         assessor = TrafficCoverageAssessment(sample_crosswalk_path)
         metrics = assessor.compute_coverage_metrics()
@@ -81,6 +82,7 @@ class TestSiteYearPanelBuilder:
     def sample_crosswalk_path(self):
         return "data/exports/crosswalk/crosswalk_v1.0.0.csv.gz"
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_build_panel_structure(self, sample_crosswalk_path):
         builder = SiteYearPanelBuilder(sample_crosswalk_path, start_year=2016, end_year=2024)
         # Process a small subset of state route sites

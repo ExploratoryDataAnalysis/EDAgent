@@ -74,3 +74,66 @@ All four script commands were invoked and stopped at their release gates.
 No reviewer has signed off any replacement. The 2006 and 2013–2024 archives
 still need year-by-year network comparison and provenance review. Geometry
 matching, grade separation and intersection clustering remain unimplemented.
+
+## Provisional staging run (2026-11-12)
+
+`scripts/build_provisional_crosswalk.py` is a separate, non-release entry point;
+the four release scripts remain blocked. Install the pinned packages in
+`scripts/requirements-provisional.txt` and set `PYTHONPATH` to those packages
+and `src`. Runs with `--output .repro/phase3_stage_b` and `phase3_stage_c`
+produced identical output hashes. Outputs remain local staging artifacts:
+`site_inventory.csv`, `candidate_junctions.csv`, `network.geojson`,
+`crosswalk.csv`, `qa_by_year.csv`, `qa_by_road_class.csv`, `manifest.json`,
+and, after `scripts/summarize_provisional.py`, `review_summary.json` and
+`qa_by_year_road_method.csv`. The crosswalk SHA-256 is
+`0bd33ca777dbc5257361f0a662fc8a5fd03fc86f6fa9f6cde08005d93f8ae750`;
+inventory `eb8d4a737fa5d795ac0d0300489243355e9912db74c03ae68ee03b65574c34a0`;
+map `7c3f7e6419766b6b7d11a52099925d6af43ce3fac83ba75def9c8fdecf66ecd2`;
+junction candidates `349b7c1eac6cf04205e141b63f9696e4581645693f9e487e2dd23c1fef8f6caa`;
+joint QA `f5c7c36fea3c93c9c18920e4debd25499c26693eea3ca1cb59f58b5410fd4098`.
+
+The 2024 archive has 81,957 unique FEATURE_KE values and EPSG:2272 geometry
+in US survey feet. IDs include the snapshot version and feature key; junction
+candidate IDs hash incident segment IDs and rounded endpoint coordinates. IDs
+are deterministic for this snapshot, not proven persistent across revisions.
+Ramps and divided carriageways remain separate source features; no clustering or
+at-grade confirmation is inferred from their geometry. The 42,878 endpoint
+junction candidates all require grade and topology review. Geometry crossings
+without shared endpoints are not included. Distances use actual polylines in
+EPSG:2272, converted from survey feet to metres. The 50 m candidate radius is an
+exploratory search limit, not a validated acceptance threshold.
+
+All 248,810 source CRNs appear exactly once: 2,146 frozen conflicts are
+`AMBIGUOUS` and 246,664 records are `UNMATCHED`; none has a primary assignment.
+Nearest snapshot candidates exist for 235,988 records and all reference a
+segment in the inventory; 10,114 lack valid coordinates and 562 have no line
+within 50 m. Year, road-class and reason strata reconcile. All assignments are
+withheld, including 2024, because temporal validity, route/offset linkage,
+intersection evidence and reviewer decisions are not established. The candidate
+distances and snapshot road classes are not adjudicated matches. Representative
+raw/input checks: CRN 2004000001 has a candidate 0.665 m away but is withheld;
+2004000022 has missing coordinates; 2007016949 is a withheld v6 conflict with
+route/segment recorded. No reviewer has approved these samples or the output.
+
+`scripts/snapshot_penndot_reference.py` captured 5,325 Allegheny features to
+`.repro/penndot_roadwaysegments/segments.geojson` with SHA-256
+`7b68dbe432bc66e04d759d15566860592ba39e6ec96184c99cd3d41dcad9fdca`.
+5,323 have a positive `CUR_AADT`; it is a live-service snapshot and its AADT
+observation year, historical network validity, terms and link to PASDA sites
+remain unverified. `.repro/tire_station_sample/sample.json` contains ten
+station features (SHA-256 `a183d47cd718e78466df171bbf7b3c8bed7530821777f231e47e12c5795f490e`),
+not traffic observations. Neither source provides a reviewed site-year join.
+An attempted download of NHTSA's 2010 Pub 153 returned HTTP 403. Historical
+encoding, roadway reference validity and the full conflict dispositions require
+additional official evidence and human review.
+
+The fixture-based exposure join rejects duplicate site-year records, preserves
+zero versus unknown crash counts, leaves missing exposure empty and reports
+unmatched observations. It is not a station-to-site join or coverage estimate.
+No site/crash-type expected baseline is justified for Phase 5. The complete
+test suite with `PROVISIONAL_STAGE=.repro/phase3_stage_b` passed **117** tests;
+nine legacy artifact checks were skipped because their v1.0.0 release contract
+is unapproved. The 12 formerly stalled HTTP tests executed outside the socket
+sandbox with their updated unavailable-state expectations. The four release
+commands still stop at their guards. Supported approved-artifact HTTP behavior
+cannot be tested because no approval mechanism or accepted artifacts exist.

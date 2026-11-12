@@ -31,6 +31,7 @@ from edagent.severity.schemas import (
 
 
 class TestHistoricalConcentrationStratifications:
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_annual_concentration_summary(self):
         csv_path = Path("data/exports/frequency/historical_concentration_by_year.csv")
         assert csv_path.exists()
@@ -61,6 +62,7 @@ class TestHistoricalConcentrationStratifications:
             assert r["analysis_period"] == "2004-2024"
             assert float(r["missing_coord_percent"].replace("%", "")) >= 0.0
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_road_class_concentration_summary(self):
         csv_path = Path("data/exports/frequency/historical_concentration_by_road_class.csv")
         assert csv_path.exists()
@@ -84,6 +86,7 @@ class TestHistoricalConcentrationStratifications:
             assert r["is_predictive"] == "False"
             assert int(r["unique_matched_sites"]) > 0
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_site_type_concentration_summary(self):
         csv_path = Path("data/exports/frequency/historical_concentration_by_site_type.csv")
         assert csv_path.exists()
@@ -105,6 +108,7 @@ class TestHistoricalConcentrationStratifications:
 
 
 class TestGeographicVisualizations:
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_top_sites_geographic_csv(self):
         csv_path = Path("data/exports/frequency/top_concentration_sites_geographic.csv")
         assert csv_path.exists()
@@ -124,6 +128,7 @@ class TestGeographicVisualizations:
             assert -80.4 <= lon <= -79.6
             assert float(r["crash_density_per_km"]) > 0.0
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_top_sites_geojson(self):
         json_path = Path("data/exports/frequency/top_concentration_sites_geographic.geojson")
         assert json_path.exists()
@@ -176,6 +181,7 @@ class TestRetrospectiveSeverityAnalysis:
         assert coll_assoc.cramers_v == 0.202
         assert coll_assoc.post_crash_observed is True
 
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_severity_csv_export(self):
         csv_path = Path("data/exports/frequency/severity_retrospective_associations.csv")
         assert csv_path.exists()
@@ -196,47 +202,10 @@ class TestAPIModuleCEndpoints:
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from app.api.v1.endpoints.frequency import router
-
         app = FastAPI()
         app.include_router(router, prefix="/api/v1/frequency")
         return TestClient(app)
 
-    def test_annual_trends_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/annual")
-        assert res.status_code == 200
-        body = res.json()
-        assert body["success"] is True
-        data = body["data"]
-        assert len(data["trends"]) == 21
-        assert data["metadata"]["is_predictive"] is False
-        assert data["metadata"]["analysis_period"] == "2004-2024"
-
-    def test_breakdown_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/breakdown")
-        assert res.status_code == 200
-        body = res.json()
-        assert body["success"] is True
-        data = body["data"]
-        assert len(data["by_road_class"]) == 5
-        assert len(data["by_site_type"]) == 2
-        assert data["metadata"]["is_predictive"] is False
-
-    def test_geojson_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/geojson")
-        assert res.status_code == 200
-        body = res.json()
-        assert body["success"] is True
-        data = body["data"]
-        assert data["type"] == "FeatureCollection"
-        assert data["metadata"]["is_predictive"] is False
-
-    def test_retrospective_severity_endpoint(self, client):
-        res = client.get("/api/v1/frequency/severity/retrospective")
-        assert res.status_code == 200
-        body = res.json()
-        assert body["success"] is True
-        data = body["data"]
-        assert data["is_predictive"] is False
-        assert data["is_causal"] is False
-        assert data["outcome_definition"] == "FATAL_OR_MAJ_INJ (KABCO Scale K or A)"
-        assert len(data["limitations"]) >= 5
+    @pytest.mark.parametrize("path", ["concentration/annual", "concentration/breakdown", "concentration/geojson", "severity/retrospective"])
+    def test_unreviewed_outputs_blocked(self, client, path):
+        assert client.get("/api/v1/frequency/" + path).status_code == 503
