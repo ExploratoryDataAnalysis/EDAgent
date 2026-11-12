@@ -78,3 +78,7 @@ Thumbs.db
 # Celery & Redis
 celerybeat-schedule
 celerybeat.pid
+
+# Local research inputs and isolated reproduction runs
+/data/raw/
+/.repro/
