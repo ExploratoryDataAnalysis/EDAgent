@@ -43,6 +43,10 @@ from edagent.roadway.schema import RoadClass
 
 
 def main() -> None:
+    raise RuntimeError(
+        "Frequency and concentration release blocked: the crosswalk is not reviewed, "
+        "the panel is crash-selected, and nominal exposure and lengths cannot support claims."
+    )
     print("=" * 80)
     print("PHASE 4 — MODULE B: SITE-YEAR FREQUENCY MODELLING & HISTORICAL CONCENTRATION")
     print("=" * 80)

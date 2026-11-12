@@ -11,6 +11,11 @@ from edagent.crosswalk.reconciler import CrosswalkReconciler
 
 
 def main():
+    raise RuntimeError(
+        "Crosswalk release blocked: the matcher uses crash-derived LRS keys and "
+        "centerline bounding-box midpoints and lacks an intersection inventory. "
+        "Independent versioned LRS references and reviewed geometry matching are required."
+    )
     print("=" * 70)
     print("EDAgent Road-Safety Crosswalk Reconciliation (Phase 3 Module D)")
     print("=" * 70)

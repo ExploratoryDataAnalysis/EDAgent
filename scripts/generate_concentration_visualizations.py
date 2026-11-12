@@ -28,6 +28,10 @@ from edagent.severity.retrospective import RetrospectiveSeverityAnalyzer
 
 
 def main() -> None:
+    raise RuntimeError(
+        "Visualization release blocked until crosswalk and concentration inputs "
+        "have been rebuilt and reviewed."
+    )
     print("=" * 80)
     print("PHASE 4 — MODULE C: HISTORICAL CONCENTRATION & RETROSPECTIVE SEVERITY")
     print("=" * 80)

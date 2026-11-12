@@ -13,11 +13,16 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.schemas.common import APIResponse
 
 router = APIRouter()
+
+
+async def require_reviewed_concentration() -> None:
+    """Do not serve legacy artifacts while the crosswalk release is unreviewed."""
+    raise HTTPException(status_code=503, detail="Historical concentration is unavailable pending crosswalk and artifact review.")
 
 CONCENTRATION_CSV_PATH = Path("data/exports/frequency/historical_crash_concentration.csv")
 YEAR_CSV_PATH = Path("data/exports/frequency/historical_concentration_by_year.csv")
@@ -33,12 +38,11 @@ def _standard_metadata() -> Dict[str, Any]:
         "analysis_type": "HISTORICAL_CRASH_CONCENTRATION",
         "analysis_period": "2004-2024",
         "is_predictive": False,
-        "coverage_status": "CROSSWALK_MATCHED_SUBSET_75.19%",
-        "crosswalk_version": "1.0.0",
+        "coverage_status": "UNVERIFIED",
+        "crosswalk_version": None,
         "limitations": [
-            "Historical concentration reflects observed crash counts and physical segment density; it is not predicted per-vehicle risk.",
-            "Predictive frequency modelling is blocked under the Phase 4 Module A NO-GO decision due to network exposure voids.",
-            "Municipal local roads have 0.00% exposure data and are evaluated within their own functional class percentile.",
+            "No reviewed crosswalk or exposure coverage assessment is available.",
+            "Historical concentration artifacts are withheld pending review.",
         ],
     }
 
@@ -85,19 +89,15 @@ async def get_modelling_status() -> APIResponse[Dict[str, Any]]:
             "decision": "NO-GO",
             "status": "BLOCKED",
             "reason": (
-                "Verified traffic exposure coverage is 0.00% across the 2004–2024 analysis period. "
-                "Predictive frequency forecasting without exposure offsets violates statistical principles "
-                "and project guidelines (Project Plan v2 §8, §18)."
+                "A reviewed site-year frame and linked traffic exposure are unavailable."
             ),
-            "failed_criteria": ["CRIT-01", "CRIT-02", "CRIT-03", "CRIT-04", "CRIT-05"],
+            "failed_criteria": [],
         },
         "mandated_active_pathway": {
             "pathway_name": "Historical Crash-Concentration Alternative",
-            "status": "ACTIVE",
+            "status": "BLOCKED_PENDING_REVIEW",
             "description": (
-                "Delivers empirical spatial crash density (crashes/km), severe injury (KSI) density, "
-                "multi-epoch temporal persistence (2004–2010, 2011–2017, 2018–2024), and within-class "
-                "percentile rankings without fabricating synthetic exposure data."
+                "Historical screening requires a reviewed crosswalk and corrected denominators."
             ),
         },
         "metadata": _standard_metadata(),
@@ -122,7 +122,7 @@ async def get_site_prediction(
     - Supplies the empirical historical concentration metrics as the sanctioned alternative.
     """
     clean_site_id = site_id.strip()
-    conc_record = _load_concentration_record(clean_site_id)
+    conc_record = None  # Legacy concentration is not approved for display.
 
     prediction_contract = {
         "site_id": clean_site_id,
@@ -140,12 +140,12 @@ async def get_site_prediction(
 
     return APIResponse(
         success=True,
-        message="Predictive frequency model is blocked; historical concentration alternative provided.",
+        message="Predictive frequency and historical concentration are unavailable pending review.",
         data=prediction_contract,
     )
 
 
-@router.get("/concentration/annual", summary="Get Annual Concentration & Coverage Trends")
+@router.get("/concentration/annual", summary="Get Annual Concentration & Coverage Trends", dependencies=[Depends(require_reviewed_concentration)])
 async def get_annual_concentration_trends() -> APIResponse[Dict[str, Any]]:
     """Retrieve annual crash counts, match coverage, and missing coordinates (2004–2024)."""
     if not YEAR_CSV_PATH.exists():
@@ -177,7 +177,7 @@ async def get_annual_concentration_trends() -> APIResponse[Dict[str, Any]]:
     )
 
 
-@router.get("/concentration/breakdown", summary="Get Stratified Concentration by Class & Site Type")
+@router.get("/concentration/breakdown", summary="Get Stratified Concentration by Class & Site Type", dependencies=[Depends(require_reviewed_concentration)])
 async def get_concentration_breakdown() -> APIResponse[Dict[str, Any]]:
     """Retrieve stratified breakdowns across functional road classes and site types."""
     road_classes = []
@@ -223,7 +223,7 @@ async def get_concentration_breakdown() -> APIResponse[Dict[str, Any]]:
     )
 
 
-@router.get("/concentration/geojson", summary="Get GeoJSON of Top High-Concentration Sites")
+@router.get("/concentration/geojson", summary="Get GeoJSON of Top High-Concentration Sites", dependencies=[Depends(require_reviewed_concentration)])
 async def get_concentration_geojson() -> APIResponse[Dict[str, Any]]:
     """Retrieve standard GeoJSON FeatureCollection with validated site coordinates."""
     if not GEOJSON_PATH.exists():
@@ -239,7 +239,7 @@ async def get_concentration_geojson() -> APIResponse[Dict[str, Any]]:
     )
 
 
-@router.get("/severity/retrospective", summary="Get Retrospective Severity Analysis & Limitations")
+@router.get("/severity/retrospective", summary="Get Retrospective Severity Analysis & Limitations", dependencies=[Depends(require_reviewed_concentration)])
 async def get_retrospective_severity() -> APIResponse[Dict[str, Any]]:
     """Retrieve retrospective severity association metrics, AP intervals, and caveats."""
     items = []
@@ -274,7 +274,7 @@ async def get_retrospective_severity() -> APIResponse[Dict[str, Any]]:
     )
 
 
-@router.get("/concentration/top", summary="Get Top High-Hazard Roadway Sites")
+@router.get("/concentration/top", summary="Get Top High-Hazard Roadway Sites", dependencies=[Depends(require_reviewed_concentration)])
 async def get_top_concentration_sites(
     road_class: Optional[str] = Query(None, description="Filter by road class (e.g., STATE_ROUTE, LOCAL_STREET)"),
     limit: int = Query(20, ge=1, le=100, description="Number of sites to return"),
@@ -327,7 +327,7 @@ async def get_top_concentration_sites(
     )
 
 
-@router.get("/concentration/{site_id}", summary="Get Site Historical Crash Concentration")
+@router.get("/concentration/{site_id}", summary="Get Site Historical Crash Concentration", dependencies=[Depends(require_reviewed_concentration)])
 async def get_site_concentration(site_id: str) -> APIResponse[Dict[str, Any]]:
     """Retrieve empirical crash concentration, density, and persistence category for a site."""
     record = _load_concentration_record(site_id)

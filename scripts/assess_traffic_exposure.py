@@ -15,6 +15,10 @@ from edagent.exposure.sources import get_official_traffic_sources
 
 
 def main():
+    raise RuntimeError(
+        "Exposure assessment blocked: no reviewed crosswalk or linked, versioned "
+        "site-year traffic observations are available; coverage values are assumptions."
+    )
     print("=" * 75)
     print("EDAgent Phase 4 Module A: Traffic Exposure & Feasibility Assessment")
     print("=" * 75)
