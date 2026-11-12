@@ -216,3 +216,47 @@ The previous 117-pass baseline included the API checks. The current collection h
 | Severity CSV export | The API serves an approved retrospective fixture with predictive and causal flags false. Real severity remains withheld. |
 
 The remaining acceptance evidence is dated, independently validated crash-to-road location coverage; at-grade incident-road and continuity evidence for the intended years; independent eligibility and reporting completeness frames; direction-compatible station links with observation years; and a named, dated reviewer decision for the corresponding input and artifact versions. No real approved HTTP artifact was available for verification.
+
+
+## Sandbox reproduction update — 2026-11-12
+
+This update records a fresh reproduction from `ExploratoryDataAnalysis/EDAgent` branch `pilot-site-link` at starting commit `84421bf1aa79da54b643782beffa5e75de3cfe05`. The authorized attached WPRDC CSV was copied only to the ignored path `data/raw/2c13021f-74a9-4289-a1e5-fe0472c89881.csv`; it is 116,560,683 bytes and verified against SHA-256 `c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511`, matching `analysis/outputs/run_manifest.json`. Git LFS was used to hydrate the repository's frozen review outputs. The required 2024 county centerline archive was retrieved from the documented PASDA URL and verified against SHA-256 `8364f54192898cc776560069745db5f5903e9f9afd8a939d3c7dc93081a948af`; raw data, retrieved archives, and all `.repro/` staging outputs remain outside Git.
+
+The reproducible commands were run with `PYTHONPATH=src:.repro/geodeps` and `OPENBLAS_NUM_THREADS=1`:
+
+```text
+python scripts/build_crosswalk.py --stage .repro/phase3_review_final
+python scripts/assess_traffic_exposure.py --stage .repro/phase4_final/exposure --input .repro/phase3_review_final
+python scripts/run_frequency_modelling.py --stage .repro/phase4_final/concentration --input .repro/phase3_review_final
+python scripts/generate_concentration_visualizations.py --stage .repro/phase4_final/visualizations --input .repro/phase3_review_final
+python scripts/review_pilot_carriageways.py .repro/source_review .repro/pilot_carriageways_link
+python scripts/extract_permanent_aadt.py .repro/source_review
+python scripts/extract_permanent_aadt.py .repro/source_review --pilot-review .repro/phase3_review_final .repro/phase4_final .repro/pilot_review.json
+python -m pytest -o addopts= -q tests
+```
+
+The fresh Phase 3 manifest is `.repro/phase3_review_final/manifest.json`, SHA-256 `4ec8acaf96f206d729a8406f393c6bbb0016f54dca1b267448ae5496ca67adb6`. Its crosswalk has 248,810 rows and 248,810 unique `CRASH_CRN` values: 246,664 `UNMATCHED`, 2,146 `AMBIGUOUS`, zero `MATCHED`, and zero out-of-scope records. The output hashes in the manifest were rechecked byte-for-byte. The fresh Phase 4 manifests are `.repro/phase4_final/exposure/manifest.json` (`36a06a80d13070a8db5d82069f3290226e88e8399a40e10a87b4ded492eb09a2`), `.repro/phase4_final/concentration/manifest.json` (`9c28ba12c7c89abac1860f187786522ff519a7f0e36d5b3e9a1e2bb925bda75e`), and `.repro/phase4_final/visualizations/manifest.json` (`975a4e66903a170d07d00718c587eff9b2d3e04e1f26830db6`). All three are `PROVISIONAL` and fail closed with `NO_GO` because an approved upstream bundle and deployment ledger are absent. The exposure bundle contains 24 reconciled station-year records in `station_link_evidence.csv`, but no unique TIRe station sample key and no eligible site-year.
+
+The pilot review output `.repro/pilot_review.json` has SHA-256 `53dfee6765f04a9b60cd2f9bc40c3d11052a75aefb2207b99b64f66e7e1e9cf6` and status `PROVISIONAL_NO_SUPPORTED_PILOT`. Station 208 is the strongest diagnostic candidate: seven 2023 records have offset candidates, with the closest decimal-to-offset distance 1.105 m for CRN `2023073486`. These remain withheld because crash-era segment effective dates, independent coordinate lineage, direction, and reporting completeness are not verified. The 2023 PASDA state-road archive, District 11 station-map PDF, and current TIRe sample were not available as checksum-verified local inputs; the 2024 RMS archive is snapshot-only evidence. No expected crash baseline is supported.
+
+Test verification completed with **128 passed and 9 skipped**. `git diff --check` passed. Fixture tests cover approved publication and unavailable responses; real staged artifacts remain provisional and therefore are not publishable or servable. The current release verdicts are:
+
+- **Phase 3 crosswalk release: PROVISIONAL / GATED.** The full crash population reconciles and every conflict remains explicitly withheld, but there are zero reviewed primary assignments and no named reviewer approval.
+- **Phase 4 historical screening: BLOCKED.** No independently supported eligible site-year and complete crash-observation frame is available.
+- **Phase 4 frequency modelling: NO-GO.** No validated zero-inclusive exposure panel or applicable expected-frequency baseline is available.
+- **Phase 5 readiness: NO-GO.** No named, reviewed site, crash type, and analysis period has a justified expected crash count.
+
+The remaining release blockers are the dated historical RMS/LRS segment and ramp histories from PennDOT District 11 or its RMS/LRS custodian; direction-specific annual traffic observations or an attested aggregation rule from PennDOT Traffic Monitoring; independent crash-coordinate lineage and reporting-completeness frames from PennDOT or WPRDC; and a named, dated reviewer decision binding the exact candidate manifest hash in `approvals.json`. The `main` branch was not modified.
+
+
+### Retrieval and verification commands used in this reproduction
+
+```bash
+mkdir -p data/raw
+sha256sum data/raw/2c13021f-74a9-4289-a1e5-fe0472c89881.csv
+curl --fail --location 'https://www.pasda.psu.edu/download/alleghenycounty/historic/AlleghenyCounty_StreetCenterlines/AlleghenyCounty_StreetCenterlines202412.zip' -o data/reference/street_centerlines/AlleghenyCounty_StreetCenterlines202412.zip
+sha256sum data/reference/street_centerlines/AlleghenyCounty_StreetCenterlines202412.zip
+python scripts/verify_review_sources.py --fetch
+```
+
+The authorized attached CSV was used because the public WPRDC transfer repeatedly returned partial content. `verify_review_sources.py --fetch` successfully verified the available pinned archives and PDFs. It reported these unavailable or changed entries, which were not fabricated or committed: `pasda_201511`, `pasda_201712`, `pasda_202312`, `pasda_202412` before local restoration, `pasda_202610`, `pub153_current`, `rms_live`, `rms_live_schema`, `tire_station_sample`, and `tire_station_schema`. The November 2024 county archive was independently restored and verified for the provisional crosswalk; the remaining unavailable sources continue to block historical continuity, current station linkage, and reviewer-grade release.
