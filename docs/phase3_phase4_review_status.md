@@ -45,6 +45,50 @@ The staged panel contract joins exact crosswalk-version site-years to independen
 
 ## Commands and approval
 
+### Bounded pilot follow-up
+
+The [2023 PennDOT report](https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information/2023-pennsylvania-traffic-data)
+provides independently dated station location and AADT tables. Both PDFs are
+pinned in the source registry. All four station route/segment keys agree with
+the 2024 location table, and all 16 overlapping annual AADT values agree.
+The 2023 report also adds four 2019 station-level observations. All 24
+station-years remain unlinked to eligible site-years.
+
+| Station and route/segment | 2023 offset candidates using November 2024 RMS | 2024 route-wide geometry candidates, one line / multiple lines within 50 m |
+|---|---:|---:|
+| 203, PA 65 / 0270 | 2 | 21 / 78 |
+| 208, I-376 / 0794 | 7 | 0 / 666 |
+| 375, US 22 / 0080 | 0 | 0 / 55 |
+| 840, I-279 / 0122 | 3 | 4 / 160 |
+
+The 2024 counts are diagnostics across the full recorded route and do not
+locate crashes on the station segment. The review checked all crash types
+for segment candidates. No intersection or crash type qualified. The best
+candidate for a future pilot is the I-376 station 208 segment in 2023.
+Its closest decimal point and independently reconstructed offset are 1.105 m
+apart. The calculation uses November 2024 geometry, so the closeness does
+not verify 2023 endpoints, alignment or the independence of the crash
+coordinate. Station 375's empty result is an unknown crash count. Station 840
+has no corresponding record in the local TIRe sample.
+
+For station 208, obtain dated segment endpoints and offset geometry from
+PennDOT District 11's RMS/LRS custodian and crash-coordinate lineage and
+reporting completeness for the selected crash types from PennDOT's crash data
+custodian or WPRDC. Obtain station direction, location and coverage history
+from PennDOT's traffic monitoring program. Those records would determine
+which matches, observation years, and AADT links can enter a reviewer package.
+The other three candidates require the same effective-date and direction
+evidence. The frozen crosswalk still accounts for all 248,810 records with
+zero primary assignments and no eligible or observed pilot denominator.
+
+Run `python scripts/extract_permanent_aadt.py .repro/source_review --pilot-review .repro/phase3_review_final .repro/phase4_final .repro/pilot_review.json`.
+Two runs produced SHA-256
+`28d34f61ffe27e2e61681fcb7149e6993118a05a5445e6edaf54fde497f98098`.
+The diagnostic pins its input manifests and preserves CRN samples and each
+station-year disposition. No pilot artifacts qualify for approval or publication.
+
+### Pipeline reproduction
+
 From the repository root in PowerShell, use `scripts/requirements-provisional.txt` for the geometry environment. The traffic-table extraction used PyMuPDF 1.27.2.3. Staging destinations must be new directories.
 
 ```powershell

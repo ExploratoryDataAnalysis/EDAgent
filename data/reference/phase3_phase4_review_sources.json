@@ -273,5 +273,27 @@
     "coverage": "Live station layer schema",
     "terms": "Dynamic public service; historical applicability and redistribution terms unverified.",
     "downloadable_archive": false
+  },
+  "permanent_station_locations_2023": {
+    "publisher": "Pennsylvania Department of Transportation",
+    "url": "https://gis.penndot.pa.gov/BPR_PDF_FILES/Documents/Traffic/Traffic_Information/Annual_Report/2023/Permanent_Site_Locations.pdf",
+    "version_or_snapshot": "2023 Traffic Data Report",
+    "retrieved_or_verified_date": "2026-11-12",
+    "path": ".repro/source_review/Permanent_Site_Locations_2023.pdf",
+    "sha256": "06f10ba7de3bd37f57768b6c3049fe0fc855537cef2601d0163da018eee880ea",
+    "coverage": "2023 station county, route and segment identifiers",
+    "terms": "Traffic count use. Downstream redistribution terms require review.",
+    "downloadable_archive": true
+  },
+  "permanent_station_aadt_2023": {
+    "publisher": "Pennsylvania Department of Transportation",
+    "url": "https://gis.penndot.pa.gov/BPR_PDF_FILES/Documents/Traffic/Traffic_Information/Annual_Report/2023/5_Year_Summary_AADT_Permanent_sites.pdf",
+    "version_or_snapshot": "2023 Traffic Data Report",
+    "retrieved_or_verified_date": "2026-11-12",
+    "path": ".repro/source_review/Permanent_Site_AADT_2023.pdf",
+    "sha256": "9bdebddfe15158f6478b65076f72037540d9dfb34fb480e787593ca3650c84a8",
+    "coverage": "Annual station-level AADT, 2019–2023",
+    "terms": "Traffic count use. Downstream redistribution terms require review.",
+    "downloadable_archive": true
   }
 }
