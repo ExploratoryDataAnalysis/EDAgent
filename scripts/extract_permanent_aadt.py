@@ -1,4 +1,4 @@
-"""Extract the Allegheny subset of PennDOT's two 2024 permanent-site tables."""
+"""Reconcile the Allegheny subset of PennDOT's 2023 and 2024 permanent-site tables."""
 
 import argparse
 import csv
@@ -54,12 +54,19 @@ def annual_values(path, stations):
 def extract(directory):
     stations = locations(directory / "Permanent_Site_Locations.pdf")
     aadt = annual_values(directory / "5_Year_Summary_AADT_Permanent_sites.pdf", stations)
+    historical_stations = locations(directory / "Permanent_Site_Locations_2023.pdf")
+    historical_aadt = annual_values(directory / "Permanent_Site_AADT_2023.pdf", historical_stations)
+    if stations != historical_stations or any(
+        aadt[station][:-1] != historical_aadt[station][1:] for station in stations
+    ):
+        raise ValueError("The 2023 and 2024 reports disagree on keys or overlapping AADT")
     with (directory / "allegheny_permanent_aadt.csv").open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["permanent_site_id", "county_code", "route", "segment_2024", "year", "published_aadt",
                          "link_status"])
         for station, (route, segment) in sorted(stations.items()):
-            for year, value in zip(YEARS, aadt[station]):
+            values = [historical_aadt[station][0], *aadt[station]]
+            for year, value in zip(range(YEARS.start - 1, YEARS.stop), values, strict=True):
                 writer.writerow([station, "02", route, segment, year, value, "STATION_ONLY_SITE_YEAR_UNLINKED"])
 
 
@@ -132,9 +139,12 @@ def pilot_review(directory, phase3, phase4, output):
             historical_values[row["permanent_site_id"]][year_index] == int(row["published_aadt"])
             if year_index < 5 else None
         )
-    paths = (historical, historical_aadt, phase3 / "manifest.json", phase4 / "exposure/manifest.json")
-    checksums = {path.name if path.suffix == ".pdf" else path.parent.name + "/manifest.json": digest(path)
-                 for path in paths}
+    checksums = {
+        historical.name: digest(historical),
+        historical_aadt.name: digest(historical_aadt),
+        "crosswalk/manifest.json": digest(phase3 / "manifest.json"),
+        "exposure/manifest.json": digest(phase4 / "exposure/manifest.json"),
+    }
     output.write_text(json.dumps({
         "status": "PROVISIONAL_NO_SUPPORTED_PILOT", "inputs": checksums,
         "candidates": candidates, "station_year_links": annual,

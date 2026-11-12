@@ -50,6 +50,8 @@ def _upstream(inputs, approvals, output, kind, required):
             ROOT / ".repro/tire_station_sample/sample.json",
             local_sources / "Permanent_Site_Locations.pdf",
             local_sources / "5_Year_Summary_AADT_Permanent_sites.pdf",
+            local_sources / "Permanent_Site_Locations_2023.pdf",
+            local_sources / "Permanent_Site_AADT_2023.pdf",
             local_sources / "allegheny_permanent_aadt.csv",
         ):
             if path.is_file():
