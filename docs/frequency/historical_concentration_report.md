@@ -4,7 +4,15 @@
 **Version:** 1.0.0  
 **Phase:** Phase 4 — Module B (Historical Crash-Concentration Reporting Pathway)  
 **Date:** November 2026  
-**Status:** Canonical & Production-Active  
+**Status:** Historical v1.0.0 report. Release approval pending.
+
+The [Phase 3/4 review status](../phase3_phase4_review_status.md) governs
+availability. The four release commands stage evidence and require a named,
+dated approval bound to the exact manifest, scope and artifact hashes before
+publication. Current historical screening requires an approved crosswalk,
+full-year crash observations and geometry-derived lengths. Segment measures
+use observed kilometre-years. Intersection measures use observed
+intersection-years. No real release currently meets those prerequisites.
 
 ---
 

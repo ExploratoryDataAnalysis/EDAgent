@@ -4,7 +4,27 @@
 **Version:** 1.0.0  
 **Phase:** Phase 4 — Module B (Site-Year Frequency Modelling & Historical Concentration)  
 **Date:** November 2026  
-**Status:** Canonical & Complete  
+**Status:** Historical v1.0.0 dictionary with current screening contract
+
+## Current screening and publication contract
+
+The [Phase 3/4 review](../phase3_phase4_review_status.md) records staging paths,
+SHA-256 hashes and reviewer status. A deployment-controlled decision must cover
+the visualization manifest before the API can use its bytes.
+
+| Reviewed output | Current fields and scope |
+|---|---|
+| `historical_crash_concentration.csv` | Site, road class, site type, observed years, attributed crashes, observed site-years, segment length, screening measure and value |
+| `historical_concentration_by_{year,road_class,site_type}.csv` | Eligible and independently observed site-years and attributed crashes in the observed frame |
+| `top_concentration_sites_geographic.geojson` | Approved inventory geometry for screened sites with their corresponding measures |
+| `severity_retrospective_associations.csv` | Optional, separately covered descriptive severity artifact |
+
+The API includes the reviewed crosswalk version and supported scope. Rankings
+use one site type per request so that segment kilometre-years and intersection
+years remain comparable within each result. Prediction responses always
+carry a null expected frequency under the current no-go decision. They may
+include historical screening for an approved site. Artifact routes return
+503 until an exact bundle is approved and verified.
 
 ---
 

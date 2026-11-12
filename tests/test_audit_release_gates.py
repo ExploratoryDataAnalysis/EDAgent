@@ -18,8 +18,10 @@ def test_unreviewed_release_scripts_fail_closed(script):
     spec = importlib.util.spec_from_file_location(script, Path("scripts") / f"{script}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    with pytest.raises(RuntimeError, match="blocked"):
-        module.main()
+    from road_safety_command import ReleaseUnavailable
+
+    with pytest.raises(ReleaseUnavailable, match="blocked"):
+        module.main([])
 
 
 def test_panel_requires_independent_frame_and_includes_never_crashed_site(tmp_path):

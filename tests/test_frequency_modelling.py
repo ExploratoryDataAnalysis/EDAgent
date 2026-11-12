@@ -379,10 +379,12 @@ class TestFrequencyAPIIntegration:
         assert data["historical_concentration_alternative"] is None
 
     def test_stale_artifact_is_not_served(self, client, tmp_path, monkeypatch):
-        from app.api.v1.endpoints import frequency
-        stale = tmp_path / 'stale.csv'
+        directory = tmp_path / "visualizations"
+        directory.mkdir()
+        stale = directory / "historical_crash_concentration.csv"
         stale.write_text('site_id,total_crashes_2004_2024\nexample,999\n', encoding='utf8')
-        monkeypatch.setattr(frequency, 'CONCENTRATION_CSV_PATH', stale)
+        monkeypatch.setenv("ROAD_SAFETY_RELEASE_ROOT", str(tmp_path))
+        monkeypatch.delenv("ROAD_SAFETY_APPROVALS", raising=False)
         assert client.get('/api/v1/frequency/concentration/example').status_code == 503
         data = client.get('/api/v1/frequency/predictions/example').json()['data']
         assert data['historical_concentration_alternative'] is None

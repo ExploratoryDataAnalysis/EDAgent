@@ -1,139 +1,105 @@
 # Phase 3 and 4 review status
 
-Status: **blocked; not approved for Phase 5**. This supersedes completion and
-approval language in the Phase 3 and 4 reports. Those reports are preserved as
-the historical record, not evidence of an accepted release.
+**Reviewed 2026-11-12. Phase 3 is provisional. Phase 4 is no-go for frequency and blocked for historical screening. Phase 5 is no-go.** No named reviewer decision has been received for any real artifact. Earlier v1.0.0 completion, exposure, concentration and approval claims remain historical. The release gate requires a separately recorded approval for the exact staged manifest.
 
-The v6 input SHA-256 is `c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511`.
-The Phase 3 audit reproduced the v1.0.0 totals and identical decompressed output
-across two builds, but found that LRS sites are inferred from crash records,
-spatial matching uses bounding-box midpoints, and no intersections are built.
-The released inputs lack a pinned independent route/segment/offset network and
-a reconciled historical network. No replacement crosswalk or site inventory is approved.
+## Frozen input and reproducibility
 
-## Source review, 2026-11-12
+The 116,560,683-byte WPRDC CSV at `data/raw/2c13021f-74a9-4289-a1e5-fe0472c89881.csv` verified against the full SHA-256 `c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511` in `analysis/outputs/run_manifest.json`. Its 248,810 distinct CRNs cover 2004–2024. Frozen v6 inputs, outputs and assumptions were preserved. The old v1.0.0 audit matched 187,068, marked 5,856 ambiguous and left 55,886 unmatched using crash-derived LRS sites and bounding-box midpoints. That result has no release approval.
 
-* PennDOT Publication 153, current PDF, is preserved at
-  `data/reference/codebooks/pub153_current.pdf`, SHA-256
-  `cfecb7765e16c7244fff934b7575439c16288f537edd01f3af968ef5ad7c311e`.
-  [PennDOT's public manual](https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/travelinpa/safety/documents/pub153.pdf)
-  is a statewide police crash-reporting guide; the local PDF metadata is dated
-  February 2025. It is not evidence that encoding was unchanged in 2004–2024.
-  The previously recorded 2021 URL redirected to a search page on download.
-* PASDA's [historical archive](https://www.pasda.psu.edu/download/alleghenycounty/historic/AlleghenyCounty_StreetCenterlines/)
-  lists a 2006 snapshot and snapshots in 2013–2024. The December 2024 snapshot
-  is preserved at `data/reference/street_centerlines/AlleghenyCounty_StreetCenterlines202412.zip`,
-  SHA-256 `8364f54192898cc776560069745db5f5903e9f9afd8a939d3c7dc93081a948af`;
-  ZIP integrity was checked. These are Allegheny County centerline snapshots,
-  not proof of continuous road existence, at-grade junctions, or stable IDs.
-  Coverage between snapshots, missing years, and licence and reuse terms need review.
-* PennDOT publishes a dynamic [roadway segments service](https://gis.penndot.pa.gov/gis/rest/services/opendata/roadwaysegments/MapServer/0)
-  and [TIRe](https://gis.penndot.pa.gov/TIRe) traffic counts, including
-  [local-road counts](https://gis.penndot.pa.gov/ltap/Public/DropIns.aspx).
-  Neither a pinned LRS extract nor a linked historical traffic extract has been
-  obtained or validated for this study. Service availability does not establish
-  coverage for any given site or year; use restrictions and historical versions
-  remain to be checked.
+Both surviving provisional builds, `.repro/phase3_stage_b` and `.repro/phase3_stage_c`, verified byte-for-byte against their manifests and against each other. Both have 81,957 December 2024 segments, 42,878 endpoint candidates, 2,146 ambiguous conflicts, 246,664 unmatched CRNs, zero exclusions and zero primary assignments. The frozen input count equals the outcome count. The 235,988 nearest line candidates are 233,318 within 10 m, 2,303 over 10 m through 25 m and 367 over 25 m through 50 m. There are 10,114 missing or invalid coordinates and 562 records with a usable point and no candidate within 50 m. Every candidate points to the same snapshot inventory.
 
-The Phase 4 coverage values are hard-coded assumptions, not a TIRe join. The
-crash-selected panel omits sites without a crash and uses future crashes to
-select training sites. The panel builder now requires independent eligible and
-observed site-year frames, neither of which is available in the checkout. There is no verified
-site-year AADT extract or approved exposure join. The previous no-go remains a
-precautionary restriction, not a measured 0% coverage finding. The concentration
-report's nominal lengths, overlapping severity categories and persistence totals
-must be corrected and revalidated against an accepted crosswalk.
+| Checkpoint output | SHA-256 |
+|---|---|
+| `crosswalk.csv` | `0bd33ca777dbc5257361f0a662fc8a5fd03fc86f6fa9f6cde08005d93f8ae750` |
+| `site_inventory.csv` | `eb8d4a737fa5d795ac0d0300489243355e9912db74c03ae68ee03b65574c34a0` |
+| `network.geojson` | `7c3f7e6419766b6b7d11a52099925d6af43ce3fac83ba75def9c8fdecf66ecd2` |
+| `candidate_junctions.csv` | `349b7c1eac6cf04205e141b63f9696e4581645693f9e487e2dd23c1fef8f6caa` |
+| `qa_by_year_road_method.csv` | `f5c7c36fea3c93c9c18920e4debd25499c26693eea3ca1cb59f58b5410fd4098` |
+| `manifest.json` | `70143952555cc99890ab61eb1357cd68b0fb0e54d63d9fe4a66c0402da84282d` |
 
-The release scripts fail closed until those defects and input gaps are resolved.
-The old v1.0.0 reports and hashes are not a replacement release. Required before
-acceptance: versioned LRS and traffic reference extracts with licences and
-historical coverage; geometry-based matching and an intersection inventory;
-review of coordinate disagreements; a reviewed eligible network and exposure
-join or bounded historical fallback; regenerated artifacts and hashes; and named,
-dated reviewer decisions. Reviewer sign-off is absent. The frozen v6 baseline
-is unchanged. The API withholds the old concentration outputs pending review.
+## Phase 3 evidence and dispositions
 
-## Reproduction and current tests
+[Phase 3 source inventory](data_sources/phase3_source_inventory.md) and [source pins](../data/reference/phase3_phase4_review_sources.json) record publisher, URL, snapshot or version, verification date, SHA-256, study coverage and restrictions. The archive comparison covers 2006 and one snapshot in each year 2013–2024, plus October 2026 to test revision behavior. County snapshot years 2004–2005 and 2007–2012 lack a pinned county centerline. Snapshot dates and edits leave opening, closure and change dates unresolved within and between years. County addressing lines include local roads, ramps and limited-access facilities as well as non-road classes. The report preserves source FCC/CFCC counts and bounding boxes. Those fields are source classifications with vintages of their own.
 
-The previous audit's two disposable legacy builds produced 248,810 outcomes:
-187,068 matched, 5,856 ambiguous, 55,886 unmatched, including 2,146 withheld
-coordinate conflicts; decompressed crosswalks matched. They used the defective
-v1.0.0 algorithm and are not a new release. Its year and road-class summaries
-reconciled, but assignments lack independent reference validation. No current
-artifact or hash is promoted. The four script entry points intentionally fail
-closed; they cannot rebuild the required inventory, crosswalk or Phase 4 output.
+PUB 153 (02-24) documents decimal-degree conversion to DMS on p. 21. Its PDF was created February 2025. This supports the published 2024-era reporting convention. The 2018 CRS manual specifies DMS with hundredths for the entry interface. NHTSA's archived 2010 PUB 153 and PennDOT's indexed 2021 revision describe DMS with a decimal seconds component. The 2010 download returned 403 and the old 2021 URL returned HTML. The 2023 PennDOT dictionary describes PennDOT-determined GPS text and decimal-degree fields, with a 404 from the direct download. The available evidence describes reporting and documented export fields at those dates. Year-specific flattened WPRDC field provenance, coordinate-source independence and encoding transitions for 2004–2024 remain unverified. [2010 PUB 153](https://www.nhtsa.gov/sites/nhtsa.dot.gov/files/documents/pa_crash_manual_pub153_sub_11_2010.pdf) · [2018 CRS manual](https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/travelinpa/safety/documents/webmanual.pdf) · [2021 indexed PUB 153](https://www.penndot.pa.gov/TravelInPA/Safety/Documents/PUB_153_9-21.pdf) · [2023 dictionary](https://gis.penndot.gov/gishub/crashZip/Crash%20Data%20Dictionary%2005.2023.pdf) · [current PUB 153](https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/travelinpa/safety/documents/pub153.pdf)
 
-With `$env:PYTHONPATH='src'` and `$env:OPENBLAS_NUM_THREADS='1'`, the release
-gate, unavailable-API dependency, and Phase 3 unit tests passed (80 tests).
-The non-API Phase 4 suites yielded 19 passed and nine artifact-dependent
-failures; they require absent outputs and still encode old claims. The 12 legacy
-API tests were attempted, but their TestClient stalled before a result; they
-also expect unreviewed artifacts to be served. The new test checks route
-dependencies and metadata, but an HTTP integration run remains outstanding.
-All four script commands were invoked and stopped at their release gates.
-No reviewer has signed off any replacement. The 2006 and 2013–2024 archives
-still need year-by-year network comparison and provenance review. Geometry
-matching, grade separation and intersection clustering remain unimplemented.
+The live PennDOT extract has 5,325 unique county/route/segment keys, directional values B/S/W/N/E/O, 5,323 positive current AADT values, and GIS edit dates from 2025-04-27 through 2026-11-08. Against all frozen crashes it yields 118,828 unique current keys with in-range offsets, 1,851 out-of-range offsets, 250 without usable offsets, 16,190 keys absent from the current extract and 111,691 incomplete keys. A current key and in-range offset do not establish a crash-era assignment. The November 2024 state-road archive is independent of crashes. It has 5,319 unique county 02 route/segment keys and 5,238 lines with a unique orientation against published endpoint coordinates. Publication 23 defines the offset as linear feet from the segment start in increasing segment direction and explains divided-road segment numbering. Archive direction, county, route and segment must agree before projecting an offset; the RMS length is used to place the offset fraction on the endpoint-checked polyline. The review's exploratory 20 m endpoint tolerance accommodates endpoint/generalization discrepancies and withholds cases where both orientations fit. The archive produces 4,252 diagnostic offset locations for 2023, whose crash-era validity remains unproved. All 10,228 frozen 2024 records have empty segment identifiers. No crash-era LRS linkage is established for a releasable scope. [PennDOT LRS](https://www.pa.gov/agencies/penndot/research-planning-and-innovation/roadway-management-testing/location-reference-system) · [Publication 23, ch. 22](https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/public/pubsforms/publications/pub-23/pub%2023-chapter%2022%20.pdf) · [State-road archive](https://www.pasda.psu.edu/download/padot/state/historic/PaStateRoads/)
 
-## Provisional staging run (2026-11-12)
+The segment lineage records shared projected edges, exact geometry, source keys, street names and direction attributes. Unique exact one-to-one correspondence carries a candidate continuity ID, including renumbering candidates. Partial edge containment records possible splits or merges, and changed, missing or conflicting geometry remains unresolved. Older schemas and duplicate or absent keys use a snapshot-scoped row identity. County junction lineage carries an ID where the rounded endpoint and incident segment lineage agree. The December 2024 county snapshot omits the node and Z-level fields present in some other vintages. The exploratory 25 m grouping requires a common road pair or shared ramp feature and pairwise agreement. It yields 42,368 groups including 509 multi-node groups. Same-point and planar crossings are candidate evidence. The separate PennDOT November 2024 at-grade archive has 12,977 county 02 records, including 58 without geometry, with 8,900 distinct nonblank node IDs among mapped records. It identifies official at-grade locations in that vintage. The crosswalk still requires time-valid incident-road identity, topology and crash linkage for any county junction. [County archive](https://www.pasda.psu.edu/download/alleghenycounty/historic/AlleghenyCounty_StreetCenterlines/) · [PennDOT at-grade archive](https://www.pasda.psu.edu/download/padot/state/historic/PA_AtGrade_Intersections/)
 
-`scripts/build_provisional_crosswalk.py` is a separate, non-release entry point;
-the four release scripts remain blocked. Install the pinned packages in
-`scripts/requirements-provisional.txt` and set `PYTHONPATH` to those packages
-and `src`. Runs with `--output .repro/phase3_stage_b` and `phase3_stage_c`
-produced identical output hashes. Outputs remain local staging artifacts:
-`site_inventory.csv`, `candidate_junctions.csv`, `network.geojson`,
-`crosswalk.csv`, `qa_by_year.csv`, `qa_by_road_class.csv`, `manifest.json`,
-and, after `scripts/summarize_provisional.py`, `review_summary.json` and
-`qa_by_year_road_method.csv`. The crosswalk SHA-256 is
-`0bd33ca777dbc5257361f0a662fc8a5fd03fc86f6fa9f6cde08005d93f8ae750`;
-inventory `eb8d4a737fa5d795ac0d0300489243355e9912db74c03ae68ee03b65574c34a0`;
-map `7c3f7e6419766b6b7d11a52099925d6af43ce3fac83ba75def9c8fdecf66ecd2`;
-junction candidates `349b7c1eac6cf04205e141b63f9696e4581645693f9e487e2dd23c1fef8f6caa`;
-joint QA `f5c7c36fea3c93c9c18920e4debd25499c26693eea3ca1cb59f58b5410fd4098`.
+Across successive archive comparisons, the review found 375,403 exact segment links, 30,024 renumbering candidates, 105 split candidates and 698 merge candidates. These are link counts, so one feature can contribute in multiple comparisons. The junction lineage has 208,062 links where endpoint and incident lineage agree. The two independent enhanced builds in `.repro/phase3_review_d` and `.repro/phase3_review_e` reproduced the segment and junction lineage, clusters, original checkpoint, county candidate distances, November 2024 grade map and RMS offset candidate files byte-for-byte.
 
-The 2024 archive has 81,957 unique FEATURE_KE values and EPSG:2272 geometry
-in US survey feet. IDs include the snapshot version and feature key; junction
-candidate IDs hash incident segment IDs and rounded endpoint coordinates. IDs
-are deterministic for this snapshot, not proven persistent across revisions.
-Ramps and divided carriageways remain separate source features; no clustering or
-at-grade confirmation is inferred from their geometry. The 42,878 endpoint
-junction candidates all require grade and topology review. Geometry crossings
-without shared endpoints are not included. Distances use actual polylines in
-EPSG:2272, converted from survey feet to metres. The 50 m candidate radius is an
-exploratory search limit, not a validated acceptance threshold.
+Point-to-line and point-to-junction distances use EPSG:2272 and exactly 1200/3937 metres per US survey foot. The 50 m radius is for candidate review. A production threshold and tie width require a labelled review sample by road class and site type. The tested matcher requires verified coordinates and site effective dates, filters incompatible class, type and direction, requires independent at-grade evidence for intersections, and preserves close geometric ties. When independent LRS is available, an unambiguous LRS candidate must agree with an eligible geometry candidate. An unresolved or conflicting reference withholds the primary. The site matcher has fixture validation and no approved real scope in this checkout.
 
-All 248,810 source CRNs appear exactly once: 2,146 frozen conflicts are
-`AMBIGUOUS` and 246,664 records are `UNMATCHED`; none has a primary assignment.
-Nearest snapshot candidates exist for 235,988 records and all reference a
-segment in the inventory; 10,114 lack valid coordinates and 562 have no line
-within 50 m. Year, road-class and reason strata reconcile. All assignments are
-withheld, including 2024, because temporal validity, route/offset linkage,
-intersection evidence and reviewer decisions are not established. The candidate
-distances and snapshot road classes are not adjudicated matches. Representative
-raw/input checks: CRN 2004000001 has a candidate 0.665 m away but is withheld;
-2004000022 has missing coordinates; 2007016949 is a withheld v6 conflict with
-route/segment recorded. No reviewer has approved these samples or the output.
+The 2,146-entry conflict register records both frozen coordinates, nearest snapshot candidates, distances, crash LRS fields, a county-polygon check and one withheld disposition per CRN. The register uses the frozen v6 field label “police candidate.” Its provenance is unverified. Against the frozen v6 boundary source, 2,125 have both points inside, 12 have only the police candidate outside, eight have only the decimal point outside, and one has both points outside. These are diagnostics against the 2024 Census cartographic boundary. Evidence does not resolve which coordinate represents the crash. The review samples include a multi-line candidate, a planar crossing, a multi-node cluster, missing coordinates and historical gaps. CRN `2004000001` is 0.665 m from a snapshot line and is withheld for crash-era validity. CRN `2007016949` is a flagged conflict and retains its two candidate positions. CRN `2004002034` has an offset beyond its current-key segment length. A named reviewer and corroborating dated location evidence remain required for any conflict resolution.
 
-`scripts/snapshot_penndot_reference.py` captured 5,325 Allegheny features to
-`.repro/penndot_roadwaysegments/segments.geojson` with SHA-256
-`7b68dbe432bc66e04d759d15566860592ba39e6ec96184c99cd3d41dcad9fdca`.
-5,323 have a positive `CUR_AADT`; it is a live-service snapshot and its AADT
-observation year, historical network validity, terms and link to PASDA sites
-remain unverified. `.repro/tire_station_sample/sample.json` contains ten
-station features (SHA-256 `a183d47cd718e78466df171bbf7b3c8bed7530821777f231e47e12c5795f490e`),
-not traffic observations. Neither source provides a reviewed site-year join.
-An attempted download of NHTSA's 2010 Pub 153 returned HTTP 403. Historical
-encoding, roadway reference validity and the full conflict dispositions require
-additional official evidence and human review.
+Among 4,161 frozen 2024 intersection-flagged crashes, 2,631 have a PennDOT at-grade snapshot point within 50 m and 1,530 have no candidate. These are junction-distance diagnostics. All are withheld pending verification of incident roads, crash coordinates and timing.
 
-The fixture-based exposure join rejects duplicate site-year records, preserves
-zero versus unknown crash counts, leaves missing exposure empty and reports
-unmatched observations. It is not a station-to-site join or coverage estimate.
-No site/crash-type expected baseline is justified for Phase 5. The complete
-test suite with `PROVISIONAL_STAGE=.repro/phase3_stage_b` passed **117** tests;
-nine legacy artifact checks were skipped because their v1.0.0 release contract
-is unapproved. The 12 formerly stalled HTTP tests executed outside the socket
-sandbox with their updated unavailable-state expectations. The four release
-commands still stop at their guards. Supported approved-artifact HTTP behavior
-cannot be tested because no approval mechanism or accepted artifacts exist.
+The archived RMS candidate for 2023 CRN `2023086164` is 9,784.767 m from the recorded decimal point. Its key matches route `0019`, segment `0501` in the November 2024 archive. This is a review example of incompatible location evidence across vintages, with no primary assignment.
+
+## Phase 4 evidence and decision
+
+PennDOT's two 2024 permanent-station tables yield 20 published AADT values at four Allegheny stations, 203, 208, 375 and 840, for 2020–2024. The second table supplies 2024 county/route/segment identifiers. Three stations have a unique matching record in the ten-feature TIRe sample. The sample contains station metadata, including station identifier and offset, and no annual volumes. The 2024 location table does not attest unchanged segment identifiers, direction or location for the preceding four years. The live RMS current AADT attribute has no annual observation year in the captured fields. The 20 annual values are retained as station-year evidence, with zero verified links to an eligible site-year. The denominator is unknown, so observed, estimated and missing fractions are unmeasured. The public report restricts use to traffic counts and excludes projected growth. [2024 PennDOT traffic report](https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information/2024-pennsyivania-traffic-data) · [traffic source inventory](traffic_exposure/traffic_source_inventory.md)
+
+The staged panel contract joins exact crosswalk-version site-years to independent full-year eligibility and crash-observation frames. It preserves verified zero, unknown crash observation, attributed crashes in unknown years and missing traffic as separate fields. Traffic requires a positive annual observation, station identity, matching route/segment/direction, compatible site type and AADT measure, and declared observed or estimated status. Duplicate site-years fail validation. Incompatible records and observations outside the eligibility frame are reported. Coverage uses all eligible site-years as denominator by year, class and type. Controlled data verify zero retention and crash reconciliation. A segment's screening measure is attributed crashes per observed kilometre-year using inventory length. Intersections use attributed crashes per observed intersection-year, with no segment length. Only independently observed site-years enter the measures, and the summaries identify the eligible and observed totals. The real crosswalk does not support either measure. A chronological Poisson baseline, negative-binomial challenger and Empirical Bayes are unavailable for this evidence. Severity remains retrospective and requires a separately covered artifact. There is no justified expected baseline for any Phase 5 site/crash-type combination.
+
+## Commands and approval
+
+From the repository root in PowerShell, use `scripts/requirements-provisional.txt` for the geometry environment. The traffic-table extraction used PyMuPDF 1.27.2.3. Staging destinations must be new directories.
+
+```powershell
+$env:PYTHONPATH = 'src;.repro/geodeps'
+$env:OPENBLAS_NUM_THREADS = '1'
+python scripts/verify_review_sources.py
+python scripts/extract_permanent_aadt.py .repro/source_review
+python scripts/build_crosswalk.py --stage .repro/phase3_review_final
+python scripts/assess_traffic_exposure.py --stage .repro/phase4_final/exposure --input .repro/phase3_review_final
+python scripts/run_frequency_modelling.py --stage .repro/phase4_final/concentration --input .repro/phase3_review_final
+python scripts/generate_concentration_visualizations.py --stage .repro/phase4_final/visualizations --input .repro/phase3_review_final
+$env:PROVISIONAL_STAGE = '.repro/phase3_review_final'
+python -m pytest -o addopts= -q tests
+```
+
+`verify_review_sources.py --fetch` retrieves missing archival files and checks the pinned bytes. For the existing live snapshots, use the two `snapshot_*.py` commands documented by their names. They fetch new vintages from dynamic services. Use a new path or preserve the surviving snapshots before any fresh capture. `build_provisional_crosswalk.py --output <new staging directory>` and `summarize_provisional.py <staging directory>` reproduce the original checkpoint. The new Phase 3 stage preserves the checkpoint manifest and adds a checksummed evidence manifest, line and junction lineage, a conflict register, grade and LRS diagnostics, and QA by year, class, type, reason and distance. Phase 4's three stage manifests pin the Phase 3 manifest and identify the unavailable decision or station review outputs.
+
+| Local stage manifest | Verified SHA-256 |
+|---|---|
+| `.repro/phase3_review_final/manifest.json` | `ba19132b6d892489382524766e40264dee82deaeeb1058626816d7150c75ecd7` |
+| `.repro/phase4_final/exposure/manifest.json` | `16825b324fbb4bf5b82257e3f115caf7dbf6ee219042f102e95a1f148d32c876` |
+| `.repro/phase4_final/concentration/manifest.json` | `ee7545e50366287fe4abccc3479f38e1707a58bd323675674ed0587355e39fa1` |
+| `.repro/phase4_final/visualizations/manifest.json` | `b0997e72cc0df7e97dfb5ecc6d7c9871438d91b4f727d0d077ca39bd057431d3` |
+
+All four manifests' output hashes were verified. The final Phase 3 build
+reproduced 15 of the 17 files from `.repro/phase3_review_e`. The added
+county-boundary evidence changed the conflict register and evidence report.
+All four real publication probes with the local pending-decision ledger
+returned a release refusal and created no publication directory.
+
+For eligible future work, pass an input directory containing an approved `crosswalk/` and, downstream, approved `exposure/` and `concentration/` bundles. Exposure reads `eligibility.csv`, `observation.csv` and `linked_annual_aadt.csv` alongside the bundles. The tests provide controlled schemas. Each publication command accepts `--publish <bundle> --approvals <ledger> --release-root <directory>`. The deployment-controlled JSON ledger sits outside the staged/published bundle. Each product key (`crosswalk`, `exposure`, `concentration`, `visualizations`) maps to a decision with `decision`, `reviewer`, `date` (ISO date), and `manifest_sha256`. `APPROVED` binds the reviewer to the exact manifest bytes, which pin the version, scope, inputs and all output hashes. The manifest must be a `REVIEW_CANDIDATE`; a provisional manifest remains ineligible even if its hash appears in the ledger. Publication verifies the staged bundle and the copy before making the directory visible. For the API set `ROAD_SAFETY_APPROVALS` and `ROAD_SAFETY_RELEASE_ROOT` to the trusted ledger and release root. The API verifies the visualization bundle before serving and rechecks the served bytes. Legacy CSVs, incomplete bundles, missing or pending decisions, mismatches and tampering return unavailable. No real artifact has an approved ledger entry.
+
+## Legacy verification
+
+The complete road-safety suite against the final Phase 3 staging directory
+passed **128** tests with **9** historical skips. The backend suite passed
+**110** tests in its installed virtual environment, with one TestClient
+deprecation warning. The HTTP and publication fixtures exercised the
+approved path and missing, pending, provisional, mismatched and tampered
+cases. Separate HTTP requests against the real provisional Phase 4 stage
+returned 503 for all six protected artifact routes, with the blocked status
+and null expected-frequency responses retained.
+
+The previous 117-pass baseline included the API checks. The current collection has 13 legacy HTTP test cases, including the stale-artifact test and duplicated endpoint checks across two test modules. All requested HTTP routes are covered. Nine historical release-artifact tests remain skipped:
+
+| Legacy skip | Current verification |
+|---|---|
+| Hard-coded traffic coverage metrics | Eligible denominator and observed, estimated and missing fractions in the panel fixture |
+| Crash-selected panel structure | Independent full-year frames, never-crashed eligible site-year, unknown and attributed count reconciliation |
+| Canonical concentration CSV | Approved fixture with geometry-derived length and separate intersection measure |
+| Annual concentration | Fixture annual observed/eligible totals and HTTP response |
+| Road-class concentration | Fixture class reconciliation and HTTP breakdown |
+| Site-type concentration | Fixture type reconciliation and HTTP breakdown |
+| Top sites geographic CSV | Site ranking and approved GeoJSON use inventory site IDs. The old standalone CSV was retired. |
+| Top sites GeoJSON | Approved map fixture and unavailable checks on the real provisional bundle |
+| Severity CSV export | The API serves an approved retrospective fixture with predictive and causal flags false. Real severity remains withheld. |
+
+The remaining acceptance evidence is dated, independently validated crash-to-road location coverage; at-grade incident-road and continuity evidence for the intended years; independent eligibility and reporting completeness frames; direction-compatible station links with observation years; and a named, dated reviewer decision for the corresponding input and artifact versions. No real approved HTTP artifact was available for verification.

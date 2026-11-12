@@ -4,7 +4,23 @@
 **Version:** 1.0.0  
 **Phase:** Phase 4 — Module A (Traffic Exposure Research & Feasibility Assessment)  
 **Date:** November 2026  
-**Status:** Canonical & Verified  
+**Status:** Historical inventory with provisional source review addendum
+
+## Source review addendum, 2026-11-12
+
+The staged TIRe sample supplies station features, and the live PennDOT roadway
+snapshot supplies current AADT with no observation year in its selected fields.
+The [2024 PennDOT traffic report](https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information/2024-pennsyivania-traffic-data)
+publishes permanent-site locations and annual AADT tables for 2020–2024.
+Two pinned PDFs yield 20 values across four Allegheny County stations.
+The publisher specifies traffic-count use. The values are kept as station
+observations pending dated site, segment and direction evidence. The publisher,
+paths, URLs and SHA-256 hashes are in the [review source registry](../../data/reference/phase3_phase4_review_sources.json).
+
+The fixed coverage estimates, single-vintage assumptions, sample sizes and
+traffic-availability claims below predate the current source review. Eligible
+site-year coverage fractions remain unmeasured. See the [Phase 3/4 review](../phase3_phase4_review_status.md)
+for the panel contract, observed/estimated/missing distinctions and approval gates.
 
 ---
 

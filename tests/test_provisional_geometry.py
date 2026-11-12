@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Point
 from shapely.strtree import STRtree
+from edagent.roadway.network_review import cluster_junctions, line_edges, match_reviewed_site, segment_lineage
 
 spec = importlib.util.spec_from_file_location('provisional', Path('scripts/build_provisional_crosswalk.py'))
 provisional = importlib.util.module_from_spec(spec)
@@ -24,6 +25,44 @@ def test_crossing_geometry_alone_does_not_assign_at_grade():
     lines = [LineString([(-100, 0), (100, 0)]), LineString([(0, -100), (0, 100)])]
     result = provisional.candidate_for_point(Point(0, 0), STRtree(lines), [{'site_id':'a'}, {'site_id':'b'}])
     assert len(result) == 2 and result[0][0] == result[1][0] == 0
+
+
+def test_matcher_withholds_parallel_ties_grade_and_conflicting_lrs():
+    line = LineString([(0, 0), (100, 0)])
+    point = Point(20, 4)
+    segment = {"site_id": "a", "geometry": line, "valid_from": 2019, "valid_through": 2021,
+               "road_class": "STATE_ROUTE", "site_type": "SEGMENT", "directions": {"E"}}
+    parallel = {**segment, "site_id": "b", "geometry": LineString([(0, 8), (100, 8)])}
+    params = dict(when=2020, road_class="STATE_ROUTE", direction="E", site_type="SEGMENT",
+                  coordinate_quality="VERIFIED", acceptance_m=10, tie_m=2,
+                  metres_per_unit=provisional.FEET_TO_METRES)
+    assert match_reviewed_site(point, [segment, parallel], lrs_site_ids=None, **params)[:3] == (
+        "AMBIGUOUS", None, "GEOMETRY_TIE")
+    assert match_reviewed_site(point, [segment, parallel], lrs_site_ids={"b"}, **params)[:3] == (
+        "MATCHED", "b", "INDEPENDENT_LRS_AND_GEOMETRY")
+    result = match_reviewed_site(point, [segment], lrs_site_ids={"b"}, **{**params, "when": 2005})
+    assert result[2] == "LRS_GEOMETRY_DISAGREE_OR_UNRESOLVED"
+    assert result[3][0][2] == "OUTSIDE_EFFECTIVE_DATES"
+    junction = {**segment, "site_type": "INTERSECTION", "geometry": point}
+    options = {**params, "site_type": "INTERSECTION"}
+    assert match_reviewed_site(point, [junction], lrs_site_ids=None, **options)[3][0][2] == "AT_GRADE_UNVERIFIED"
+    junction["at_grade_evidence"] = "fixture grade and connectivity evidence"
+    assert match_reviewed_site(point, [junction], lrs_site_ids=None, **options)[:2] == ("MATCHED", "a")
+
+
+def test_lineage_and_junction_clustering_are_evidence_based():
+    whole = line_edges(LineString([(0, 0), (10, 0), (20, 0)]))
+    first = line_edges(LineString([(10, 0), (0, 0)]))
+    second = line_edges(LineString([(10, 0), (20, 0)]))
+    before = {"a": ("Main", whole)}
+    after = {"a": ("Main", first), "b": ("Main", second)}
+    assert list(segment_lineage(before, after)) == [
+        ("a", "a", "SPLIT_CANDIDATE"), ("a", "b", "SPLIT_CANDIDATE")]
+    assert all(link[2] == "MERGE_CANDIDATE" for link in segment_lineage(after, before))
+    assert list(segment_lineage(before, {"c": ("Main", whole)})) == [("a", "c", "RENUMBERING_CANDIDATE")]
+    nodes = [{"x": x, "y": 0, "segments": {str(x)}, "roads": {"Main", "Other"}} for x in (0, 10, 20)]
+    sites = {str(x): {"ramp": False} for x in (0, 10, 20)}
+    assert cluster_junctions(nodes, sites, 12) == [[0, 1], [2]]
 
 
 def test_staged_population_and_candidate_references():
