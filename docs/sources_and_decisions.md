@@ -36,3 +36,9 @@ approved exposure data. All models and outputs remain review-only and
 
 See [the reproduction inventory](v6_reproduction_inventory.md) for the
 notebook revision, commands, hashes, comparisons and review status.
+# Phase 3 and 4 review update
+
+The Phase 3 and 4 reports are not approved release evidence. See
+[review status and blockers](phase3_phase4_review_status.md) for the current
+source, methodology, artifact, and reviewer gaps. No new crosswalk or traffic
+coverage version has been approved; the v6 baseline remains frozen.

@@ -328,6 +328,7 @@ class TestModelPersistence:
 # -----------------------------------------------------------------------------
 
 class TestHistoricalCrashConcentration:
+    @pytest.mark.skip(reason="Legacy v1.0.0 release artifact is unapproved; provisional contract tested separately")
     def test_concentration_csv_exists_and_valid(self):
         csv_path = Path("data/exports/frequency/historical_crash_concentration.csv")
         assert csv_path.exists()
@@ -362,84 +363,32 @@ class TestFrequencyAPIIntegration:
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from app.api.v1.endpoints.frequency import router
-
         app = FastAPI()
         app.include_router(router, prefix="/api/v1/frequency")
         return TestClient(app)
 
     def test_status_endpoint(self, client):
-        res = client.get("/api/v1/frequency/status")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        assert data["predictive_frequency_modeling"]["decision"] == "NO-GO"
+        data = client.get("/api/v1/frequency/status").json()["data"]
         assert data["predictive_frequency_modeling"]["status"] == "BLOCKED"
-        assert data["mandated_active_pathway"]["status"] == "ACTIVE"
+        assert data["mandated_active_pathway"]["status"] == "BLOCKED_PENDING_REVIEW"
+        assert data["metadata"]["coverage_status"] == "UNVERIFIED"
 
     def test_prediction_gracefully_blocked(self, client):
-        res = client.get("/api/v1/frequency/predictions/SEG:02:SR0376:0744?year=2024")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        assert data["prediction_status"] == "BLOCKED_INSUFFICIENT_EXPOSURE"
+        data = client.get("/api/v1/frequency/predictions/SEG:02:SR0376:0744?year=2024").json()["data"]
         assert data["expected_crash_frequency"] is None
-        assert "historical_concentration_alternative" in data
-        assert data["historical_concentration_alternative"] is not None
+        assert data["historical_concentration_alternative"] is None
 
-    def test_concentration_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/SEG:02:SR0376:0744")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        site = data["site"]
-        assert site["site_id"] == "SEG:02:SR0376:0744"
-        assert site["total_crashes_2004_2024"] > 0
-        assert site["persistence_category"] == "PERSISTENT_HIGH_HAZARD"
-        assert data["metadata"]["is_predictive"] is False
-        assert data["metadata"]["analysis_type"] == "HISTORICAL_CRASH_CONCENTRATION"
+    def test_stale_artifact_is_not_served(self, client, tmp_path, monkeypatch):
+        directory = tmp_path / "visualizations"
+        directory.mkdir()
+        stale = directory / "historical_crash_concentration.csv"
+        stale.write_text('site_id,total_crashes_2004_2024\nexample,999\n', encoding='utf8')
+        monkeypatch.setenv("ROAD_SAFETY_RELEASE_ROOT", str(tmp_path))
+        monkeypatch.delenv("ROAD_SAFETY_APPROVALS", raising=False)
+        assert client.get('/api/v1/frequency/concentration/example').status_code == 503
+        data = client.get('/api/v1/frequency/predictions/example').json()['data']
+        assert data['historical_concentration_alternative'] is None
 
-    def test_top_concentration_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/top?limit=10")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        sites = data["sites"]
-        assert len(sites) == 10
-        assert sites[0]["total_crashes_2004_2024"] >= sites[1]["total_crashes_2004_2024"]
-        assert data["metadata"]["is_predictive"] is False
-
-    def test_annual_trends_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/annual")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        trends = data["trends"]
-        assert len(trends) == 21
-        assert trends[0]["crash_year"] == 2004
-        assert trends[-1]["crash_year"] == 2024
-        assert data["metadata"]["is_predictive"] is False
-
-    def test_breakdown_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/breakdown")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        assert "by_road_class" in data
-        assert "by_site_type" in data
-        assert len(data["by_road_class"]) >= 5
-        assert len(data["by_site_type"]) >= 2
-        assert data["metadata"]["is_predictive"] is False
-
-    def test_geojson_endpoint(self, client):
-        res = client.get("/api/v1/frequency/concentration/geojson")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        assert data["type"] == "FeatureCollection"
-        assert len(data["features"]) > 0
-        f0 = data["features"][0]
-        assert f0["geometry"]["type"] == "Point"
-        assert len(f0["geometry"]["coordinates"]) == 2
-        assert f0["properties"]["is_predictive"] is False
-
-    def test_severity_retrospective_endpoint(self, client):
-        res = client.get("/api/v1/frequency/severity/retrospective")
-        assert res.status_code == 200
-        data = res.json()["data"]
-        assert data["is_predictive"] is False
-        assert data["is_causal"] is False
-        assert data["outcome_definition"] == "FATAL_OR_MAJ_INJ (KABCO Scale K or A)"
-        assert len(data["limitations"]) >= 5
+    @pytest.mark.parametrize("path", ["concentration/SEG:02:SR0376:0744", "concentration/top", "concentration/annual", "concentration/breakdown", "concentration/geojson", "severity/retrospective"])
+    def test_unreviewed_outputs_blocked(self, client, path):
+        assert client.get("/api/v1/frequency/" + path).status_code == 503

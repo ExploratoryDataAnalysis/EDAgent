@@ -24,11 +24,15 @@ class SiteYearPanelBuilder:
         start_year: int = 2016,
         end_year: int = 2024,
         crosswalk_version: str = "1.0.0",
+        eligible_site_years: Optional[Set[Tuple[str, int]]] = None,
+        observed_site_years: Optional[Set[Tuple[str, int]]] = None,
     ) -> None:
         self.crosswalk_gz_path = Path(crosswalk_gz_path)
         self.start_year = start_year
         self.end_year = end_year
         self.crosswalk_version = crosswalk_version
+        self.eligible_site_years = eligible_site_years
+        self.observed_site_years = observed_site_years
 
     def build_panel(
         self,
@@ -44,6 +48,13 @@ class SiteYearPanelBuilder:
         """
         if not self.crosswalk_gz_path.exists():
             raise FileNotFoundError(f"Crosswalk file not found: {self.crosswalk_gz_path}")
+
+        if self.eligible_site_years is None:
+            raise ValueError("An independently reviewed eligible site-year frame is required")
+        if self.observed_site_years is None:
+            raise ValueError("An independently reviewed crash-observation frame is required")
+        if not self.observed_site_years <= self.eligible_site_years:
+            raise ValueError("Observed site-years must be eligible")
 
         # 1. Aggregate observed crash counts by site and year
         # site_id -> {year: count}
@@ -72,11 +83,22 @@ class SiteYearPanelBuilder:
                 if focus_state_routes_only and not pid.startswith("SEG:02:SR"):
                     continue
 
+                if (pid, yr) not in self.eligible_site_years:
+                    raise ValueError(f"Matched crash outside eligible site-year frame: {pid}, {yr}")
+
                 if pid not in site_annual_counts:
                     site_annual_counts[pid] = {y: 0 for y in range(self.start_year, self.end_year + 1)}
                     site_metadata[pid] = (rc, st)
 
                 site_annual_counts[pid][yr] += 1
+
+        # Add eligible sites with no observed crashes anywhere in the window.
+        for pid, yr in self.eligible_site_years:
+            if self.start_year <= yr <= self.end_year:
+                if focus_state_routes_only and not pid.startswith("SEG:02:SR"):
+                    continue
+                site_annual_counts.setdefault(pid, {})
+                site_metadata.setdefault(pid, ("UNKNOWN", "SEGMENT"))
 
         # Sort sites deterministically
         sorted_sites = sorted(site_annual_counts.keys())
@@ -90,8 +112,11 @@ class SiteYearPanelBuilder:
             annual_dict = site_annual_counts[site_id]
 
             for yr in range(self.start_year, self.end_year + 1):
-                cnt = annual_dict[yr]
-                is_zero_crash = (cnt == 0)
+                if (site_id, yr) not in self.eligible_site_years:
+                    continue
+                observed = (site_id, yr) in self.observed_site_years
+                cnt = annual_dict.get(yr, 0) if observed else None
+                is_zero_crash = (cnt == 0) if observed else None
 
                 panel_rows.append({
                     "site_id": site_id,
@@ -104,7 +129,7 @@ class SiteYearPanelBuilder:
                     "exposure_source": "UNAVAILABLE",
                     "exposure_year": None,
                     "exposure_quality_status": "MISSING_EXPOSURE",
-                    "observability_status": "VERIFIED_STATE_HIGHWAY_CORRIDOR",
+                    "observability_status": "OBSERVED" if observed else "INCOMPLETE_OR_UNKNOWN",
                     "crosswalk_version": self.crosswalk_version,
                 })
 

@@ -4,7 +4,32 @@
 **Phase:** Phase 3 — Roadway Crosswalk and Geographic Integration  
 **Module:** Module A — Official Roadway Data and Source Research  
 **Date:** November 2026  
-**Status:** Complete / Verified Research Baseline  
+**Status:** Historical inventory with provisional source review addendum
+
+## Source review addendum, 2026-11-12
+
+The [review source registry](../../data/reference/phase3_phase4_review_sources.json)
+pins the crash manuals, the 2006 and 2013–2024 county snapshots, the live
+PennDOT extracts and the November 2024 PennDOT state-road and at-grade
+archives. It records hashes, publisher URLs, dates, coverage and use terms.
+Run `python scripts/verify_review_sources.py` from the repository root. Use
+`--fetch` to restore absent archival files by checksum.
+
+County addressing records change schema between vintages. In the December
+2024 archive, `FEATURE_KE`, `FCC`, `ONEWAY`, names and polylines support
+candidate review. That export has no F/T node and Z-level fields. The archive's
+embedded terms describe informational use and disclaim completeness and
+accuracy. The older December 2013/2014 exports have DYNAMAPID. The 2006
+export has UNIQUE_ID and CFCC. The staged lineage validates uniqueness within
+each archive and uses row identities where required.
+
+The Pennsylvania RMS archive is state-road coverage. November 2024 includes
+direction, segment length in feet, cumulative offsets and endpoint coordinates.
+Its at-grade counterpart provides route, segment, offset, node ID and
+intersecting-road references. Neither source supports a countywide assignment
+period by itself. Effective dates, local roads, unrepresented grade topology,
+year-specific crash encoding and review status are recorded in the [current
+Phase 3/4 review](../phase3_phase4_review_status.md).
 
 ---
 

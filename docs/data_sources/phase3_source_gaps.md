@@ -1,5 +1,10 @@
 # Phase 3 — Module A: Source Gaps, Coordinate Discrepancies & Research Blockers
 
+> Review update: the statements below that no historical centerline archives
+> exist and that the current Pub 153 cannot be obtained are superseded by the
+> [source review](../phase3_phase4_review_status.md#source-review-2026-11-12).
+> Historical coverage and older police manual versions remain unverified.
+
 **Project:** EDAgent Road-Safety Analytics  
 **Phase:** Phase 3 — Roadway Crosswalk and Geographic Integration  
 **Module:** Module A — Official Roadway Data and Source Research  
