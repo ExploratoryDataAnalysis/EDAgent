@@ -209,7 +209,11 @@ def review_official_archive(source_directory, output, name, folder):
                 node_key = props["NODE_ID"] or f"ROW:{props['GPID']}"
                 props["site_id"] = f"PENNDOT202411:JUNC:{node_key}"
             (output / "penndot_at_grade_202411.geojson").write_text(json.dumps(
-                {"type": "FeatureCollection", "features": features}, separators=(",", ":")), encoding="utf-8")
+                {"type": "FeatureCollection", "title": "PennDOT at-grade reference points",
+                 "source": "PennDOT November 2024 at-grade snapshot, county 02",
+                 "grain": "Snapshot incident-road record; multiple records may share a node ID",
+                 "limitations": "Internal reference. Crash-era incident-road and site linkage are unverified.",
+                 "features": features}, separators=(",", ":")), encoding="utf-8")
         else:
             rms = {key: value for key, value in rms.items() if keys[key] == 1}
             profile["uniquely_keyed_endpoint_checked_lines"] = len(rms)
@@ -344,7 +348,11 @@ def review_locations(output):
             features.append({"type": "Feature", "geometry": mapping(Point(*to_wgs(x, y))),
                              "properties": {"site_id": identity, "grade_status": "AT_GRADE_UNVERIFIED"}})
     (output / "junction_review.geojson").write_text(json.dumps(
-        {"type": "FeatureCollection", "features": features}, separators=(",", ":")), encoding="utf-8")
+        {"type": "FeatureCollection", "title": "County endpoint junction candidates",
+         "source": "PASDA Allegheny County street centerlines, 2024-12",
+         "grain": "Cluster of nearby compatible endpoints within 25 m",
+         "limitations": "Internal candidate geometry. At-grade connectivity and site attribution are unverified.",
+         "features": features}, separators=(",", ":")), encoding="utf-8")
     tree = STRtree(lines)
     to_plane = Transformer.from_crs(4326, 2272, always_xy=True)
     county = _county_polygon()
@@ -385,7 +393,7 @@ def review_locations(output):
         writer.writerow([*rows.fieldnames, "route", "segment", "offset",
                          "police_candidate", "police_distance_m", "decimal_candidate", "decimal_distance_m",
                          "police_inside_county", "decimal_inside_county", "boundary_evidence",
-                         "disposition", "primary_site_id"])
+                         "disposition", "primary_site_id", "road_class", "difference_band_max_m"])
         for row in rows:
             evidence = crosswalk_conflicts.pop(row["CRASH_CRN"])
             candidates = []
@@ -403,7 +411,8 @@ def review_locations(output):
             conflict_counts[boundary_evidence] += 1
             writer.writerow([*row.values(), evidence["route"], evidence["segment"], evidence["offset"],
                              *candidates, *inside, boundary_evidence,
-                             "WITHHELD_PENDING_INDEPENDENT_LOCATION_EVIDENCE", ""])
+                             "WITHHELD_PENDING_INDEPENDENT_LOCATION_EVIDENCE", "", evidence["road_class"],
+                             next((n for n in (1000, 5000, 10000) if float(row["difference_m"]) <= n), "OVER_10000")])
     if crosswalk_conflicts:
         raise ValueError("Conflict register did not reconcile with the crosswalk")
     # Preserve geometry-only crossings as unresolved examples for grade review.

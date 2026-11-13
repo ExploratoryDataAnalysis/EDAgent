@@ -13,8 +13,8 @@
 
 ## 1. Official Encoding Authority & Specification
 
-### 1.1 The Encoding Finding
-Prior research iterations noted that field-level GPS coordinate encodings remained unverified. Investigation of authoritative state documentation—specifically the **PennDOT Crash Data Dictionary (2026 Edition, Page 4)**—formally establishes the exact format:
+### 1.1 Documented format and frozen-export status
+The **PennDOT Crash Data Dictionary (2026 Edition, Page 4)** describes the state fields below. Applicability to the frozen 2004–2024 WPRDC export remains `UNVERIFIED`. Phase 3 uses police DMS parsing for diagnostics only.
 
 | Field Name | Official Short Title | Data Type | Length | Documented Constraints |
 |---|---|---|---|---|

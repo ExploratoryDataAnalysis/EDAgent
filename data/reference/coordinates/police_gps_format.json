@@ -1,5 +1,5 @@
 {
-  "verified": true,
+  "verified": false,
   "format": "dms_text",
   "source_name": "PennDOT Crash Data Dictionary (2026)",
   "source_url": "https://gis.penndot.pa.gov/gishub/crashZip/Crash_Data_Dictionary_2026.pdf",
@@ -8,6 +8,7 @@
   "longitude_hemisphere": "W",
   "conversion_formula": "decimal_degrees = degrees + minutes/60.0 + seconds/3600.0 (negated for longitude in Western hemisphere)",
   "unresolved_caveats": [
+    "The state dictionary describes the format hypothesis. Applicability to the frozen WPRDC export remains unverified.",
     "2,146 candidate paired records disagree with state route decimal coordinates by >500m (up to 48.47 km)",
     "Local road crashes prior to 2008 frequently lack geocoded coordinates",
     "Field-level operational selection policy between police DMS and state decimal coordinates remains gated pending site-level discrepancy review in Phase 3 Module B"
