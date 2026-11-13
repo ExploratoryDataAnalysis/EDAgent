@@ -1,6 +1,50 @@
 # Phase 3 and 4 review status
 
-## Project Plan v3 D7 aggregate review — 2026-11-13
+## Project Plan v3 D7 audit follow-up — 2026-11-13
+
+**D7 technical work is complete. Phase 4 remains open pending sign-off.** The current candidate is `v3-d7-2`, schema version 1, in `.repro/v3-d7-2-a/descriptive_release/` with an identical second build in `.repro/v3-d7-2-b/descriptive_release/`. The exact candidate [manifest](../.repro/v3-d7-2-a/descriptive_release/manifest.json) has SHA-256 `ec9def348fc67561f7ee2a5c7b3307a7db42b6e8832d7df7cc04252b87e70a82`. The [Phase 6 API contract](descriptive_release_data_dictionary.md#phase-6-road-safety-overview-api-contract) defines the eight tables, approved asset allowlist, response metadata, and unavailable behavior.
+
+The dictionary is the only changed payload. Its bundled file and repository source `docs/descriptive_release_data_dictionary.md` both hash to `6967abf0aacff18aed926b3c9da156b238011a12b041e461beb60e6b88eefbb6`. The manifest records that digest in both inventories. The two manifests and all 19 declared payloads match across the verified builds. The fallback at `.repro/v3-d7-2-fallback/descriptive_release/` reproduces all 19 payloads with a different manifest that records its fallback lineage. The other 18 payload hashes are identical to the v3-d7-1 inventory below. The findings builder validates each frozen label, reports missing, duplicate and unexpected labels, and emits the same eight narratives, populations, periods and IDs even when the ledger is reordered.
+
+The checked tables retain 248,810 reports, of which 238,281 map to 38,332 occupied cells. The 10,529 exclusions are 10,232 missing coordinate pairs, 10 invalid pairs, 12 placeholders and 275 usable pairs outside the county polygon. All table exports retain CSV/JSON parity. Codes 8 and 9 account for 43,266 unknown-severity reports. Pre-2016 and cross-era serious/fatal trend values and cross-era injury-code shares remain null. In 2024, 387 of 10,228 reports have valid hours and zero have populated illumination. The map labels 2004–2024, the clipped 0.001° grid, and the unmeasured exposure.
+
+### Reproduction and review
+
+Run from the repository root with the pinned sources and dependencies from the earlier reproduction. Use fresh directories when repeating the build.
+
+```powershell
+$env:PYTHONPATH = 'src;.repro/geodeps'
+$env:OPENBLAS_NUM_THREADS = '1'
+python scripts/build_descriptive_release.py --input .repro/v3-phase3-verified-a --stage .repro/v3-d7-2-a/descriptive_release
+python scripts/build_descriptive_release.py --input .repro/v3-phase3-verified-b --stage .repro/v3-d7-2-b/descriptive_release
+$env:PROVISIONAL_STAGE = '.repro/v3-phase3-verified-a'
+$env:DESCRIPTIVE_STAGE = '.repro/v3-d7-2-a/descriptive_release'
+python -m pytest -o addopts= -q tests/test_descriptive_release.py
+python -m pytest -o addopts= -q -rs tests
+Push-Location EDAgent_Completed_Extension/EDAgent/backend
+$env:PYTHONPATH = 'C:/Darshan/EDAgent/src;C:/Darshan/EDAgent/.repro/geodeps'
+../.venv/Scripts/python.exe -m pytest -o addopts= -q tests
+Pop-Location
+```
+
+To exercise the fallback without moving the verified Phase 3 files, point the builder's default upstream at an absent path for the isolated run.
+
+```powershell
+@'
+from pathlib import Path
+import sys
+sys.path.insert(0, "scripts")
+import build_descriptive_release as d7
+d7.PHASE3 = Path(".repro/v3-d7-2-missing-input")
+d7.stage(Path(".repro/v3-d7-2-fallback/descriptive_release"), None, None)
+'@ | python -
+```
+
+The candidate is `REVIEW_CANDIDATE` with null approval. The reviewer needs the exact manifest above, the dictionary and evidence reconciliation in this record. A named, dated decision must approve the historical descriptive aggregate claims for this hash in the external `descriptive_release` ledger. The previous manifest hash cannot authorize this bundle. No genuine decision for the new hash was available. Phase 6 can implement against the contract. Public consumption remains gated.
+
+The focused D7 suite passed **9 tests** with `DESCRIPTIVE_STAGE` set to the rebuilt bundle. Road-safety tests passed **140**, with **9** existing skips for unapproved legacy artifacts. The backend passed **110**, with one TestClient deprecation warning. The HTTP tests used Windows loopback. Release regressions rejected absent or pending approvals, the wrong manifest hash, an altered payload, and D7 through legacy site and retrospective routes. Fixture approvals stayed in test temporary directories. `git diff --check` passed. The diff against `d1c721c` contains no changes to `analysis/` or the project plans and their TeX and PDF files. `main` remains at `4de5fd4`.
+
+## Project Plan v3 D7 aggregate review — 2026-11-13 (v3-d7-1 record)
 
 The build started from clean `main` at `4de5fd457ba9793058c8d8927d0f9327b52594a5`, with Phase 3 closeout `e211292` and cleanup `c0ed6ff` verified as ancestors. D7 uses the frozen v6 run `v6/6.1-targeted-corrections/2026-11-11T03:13:38.038283+00:00`. The original manifest state remains `NOT_APPROVED_FOR_PRODUCTION`. The [data dictionary](descriptive_release_data_dictionary.md) defines the Phase 6 table contract, source paths, periods, populations, units, missingness and chart interpretation.
 

@@ -4,12 +4,13 @@ import csv
 import json
 import shutil
 from collections import Counter, defaultdict
+from hashlib import sha256
 from math import isclose
 
 from road_safety_command import ROOT, digest, run
 
 KIND = "descriptive_release"
-VERSION = "v3-d7-1"
+VERSION = "v3-d7-2"
 STATUS = "REVIEW_CANDIDATE"
 FROZEN = ROOT / "analysis/outputs"
 PHASE3 = ROOT / ".repro/v3-phase3-verified-a"
@@ -197,46 +198,57 @@ def field_missingness(reported):
     return table
 
 
-def findings(known, coverage, association_population, field_coverage, manifest):
-    from phase3_diagnostics import rows
-
-    ledger = list(rows(FROZEN / "eda_summary/findings_review.csv"))
+def findings(ledger, known, coverage, association_population, field_coverage, manifest):
     reported, mapped = coverage["reported_crashes"], coverage["mapped_crashes"]
     require(manifest["codebook_team_attested"] is False and manifest["police_gps_format_verified"] is False
             and manifest["conditional_site_frequency_gate"] is False, "Frozen research gates changed")
-    descriptions = [
-        (2004, 2024, "All source reports", STATUS,
-         f"The frozen source has {reported:,} unique crash reports. "
-         "The extract covers police-reported crashes and contains no travel-exposure denominator."),
-        (2004, 2024, "All source reports", STATUS,
-         f"{known:,} of {reported:,} reports have severity codes 0–4 ({percent(known, reported):.2f}%). "
-         "The 2016 injury standard separates the injury-severity reporting eras."),
-        (2024, 2024, "2024 source reports", STATUS,
-         f"{field_coverage['valid_hour']:,} of {field_coverage['reported']:,} reports have a valid hour "
-         "and zero have a nonmissing illumination value. Withhold full-year hour and lighting comparisons."),
-        (2018, 2019, "Weather and road-surface code transition", "UNVERIFIED",
-         "The assumed weather and road-surface code transition remains unverified. "
-         "These groupings are excluded from formal comparisons."),
-        (2016, 2023, "Known-severity source reports", STATUS,
-         f"Four categorical tests used {association_population:,} known-severity reports. "
-         "Collision type had the largest Cramér's V. Consult the pooling and test denominators."),
-        (2004, 2024, "Source reports and polygon-screened state decimals", STATUS,
-         f"{mapped:,} of {reported:,} reports map within the county polygon. "
-         "Grid counts describe historical concentration. "
-         f"Of {manifest['candidate_dms_pairs_n']:,} diagnostic police/state pairs, "
-         f"{manifest['candidate_dms_disagreements_over_500m_n']:,} differ by more than 500 m. "
-         "Police coordinate encoding remains unverified."),
-        (2022, 2024, "Known-severity test reports", "REVIEW_ONLY",
-         "Frozen severity evaluation uses 27,697 known-severity reports from 2022–2024. "
-         "The test interval was previously examined. Model scores and inference are withheld."),
-        (2004, 2024, "v3 site-analysis scope", "OUT_OF_SCOPE_NO_GO",
-         "Site screening, site ranks, frequency and Empirical Bayes models, expected crash counts "
-         "and real-site treatment benefits are outside the v3 release scope."),
-    ]
-    return [{"finding_id": i, "finding": row["finding"], **period(start, end), "population": population,
+    descriptions = {
+        "Dataset integrity / provenance": (
+            2004, 2024, "All source reports", STATUS,
+            f"The frozen source has {reported:,} unique crash reports. "
+            "The extract covers police-reported crashes and contains no travel-exposure denominator."),
+        "Severity definition / missingness": (
+            2004, 2024, "All source reports", STATUS,
+            f"{known:,} of {reported:,} reports have severity codes 0–4 ({percent(known, reported):.2f}%). "
+            "The 2016 injury standard separates the injury-severity reporting eras."),
+        "Time and environmental field coverage": (
+            2024, 2024, "2024 source reports", STATUS,
+            f"{field_coverage['valid_hour']:,} of {field_coverage['reported']:,} reports have a valid hour "
+            "and zero have a nonmissing illumination value. Withhold full-year hour and lighting comparisons."),
+        "Historic codebook gate": (
+            2018, 2019, "Weather and road-surface code transition", "UNVERIFIED",
+            "The assumed weather and road-surface code transition remains unverified. "
+            "These groupings are excluded from formal comparisons."),
+        "Formal categorical association": (
+            2016, 2023, "Known-severity source reports", STATUS,
+            f"Four categorical tests used {association_population:,} known-severity reports. "
+            "Collision type had the largest Cramér's V. Consult the pooling and test denominators."),
+        "County-screened historical location": (
+            2004, 2024, "Source reports and polygon-screened state decimals", STATUS,
+            f"{mapped:,} of {reported:,} reports map within the county polygon. "
+            "Grid counts describe historical concentration. "
+            f"Of {manifest['candidate_dms_pairs_n']:,} diagnostic police/state pairs, "
+            f"{manifest['candidate_dms_disagreements_over_500m_n']:,} differ by more than 500 m. "
+            "Police coordinate encoding remains unverified."),
+        "Retrospective known-crash severity ranking": (
+            2022, 2024, "Known-severity test reports", "REVIEW_ONLY",
+            "Frozen severity evaluation uses 27,697 known-severity reports from 2022–2024. "
+            "The test interval was previously examined. Model scores and inference are withheld."),
+        "Site-year frequency, EB and CMF gates": (
+            2004, 2024, "v3 site-analysis scope", "OUT_OF_SCOPE_NO_GO",
+            "Site screening, site ranks, frequency and Empirical Bayes models, expected crash counts "
+            "and real-site treatment benefits are outside the v3 release scope."),
+    }
+    labels = Counter(row.get("finding") or "" for row in ledger)
+    missing = sorted(descriptions.keys() - labels.keys())
+    unexpected = sorted(labels.keys() - descriptions.keys())
+    duplicate = sorted(label for label, count in labels.items() if count > 1)
+    require(not (missing or unexpected or duplicate),
+            f"Invalid findings ledger labels: missing={missing}, duplicate={duplicate}, unexpected={unexpected}")
+    return [{"finding_id": i, "finding": label, **period(start, end), "population": population,
              "review_state": state, "narrative": narrative}
-            for i, (row, (start, end, population, state, narrative))
-            in enumerate(zip(ledger, descriptions, strict=True), 1)]
+            for i, (label, (start, end, population, state, narrative))
+            in enumerate(descriptions.items(), 1)]
 
 
 def association_table(known, period_reported, all_reported):
@@ -287,7 +299,9 @@ def stage(output, source_directory, _approvals):
     source = manifest["data"]
     raw = ROOT / "data/raw" / source["filename"]
     sources[raw.relative_to(ROOT).as_posix()] = checked_digest(raw, source["sha256"])
-    guide = GUIDE.read_text(encoding="utf-8")
+    guide = GUIDE.read_bytes()
+    guide_sha = sha256(guide).hexdigest()
+    sources[GUIDE.relative_to(ROOT).as_posix()] = guide_sha
     county = _county_polygon()
     upstream = source_directory or PHASE3
     use_stage = source_directory is not None or upstream.exists()
@@ -361,7 +375,8 @@ def stage(output, source_directory, _approvals):
         int(row["test_records"]) == model_known
         and isclose(float(row["test_prevalence_percent"]), percent(model_counts["1"] + model_counts["2"], model_known))
         for row in model_rows), "Frozen model test population disagrees")
-    notes = findings(summaries[0]["known_severity_crashes"], coverage[0], association_known,
+    notes = findings(rows(FROZEN / "eda_summary/findings_review.csv"),
+                     summaries[0]["known_severity_crashes"], coverage[0], association_known,
                      {**fields[2024], "reported": summaries[-1]["reported_crashes"]}, manifest)
 
     output.mkdir(parents=True)
@@ -371,7 +386,7 @@ def stage(output, source_directory, _approvals):
               "severity_associations": associations, "findings": notes}
     for name, data in tables.items():
         write_table(output, name, data)
-    (output / GUIDE.name).write_bytes(guide.encode("utf-8"))
+    (output / GUIDE.name).write_bytes(guide)
     json_file(output / "county_boundary.geojson", {
         "type": "Feature", "properties": {"geoid": "42003", "vintage": 2024}, "geometry": mapping(county)})
     if use_stage:
@@ -379,13 +394,15 @@ def stage(output, source_directory, _approvals):
     else:
         draw_maps(output, county, grid_counts)
 
+    outputs = {path.name: digest(path) for path in sorted(output.iterdir())}
+    require(outputs[GUIDE.name] == guide_sha, "Bundled data dictionary differs from the source bytes")
     json_file(output / "manifest.json", {
         "kind": KIND, "version": VERSION, "schema_version": 1, "status": STATUS, "approval": None,
         "scope": {"county": "Allegheny County, Pennsylvania", "geoid": "42003", **period(2004, 2024),
                   "claim_class": "HISTORICAL_DESCRIPTIVE_AGGREGATES", "PRIMARY_SITE_ASSIGNMENTS_ACCEPTED": 0},
         "run_id": f"v6/{manifest['notebook_version']}/{manifest['generated_utc']}",
         "frozen_run_review_status": manifest["review_status"],
-        "reproduce": "python scripts/build_descriptive_release.py --stage .repro/v3-phase4-verified-a/descriptive_release",
+        "reproduce": "python scripts/build_descriptive_release.py --stage .repro/v3-d7-2-a/descriptive_release",
         "phase3_geography": "verified staging artifacts" if use_stage else "frozen points and rebuilt coverage",
         "tables": {name: {"rows": len(data), "review_state": STATUS} for name, data in tables.items()},
         "grid": {"crs": "EPSG:4326", "side_degrees": GRID_RESOLUTION, "county_bbox_wsen": county.bounds,
@@ -394,7 +411,7 @@ def stage(output, source_directory, _approvals):
                  "lon_bin_range": [min(row["lon_bin"] for row in grid), max(row["lon_bin"] for row in grid)]},
         "data_dictionary": GUIDE.name,
         "inputs": sources,
-        "outputs": {path.name: digest(path) for path in sorted(output.iterdir())},
+        "outputs": outputs,
     })
 
 
