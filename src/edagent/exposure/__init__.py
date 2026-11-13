@@ -1,6 +1,6 @@
 """Traffic exposure research, coverage assessment, panel prototyping, and feasibility module.
 
-Governed by Phase 4 Module A requirements and Project Plan v2 (§8, §14, §18).
+Developed under historical Project Plan v2 (§8, §14, §18); v3 governs release scope.
 """
 
 from edagent.exposure.coverage import TrafficCoverageAssessment

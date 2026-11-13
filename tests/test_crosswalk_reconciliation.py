@@ -1,6 +1,6 @@
 """Unit tests for crosswalk quality control and reconciliation modules.
 
-Governed by Project Plan v2 (§12–15) and Phase 3 Module D requirements.
+Developed under historical Project Plan v2 (§12–15) and Phase 3 Module D requirements; v3 governs release scope.
 """
 
 import json

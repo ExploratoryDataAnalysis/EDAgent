@@ -1,6 +1,6 @@
 """Retrospective crash severity association analysis and limitation auditor.
 
-Governed by Project Plan v2 (§8, §14, §18) and Phase 4 Module C requirements.
+Developed under historical Project Plan v2 (§8, §14, §18) and Phase 4 Module C requirements; v3 governs release scope.
 Encapsulates verified empirical association tests, AP temporal intervals,
 class imbalance properties, and methodological limitations to prevent retrospective
 classification from being conflated with predictive crash forecasting.

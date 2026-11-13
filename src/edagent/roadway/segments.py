@@ -1,6 +1,6 @@
 """Road segment identification, LRS parsing, and spatial snapping module.
 
-Governed by Project Plan v2 (§12–15) and Phase 3 Module C requirements.
+Developed under historical Project Plan v2 (§12–15) and Phase 3 Module C requirements; v3 governs release scope.
 Supports PennDOT State Route Linear Referencing System (LRS), County Centerlines,
 and local municipal road segments with deterministic identifiers.
 """

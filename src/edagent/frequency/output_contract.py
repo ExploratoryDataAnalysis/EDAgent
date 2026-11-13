@@ -1,6 +1,6 @@
 """Output contract and schema specifications for site-year frequency modelling.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Enforces the core invariant that expected crash frequency is a model prediction,
 never to be confused with observed historical crash counts.
 """

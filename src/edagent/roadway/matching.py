@@ -1,6 +1,6 @@
 """Staged crash-to-site matching engine.
 
-Governed by Project Plan v2 (§12–15) and Phase 3 Module C requirements.
+Developed under historical Project Plan v2 (§12–15) and Phase 3 Module C requirements; v3 governs release scope.
 Enforces the strict One-Primary-Site Rule:
 - Exactly one primary site ID when resolved (MATCHED).
 - Zero primary site matches when unresolved (AMBIGUOUS or UNMATCHED).

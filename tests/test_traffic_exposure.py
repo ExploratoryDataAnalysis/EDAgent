@@ -1,6 +1,6 @@
 """Unit tests for Phase 4 Module A traffic exposure and feasibility modules.
 
-Governed by Phase 4 Module A requirements and Project Plan v2 (§8, §14, §18).
+Developed under historical Project Plan v2 (§8, §14, §18); v3 governs release scope.
 """
 
 import csv
@@ -127,7 +127,7 @@ class TestTrafficFeasibilityEvaluator:
         assert result["overall_decision"] == OverallDecision.NO_GO.value
         assert result["criteria_evaluated_n"] == 5
         assert result["criteria_failed_n"] == 5
-        assert "HISTORICAL_CRASH_CONCENTRATION_ALTERNATIVE" in result["mandated_alternative"]
+        assert "excludes site-level historical screening" in result["mandated_alternative"]
 
     def test_all_criteria_fail(self):
         criteria = TrafficFeasibilityEvaluator.get_standard_criteria()

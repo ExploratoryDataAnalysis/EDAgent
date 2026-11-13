@@ -1,6 +1,6 @@
 """Schemas and contracts for retrospective crash severity association analysis.
 
-Governed by Project Plan v2 (§8, §14, §18) and Phase 4 Module C requirements.
+Developed under historical Project Plan v2 (§8, §14, §18) and Phase 4 Module C requirements; v3 governs release scope.
 Enforces that severity results are strictly retrospective associations, never to be
 represented as pre-crash predictive risk or causal probabilities.
 """

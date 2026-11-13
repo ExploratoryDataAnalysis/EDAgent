@@ -30,8 +30,7 @@ Police GPS encoding remains unverified; candidate DMS comparisons are
 diagnostic and do not authorize operational coordinate selection. Historical
 severity definitions and codebooks still require team attestation. Reported
 crashes are not traffic exposure, and the reused 2022–2024 test period is not
-fresh external validation. The site-frequency gate remains closed without
-approved exposure data. All models and outputs remain review-only and
+fresh external validation. Site-level screening and frequency modelling are outside the v3 release scope. All models and outputs remain review-only and
 `NOT_APPROVED_FOR_PRODUCTION`; no reproduction is a promotion or sign-off.
 
 See [the reproduction inventory](v6_reproduction_inventory.md) for the
@@ -39,6 +38,6 @@ notebook revision, commands, hashes, comparisons and review status.
 # Phase 3 and 4 review update
 
 The Phase 3 and 4 reports are not approved release evidence. See
-[review status and blockers](phase3_phase4_review_status.md) for the current
-source, methodology, artifact, and reviewer gaps. No new crosswalk or traffic
+[the dated review](phase3_phase4_review_status.md) for the historical
+source, methodology, artifact, and reviewer gaps; the [v3 roadmap](implementation_plan.md#v3-transition-and-roadmap) governs current release scope. No new crosswalk or traffic
 coverage version has been approved; the v6 baseline remains frozen.

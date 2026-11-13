@@ -1,7 +1,7 @@
 """Coordinate validation and quality assurance module.
 
 Implements range checks, county boundary containment, concentration detection,
-and pairwise conflict detection according to Project Plan v2 (§12-14).
+and pairwise conflict detection as originally specified in Project Plan v2 (§12-14); v3 governs release scope.
 """
 
 from __future__ import annotations

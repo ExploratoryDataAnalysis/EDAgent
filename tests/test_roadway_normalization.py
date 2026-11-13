@@ -1,6 +1,6 @@
 """Unit tests for roadway reference normalization engine.
 
-Governed by Project Plan v2 (§12–15) and Phase 3 Module C requirements.
+Developed under historical Project Plan v2 (§12–15) and Phase 3 Module C requirements; v3 governs release scope.
 """
 
 import pytest

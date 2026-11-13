@@ -1,6 +1,21 @@
 # Legacy generic EDA implementation roadmap
 
-This historical roadmap describes the original EDA prototype. [Project Plan v2](EDAgent_Project_Plan_v2.pdf) governs the road-safety project. See the [environment setup guide](environment_setup.md) for the active application.
+[Project Plan v3](EDAgent_Project_Plan_v3.pdf) ([source](EDAgent_Project_Plan_v3.tex)) governs the road-safety project. See the [environment setup guide](environment_setup.md) for the active application. The original generic EDA prototype roadmap is retained below as history; its phase numbers are distinct from the v3 road-safety phases.
+
+## v3 transition and roadmap
+
+V3 supersedes [v2](EDAgent_Project_Plan_v2.pdf) and treats the available evidence as the final project input. The diagnostic crosswalk accounted for 248,810 crash records but accepted zero primary site assignments. It did not establish reliable crash-to-road attribution, complete site-year observation, or validated traffic exposure. Station 375 remains internal diagnostic evidence: its observed 2023 crash count is unknown, and 11,072 vehicles/day is an archived 2023 traffic-section value for the section containing segment 0080, not validated site exposure.
+
+Without a defensible expected crash count or validated treatment applicability for a real site, the release comprises reviewed v6 aggregates, diagnostic geography, review-only severity results, and a hypothetical intervention calculator. Site-level historical screening, frequency and Empirical Bayes modelling, and real-site treatment estimates are outside v3 release scope. Preserve publication safeguards and existing API contracts; use the canonical nested application and retain the general analyser.
+
+- **Phases 0–2:** Carry forward the source and repository freeze, frozen v6 record and provenance, and fixed-input feasibility/no-go decisions.
+- **Phase 3:** Reproduce diagnostic geography, conflict inventory, maps and QA; accept no primary site assignments.
+- **Phase 4:** Review supported county/year and grid aggregates, denominators, coverage and severity limitations.
+- **Phase 5:** Review treatment references and test hypothetical-only calculator arithmetic; real-site benefits remain unavailable.
+- **Phase 6:** Deliver the aggregate Road Safety Overview first in the nested app, followed by bounded diagnostic, research and calculator views.
+- **Phase 7:** Verify reproduction, traceability, accessibility, security, API compatibility and unknown/unavailable states before release.
+
+## Historical generic EDA roadmap
 
 This implementation plan is derived directly from Section 13 of the project blueprint. It structures the delivery of EDAgent into distinct, verifiable phases.
 

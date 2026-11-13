@@ -1,6 +1,6 @@
 """Coordinate models, status enumerations, and validation flags.
 
-Governed by PennDOT Crash Data Dictionary (2026) and Project Plan v2.
+Developed under the PennDOT Crash Data Dictionary (2026) and historical Project Plan v2; v3 governs release scope.
 """
 
 from __future__ import annotations

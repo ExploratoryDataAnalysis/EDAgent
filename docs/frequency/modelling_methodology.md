@@ -1,5 +1,7 @@
 # Phase 4 — Module B: Site-Year Crash-Frequency Modelling Methodology
 
+> **Superseded scope:** This report records earlier work and decisions. [Project Plan v3](../EDAgent_Project_Plan_v3.pdf) and the [v3 roadmap](../implementation_plan.md#v3-transition-and-roadmap) govern release scope: site-level historical screening, frequency/EB modelling and real-site treatment estimates are out of scope; geographic matches are diagnostic, with zero accepted primary assignments. Earlier claims of approval, mandatory pathways or pending release describe historical proposals, not current authorization.
+
 **Project:** EDAgent — Road-Safety Analytics  
 **Version:** 1.0.0  
 **Phase:** Phase 4 — Module B (Site-Year Frequency Modelling & Historical Concentration)  

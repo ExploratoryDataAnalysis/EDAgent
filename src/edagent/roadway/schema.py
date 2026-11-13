@@ -1,6 +1,6 @@
 """Schema definitions for roadway crosswalk, sites, and matching lifecycle.
 
-Governed by Project Plan v2 (§12–15).
+Developed under historical Project Plan v2 (§12–15); v3 governs release scope.
 """
 
 from __future__ import annotations

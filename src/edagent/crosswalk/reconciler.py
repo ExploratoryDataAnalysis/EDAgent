@@ -1,6 +1,6 @@
 """Crosswalk reconciliation and stratified quality reporting engine.
 
-Governed by Project Plan v2 (§12–15) and Phase 3 Module D requirements.
+Developed under historical Project Plan v2 (§12–15) and Phase 3 Module D requirements; v3 governs release scope.
 Executes end-to-end batch crosswalk reconciliation across all 248,810 crashes,
 enforces the strict One-Primary-Site Rule, generates stratified quality reports,
 and establishes full cryptographic reproducibility.

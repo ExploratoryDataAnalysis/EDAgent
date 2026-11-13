@@ -2,8 +2,8 @@
 
 `EDA_v6.ipynb` is the sole canonical research notebook for the 2004-2024
 Allegheny County crash-data baseline. It includes exploratory analysis,
-statistical tests, geographic screening, and conditional model training and
-evaluation.
+statistical tests, geographic diagnostics, and retrospective model training and
+evaluation. [Project Plan v3](../docs/EDAgent_Project_Plan_v3.pdf) governs release use; site-level screening and frequency modelling are outside its scope.
 
 ## Inputs
 

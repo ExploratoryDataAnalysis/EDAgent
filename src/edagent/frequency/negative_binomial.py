@@ -1,6 +1,6 @@
 """Negative Binomial (NB2) regression model and overdispersion evaluation.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Evaluates empirical overdispersion against the Poisson baseline using the Cameron-Trivedi
 score test, estimates the quadratic dispersion parameter alpha, and compares models
 across AIC, log-likelihood, dispersion ratio, and chronological out-of-sample performance.
@@ -331,7 +331,7 @@ class NegativeBinomialModel:
                         prediction_status=PredictionStatus.BLOCKED_INSUFFICIENT_EXPOSURE,
                         limitations=[
                             "Negative Binomial model not fitted due to unverified traffic exposure.",
-                            "Predictive forecasting prohibited under Project Plan v2 (§8, §18).",
+                            "Site frequency modelling is outside Project Plan v3 release scope.",
                         ],
                     )
                 )

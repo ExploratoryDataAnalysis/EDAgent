@@ -13,7 +13,7 @@ from app.road_safety_release import ReleaseUnavailable, approved_bytes, verify_r
 from app.schemas.common import APIResponse
 
 router = APIRouter()
-UNAVAILABLE = "Historical concentration is unavailable pending crosswalk and artifact review."
+UNAVAILABLE = "Site-level historical screening is outside Project Plan v3 release scope."
 SCREENING_OUTPUTS = {
     "historical_crash_concentration.csv",
     "historical_concentration_by_year.csv",

@@ -1,0 +1,904 @@
+\documentclass[11pt,a4paper,openany]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[english]{babel}
+\usepackage[a4paper,margin=26mm,headheight=15pt,headsep=8mm,footskip=13mm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref,xurl}
+\usepackage{etoolbox}
+\usepackage{needspace}
+\usepackage{listings}
+\usepackage{lastpage}
+\usepackage{ragged2e}
+\definecolor{ink}{HTML}{192F44}
+\definecolor{muted}{HTML}{586675}
+\definecolor{lightline}{HTML}{C3CBD3}
+\definecolor{pale}{HTML}{F2F5F7}
+\hypersetup{colorlinks=true,linkcolor=ink,urlcolor=ink,citecolor=ink,pdftitle={EDAgent Project Master Plan Version 3.0},pdfauthor={EDAgent project documentation},pdfsubject={Integrated project plan, executed v6 baseline, geospatial road safety and deployment}}
+\setlength{\parskip}{.34em}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.18}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\titleformat{\chapter}[display]{\normalfont\LARGE\bfseries\color{ink}}{\small\mdseries\scshape Chapter \thechapter}{8pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{-6pt}{19pt}
+\titleformat{\section}{\normalfont\large\bfseries\color{ink}}{\thesection}{.7em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{.7em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\scshape EDAgent -- Project Master Plan}
+\fancyhead[R]{\footnotesize Version 3.0 | 13 November 2026}
+\fancyfoot[C]{\footnotesize\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\footnotesize\thepage\ of \pageref{LastPage}}\renewcommand{\headrulewidth}{0pt}}
+\newcommand{\status}[1]{\textsf{\textbf{#1}}}
+\newcommand{\pathcode}[1]{\nolinkurl{#1}}
+\newcommand{\qnote}[1]{\begin{quote}\itshape #1\end{quote}}
+\newcommand{\headnote}[2]{\vspace{.25em}\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textbf{#1}\quad #2}}\vspace{.4em}}
+\newcommand{\tightlist}{\setlist[itemize]{leftmargin=1.35em,itemsep=2pt,topsep=3pt}\setlist[enumerate]{leftmargin=1.65em,itemsep=2pt,topsep=3pt}}
+\tightlist
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,framesep=6pt,rulecolor=\color{lightline},backgroundcolor=\color{pale},columns=fullflexible,keepspaces=true,showstringspaces=false}
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{22mm}
+{\large\scshape Project Master Plan\par}
+\vspace{13mm}
+{\Huge\bfseries EDAgent\par}
+\vspace{6mm}
+{\Large Allegheny County Road Safety Intelligence\par}
+{\Large and Decision Support System\par}
+\vspace{15mm}
+\rule{.79\textwidth}{.6pt}\par\vspace{9mm}
+{\large Research specification, executed analytical evidence,\\system architecture, repository blueprint, and end-to-end implementation roadmap\par}
+\vspace{10mm}\rule{.79\textwidth}{.6pt}\par
+\vspace{16mm}
+{\Large\bfseries Version 3.0 --- Evidence-Bounded Release Plan\par}
+\vspace{3mm}
+{\normalsize 13 November 2026\par}
+\vfill
+\begin{minipage}{.87\textwidth}
+\begin{tabularx}{\linewidth}{@{}L{40mm}Y@{}}
+\textbf{Repository} & EDAgent (unchanged)\\
+\textbf{Canonical analysis} & \pathcode{analysis/EDA_v6.ipynb}; executed 2004--2024 baseline\\
+\textbf{Active application} & \pathcode{EDAgent_Completed_Extension/EDAgent/}; confirm once against root copies\\
+\textbf{Source scope} & WPRDC cumulative crash extract 2004--2024; separate 2025 resource excluded\\
+\textbf{Current stage} & Frozen v6 baseline; diagnostic geography and aggregate-first public release with site-level claims unavailable\\
+\end{tabularx}
+\end{minipage}\par
+\vspace{14mm}
+{\small Standalone research and implementation specification: fixed available evidence, complete phase deliverables, release checks, and explicit scientific boundaries.}
+\end{titlepage}
+\pagenumbering{roman}
+\chapter*{Document control and reading guide}
+\addcontentsline{toc}{chapter}{Document control and reading guide}
+\begin{tabularx}{\linewidth}{@{}L{37mm}Y@{}}
+\toprule
+Document purpose & Single governing plan for EDAgent research, fixed-input analysis, implementation, verification, deployment, and demonstration.\\
+Document version & 3.0; prepared 13 November 2026. Replaces Project Plan v2 as the standalone implementation and release specification.\\
+Evidence record & Frozen executed v6 notebook and the source hashes, tables, model comparisons and limitations documented by the v2 analytical review; the accompanying uploaded \pathcode{EDA_v6(4).ipynb} was inspected for notebook structure. Existing Station 375 and 2023 PennDOT traffic-section observations are restricted as specified below.\\
+Input assumption & \textbf{Final-input closure:} information and evidence currently in the project are the complete available inputs, including at final release. No phase or acceptance gate requires later provision of a codebook, route network, verified crash-to-site crosswalk, historical exposure panel, new crashes, or a validated real-site CMF.\\
+Status & V6 is accepted for analytical review, not public model inference. Zero primary crash-to-site assignments are accepted. Real-site expected crash counts, frequency models, EB screening and real-site treatment-benefit numbers are unavailable.\\
+Replacement rule & This document is complete in itself. Retain the frozen v6 baseline and all provenance; archive older plans after backup. No appendix or opening supplement is needed to understand the v3 execution path.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Statement classes.} Distinguish (i) observations from the frozen v6 execution, (ii) records held for diagnostic review, (iii) project decisions based on evidence sufficiency, and (iv) explicitly hypothetical calculator inputs. The existence of a source filename or a successful notebook run does not certify its geographic interpretation or authorise public inference.
+
+\textbf{Evidence boundary.} The 11 November 2026 v6 source and export measurements in this plan retain the v2 review provenance; the full 116.6 MB CSV and original export ZIP were not newly rerun or re-audited while drafting v3. The supplied \pathcode{EDA_v6(4).ipynb} contains 105 cells, of which 44 are code cells, with no stored execution errors. It does not on its own close the historic codebook, precise roadway assignment, exposure, model-promotion or CMF-applicability gates. Reproduction checks in later phases must use the archived source/exports when available locally, not a request for fresh evidence.
+
+\textbf{How the chapters fit.} Chapters 1--2 specify aims and the final-input scope; 3--6 document established data, limitations and methods; 7--10 give the diagnostic geography, treatment calculator, application and repository implementation; 11--14 define Phases 0--7, dependencies, optional work, QA and deliverables; Chapter 15 governs handoff and release. Appendices A--C contain provenance, exchange schemas, decisions and the operational checklist.
+
+\chapter*{Executive decision and immediate direction}
+\addcontentsline{toc}{chapter}{Executive decision and immediate direction}
+\textbf{Central objective.} Deliver a verifiable Allegheny County road-safety intelligence system that explains historical reported-crash patterns, preserves honest retrospective statistical and model evidence, documents the unresolved geographic matching problem, and demonstrates countermeasure arithmetic with unmistakably illustrative inputs.
+
+The \textbf{v6 research record is frozen}. It covers 248,810 reported crashes (2004--2024), 191 source fields, 44 executed code cells, four formal association tests, chronological severity comparisons, uncertainty checks and county-boundary diagnostic maps. HistGradientBoosting average precision is approximately 0.155 against test prevalence approximately 0.0444. These retrospective scores do \emph{not} estimate where or when a new crash will occur.
+
+The geographic work will produce a \textbf{reproducible diagnostic inventory, maps, conflict register and QA record}, not an accepted road-site crash table. Of 238,517 candidate police/state coordinate comparisons, 2,146 exceed 500 m; the police-text parser remains unverified. \textbf{Accepted primary crash-to-site assignments: zero.} The Station 375 pilot is internal diagnostic evidence only. Its \textbf{observed 2023 crash count is unknown}; it must not be entered as zero or calculated from unreviewed matches. The \textbf{11,072 vehicles/day} value is an archived 2023 traffic-section measure for the section containing segment 0080, not a verified Station 375 site-year exposure or a crash count.
+
+The critical path now runs through Phase 3 diagnostic geography, Phase 4 reviewed descriptive analysis from supported v6 aggregates, Phase 5 evidence-register and tested hypothetical CMF calculator, Phase 6 \textbf{aggregate Road Safety Overview first}, and Phase 7 release QA. No public feature will present site-level historical screening, site-level expected frequency, causal treatment benefit, or actionable real-location crash probabilities. Supported maps and historical aggregations remain descriptive. The existing React/Vite--FastAPI application and general analyser are retained; no unsupported model is promoted to public inference.
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Executive direction and project decisions}
+\section{Overall direction and central contribution}
+EDAgent evolves from a general exploratory data-analysis application into a \textbf{domain-specific road-safety intelligence and decision-support system}. The central contribution in the final-input setting is traceable historical evidence, explicit limits on geographic attribution, transparent model evaluation, and a demonstrable treatment-calculation workflow. Research quality is measured by correct populations and denominators, provenance and defensible no-go decisions rather than a count of algorithms or purported road-site predictions.
+
+The implementation proceeds through (1) descriptive EDA and association audits; (2) geographic quality diagnostics without accepting crash-to-site matches; (3) reviewed, reproducible aggregate interpretations; (4) an intervention evidence register and a tested hypothetical what-if calculator; and (5) an aggregate-first website with unsupported functionality visibly unavailable.
+
+\qnote{How can available historical crash records, geographic diagnostics and retrospective statistical evidence support a transparent Allegheny County road-safety overview and a bounded, illustrative intervention workflow, without claiming site-level knowledge that the evidence does not establish?}
+
+\section{Locked decisions}
+\small
+\begin{longtable}{@{}L{35mm}L{18mm}L{91mm}@{}}
+\toprule Decision & State & Operating rule\\\midrule\endfirsthead
+\toprule Decision & State & Operating rule\\\midrule\endhead
+Dataset years & Fixed & WPRDC cumulative 2004--2024 crash source only; exclude separately published 2025 resource.\\
+Available evidence & Closed & Treat existing evidence as complete through final release; document unsupported fields and features instead of assuming later data acquisition.\\
+Notebook & Frozen & One canonical \pathcode{analysis/EDA_v6.ipynb}; retain the executed v6 run, exports and original source checksum. Do not quietly rewrite the baseline.\\
+Repository & Fixed & Keep the project name EDAgent.\\
+Application & Verify once & Extend \pathcode{EDAgent_Completed_Extension/EDAgent/} after one root/nested entry-point reconciliation.\\
+General AI analyser & Preserve & Keep the completed arbitrary-dataset feature operational; no expansion as the core research contribution.\\
+Crash Data Assistant & Bounded & Explain approved aggregates and limitations; decline unsupported site, future probability and treatment-benefit questions.\\
+Geographic attribution & No-go for release & Diagnostic candidates may be reviewed; accepted primary crash-to-site assignments remain exactly zero. Station 375 is internal evidence, not a validated site profile.\\
+Site frequency / EB & Out of scope & Do not construct site-year expected crash counts, Poisson/NB release models, EB rankings or site historical priorities from the current inputs.\\
+Road Safety Overview & First public deliverable & Ship reproducible county/year/approved-grid descriptive aggregates with period, source population, denominator, geographic resolution and coverage.\\
+Main simulator & Core, illustrative & Tested CMF arithmetic on clearly hypothetical baselines and factors; no real-location selection or real-site benefit estimate.\\
+Severity models & Review-only & Preserve original post-crash evaluation and limitations; do not enable public inference from \pathcode{NOT_APPROVED_FOR_PRODUCTION} artifacts.\\
+Live 1--3 hour forecast & Not committed & No occurrence forecast from a dataset without exact event dates and non-crash exposure.\\
+Routing / replay & Outside v3 release & Retain methodological reference, not a release dependency.\\
+Deep learning & Not core & No added model family without a research target and appropriate evidence.\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Four connected layers and success conditions}
+\begin{enumerate}
+\item \textbf{EDA and statistical evidence:} describe recorded patterns and interpret associations with defined years, measured populations, missingness and historical coding changes.
+\item \textbf{Spatial diagnostics and model evidence:} reproduce county polygon/grid maps, source-coordinate disagreements and Station 375 pilot limitations; retain the retrospective v6 severity comparison without road-site predictions.
+\item \textbf{Intervention evaluation:} curate a source-and-applicability register; illustrate arithmetic only on hypothetical baseline/CMF inputs, or return an explicit unavailable state when a real site is requested.
+\item \textbf{Website and user experience:} release Road Safety Overview before optional analytic pages, show diagnostic map caveats, keep the completed general analyser, and constrain the assistant and calculator by approved data states.
+\end{enumerate}
+Completion means versioned reproducible aggregate outputs, a reviewable geography conflict/QA package with zero approved primary matches, a calculator test suite, a working domain website and demonstrated unavailable states. Neither site-level screening nor new data acquisition is necessary for final acceptance.
+
+\chapter{Project context, questions and scope}
+\section{Problem context and users}
+The Western Pennsylvania Regional Data Center (WPRDC) cumulative Allegheny County crash resource describes police-reported crashes during 2004--2024, including severity, vehicles, people, recorded roadway and environmental context and location fields \cite{WPRDC}. Its data availability, reporting thresholds, historical definitions and privacy-related omission of exact crash dates limit what can be inferred.
+
+The intended users include road-safety analysts, project reviewers, and community users who want to understand \emph{reported} historical patterns and examine evidence-backed countermeasures. The existing general-data analyser is already implemented by the team; the new domain module should add subject-matter depth without replacing that general feature.
+
+\section{Five research questions}
+\begin{enumerate}
+\item Which spatial, temporal, environmental, collision and road-user patterns are visible in the recorded 2004--2024 data, after declaring coverage and aggregation grain?
+\item Which recorded circumstances are associated with serious/fatal outcomes among known-severity crashes, especially after the 2016 definition change?
+\item What can the current county/grid geography support, and what coordinate conflicts and road-assignment ambiguities prevent defensible site-level historical claims?
+\item What do the existing chronological severity experiments estimate, how stable are they, and why can they not be interpreted as site-year occurrence or pre-crash probabilities?
+\item What can reviewed treatment references and \emph{hypothetical} CMF arithmetic demonstrate, and which real-site outputs must remain unavailable?
+\end{enumerate}
+
+\section{Committed scope and exclusions}
+\textbf{Included in v3 release:} existing comprehensive EDA, source/variable audits, historical coding checks, severity analysis, statistical inference and uncertainty, county-polygon and grid descriptive concentration with explicit coverage; coordinate/road-reference diagnostic inventory, conflict register, diagnostic map layers and Station 375 internal pilot; published aggregate descriptive analysis; v6 severity evaluation as research material; a reviewed treatment evidence/applicability register; a unit-tested hypothetical CMF calculator; the aggregate-first Road Safety Overview; integration, provenance, test and deployment documentation in the canonical application.
+
+\textbf{Outside v3 release:} accepted crash-to-segment/intersection crosswalk, geographic site rankings or profiles claiming observed crashes, zero-inclusive site-year crash-frequency models, empirical-Bayes site screening, site-level expected crash counts, real-site treatment benefits and public real-location calculator inputs. Also excluded are the separate 2025 crash resource, true near-term occurrence forecast, routing service, microsimulation, gratuitous deep learning and expansion of the completed general analyser. These restrictions are final planned feature boundaries, \emph{not pending-data tasks}.
+
+\textbf{Permitted geography:} county-clipped point/grid counts from supported v6 outputs are historical visualisations, not road-site attribution, exposure-normalised risk or validated location priorities. A pilot road segment may be discussed internally as an \emph{unaccepted candidate} only.
+
+\section{Professor feedback and its practical implications}
+An animated historical replay may help presentation, but is not a research contribution by itself. A one-week forecast is neither suitably actionable nor supported; an honest 1--3 hour alternative would need precise historical crash times, non-event intervals and aligned traffic/weather inputs absent from the closed evidence. A route comparison would require an external routing provider and acknowledge that recommendations change travel exposure. In v3 these remain outside the release. The strongest complete deliverable is \emph{reviewed historical aggregate evidence plus a transparently illustrative treatment calculator}, not a placeholder for unavailable site prediction.
+
+\chapter{Dataset, provenance and the executed v6 research baseline}
+\section{Source identity, size and execution record}
+The executed v6 source manifest identifies WPRDC resource \pathcode{2c13021f-74a9-4289-a1e5-fe0472c89881} and local file \pathcode{2c13021f-74a9-4289-a1e5-fe0472c89881.csv}. The CSV contains 248,810 rows and 191 source columns, occupies 116,560,683 bytes, and covers every year from 2004 through 2024. Its SHA-256 digest is:
+\begin{lstlisting}
+c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511
+\end{lstlisting}
+The final run manifest was generated 11 November 2026 at 03:13:38 UTC; the environment reported Python 3.13.18, pandas 2.2.3 and scikit-learn 1.6.1. This precise environment is a reproducibility record, not a demand that every future installation use these versions without validation. Every one of the 44 code cells executed with no stored exception. There are 105 notebook cells in total; the analysis stays in one notebook.
+
+\begin{table}[htbp]\centering\small
+\caption{Verified dataset and run summary from final v6 exports.}
+\begin{tabular}{@{}lr@{}}\toprule Measure & Final execution\\\midrule
+Total reported crashes & 248,810\\
+Source columns & 191\\
+Distinct crash identifiers & 248,810\\
+Exact duplicate records / repeated CRNs & 0 / 0\\
+Known binary severity outcomes & 205,544 (82.61\%)\\
+Unknown or excluded severity outcomes & 43,266 (17.39\%)\\
+County-screened crash points & 238,281\\
+Formal categorical association tests & 4\\
+Exported severity model files & 5\\
+Stored notebook exceptions & 0\\
+\bottomrule\end{tabular}
+\end{table}
+
+\section{Progress from v3/v4/v5 to v6}
+The executed v5 notebook was an extension of v4, preserving much descriptive analysis and adding missingness audits, historical coding checks, severity-standard diagnostics, chronological model comparisons, exploratory clustering and spatial DBSCAN. The accompanying v5 comparison found three prominent gaps: unfinished conclusions, large chained DBSCAN clusters and unstable adjusted logistic estimates. V6 retains the useful charts and established loader, introduces a source checksum, completes the written findings, checks injury-component consistency, replaces the county rectangle with a county polygon, demotes density-connected clusters, reports inferential effect sizes with appropriate pooling, reworks adjusted severity models, adds temporal uncertainty and exports review-only artefacts.
+
+V6 does \emph{not} independently solve countywide site attribution, historical codebook verification, traffic exposure, Empirical Bayes screening or intervention evidence. Its accepted status is a precise baseline and evidence register, not confirmation that these remaining stages are done.
+
+\section{Missing values, historical definitions and data quality}
+Across the original fields v5/v6 report 4,793,642 missing source values. Fields such as \pathcode{SPEC_JURIS_CD} and \pathcode{RDWY_SURF_TYPE_CD} are approximately 99.4\% missing; \pathcode{TOT_INJ_COUNT} about 63.4\%; closure estimates about 65.3\%; route, segment and offset fields respectively about 41.1\%, 44.3\% and 38.6\% missing. Such gaps must not be globally filled with zero for descriptive work. The eight-field co-missingness audit finds 216,378 crashes missing none, 12,380 missing one, 18,457 missing two and 1,595 missing three or more of the selected fields.
+
+The 2024 data contain only 387 valid hours from 10,228 records (3.78\%), and no nonmissing illumination values. Time recording also heaps on whole/half-hours; code 9999 appears 3,781 times as a likely unknown-time sentinel. The 02:00 pattern therefore warrants a measurement-quality caveat, particularly for 2024. The exact crash date is absent, preventing credible reconstruction of time-aligned traffic/weather inputs for real-time occurrence forecasting \cite{WPRDC}.
+
+The 2016 adoption of the revised injury-severity standard is material. In 2015 the \emph{possible injury} class was approximately 21.9\% of known-severity crashes; in 2016 it was 13.8\%. The \emph{minor injury} class rose from 8.5\% to 15.1\%. Long-run serious-injury comparisons spanning that boundary require explicit harmonisation or separate eras \cite{PennDOT2016}. Primary severity modelling therefore uses 2016 onward. Fatal-only longer trends may be described separately with due caution.
+
+The weather and road-surface old/new coding maps retain an assumed 2018/2019 transition, but official year-specific codebooks have \emph{not} been attested in the run manifest. Formal grouped inference on them remains disabled; unknown/unmapped values remain visible. \pathcode{URBAN_RURAL} also changes raw-code composition around 2022--2023 and is excluded from unverified models. These are gates to resolve, not reasons to invent harmonised labels.
+
+\section{Injury-component reconciliation}
+The new audit compares overall injury/fatality counts to available component fields and checks logical constraints without changing original values. Among 182,782 eligible comparisons, 743 \pathcode{INJURY_COUNT} records disagree with the available component sum (about 0.41\%), concentrated in early years. The \pathcode{TOT_INJ_COUNT} comparison has 24,954 eligible records and no disagreements, while one record has injury count above person count and none has fatality count above person count. Eligibility depends on component availability; untested later years cannot be described as internally consistent. Compare flagged records and official field definitions before explaining the mechanism.
+
+\section{Geographic audit: what is confirmed and what remains provisional}
+Actual county-boundary screening retains 238,281 of 248,810 crashes. Accepted state-route decimal coordinates cover 238,556 records before polygon filtering, with 275 outside the county boundary. The 2024 Census 500k boundary for GEOID 42003 was used; the old rectangle is not treated as county membership. The historical grid export includes 38,332 cells whose recorded-crash counts sum to 238,281. This is an aggregate descriptive surface, \emph{not a road-site match} or exposure-normalised risk surface.
+
+A candidate parser for police GPS text such as \pathcode{40 19:05.530} and \pathcode{79 54:27.197} yielded 238,517 candidate police/state coordinate pairs. Median difference: 4.16 m; 95th percentile: 36.91 m; 99th percentile: 398.91 m; maximum: 48.47 km. Exactly 2,146 candidate pairs (0.8997\%) differ by more than 500 m. The parser's DMS interpretation is unverified, and the operational v6 manifest correctly reports \emph{zero officially verified police/state pairs}. These are not competing statements about the same metric.
+
+\textbf{Release consequence:} the available record supports diagnostic source comparisons and county/grid display, but \emph{zero accepted primary crash-to-site assignments}. The Station 375 directional pilot is retained in internal review outputs; it supplies no approved 2023 crash count. The archived \textbf{11,072 vehicles/day} 2023 traffic-section value pertains to the traffic section containing segment \pathcode{0080}. It must not be equated with a uniquely validated Station 375 crash-site exposure or assigned as a countywide/2004--2024 denominator. No invented station count or road-site calibration is permitted.
+
+\section{Statistical inference and model evidence}
+Four post-2016 categorical association tests pass rare-category pooling and expected-cell checks with false-discovery-rate adjustment. Collision type has the largest Cram\'er's $V=0.2020$; time period has $V=0.0483$, illumination $V=0.0371$ and intersection type $V=0.0222$. The latter three are very small effect sizes despite significant tests. The tests use 77,476 known-severity records from 2016--2023, and pooled categories must be named when interpreting them.
+
+The adjusted regression on 77,476 records and 3,233 serious/fatal outcomes reports an estimated odds ratio about 10.63 for pedestrian collision versus angle collision, approximately 2.74 for head-on and 0.45 for rear-end; speed-limit odds ratio is about 1.006 per mph. The historical v5 separation problem is addressed with low-event diagnostics and penalisation safeguards. These are \emph{observational adjusted associations}, not causal effects. Other covariates, selection and historical recording still matter.
+
+\begin{table}[htbp]\centering\small
+\caption{Final executed v6 severity classifier comparison: test years 2022--2024; $N=27{,}697$, positive prevalence 4.4445\%.}
+\begin{tabular}{@{}L{54mm}rrrr@{}}\toprule
+Classifier & AP & ROC--AUC & Bal. acc. & Brier\\\midrule
+HistGradientBoosting + collision & \textbf{.1548} & .6921 & .6333 & .2028\\
+Random Forest + collision & .1420 & .6900 & .6301 & .1711\\
+Logistic Regression + collision & .1393 & \textbf{.6990} & \textbf{.6381} & .2132\\
+Random Forest without collision & .0517 & .5461 & .5279 & .1995\\\bottomrule
+\end{tabular}
+\end{table}
+
+Average precision (AP) is the primary ranking measure for rare serious/fatal outcomes. HistGradientBoosting reaches AP 0.1548 against a test prevalence 0.0444. Its top 5\% captures 310 serious/fatal crashes (25.18\% recall) at 22.38\% precision. The restricted-feature forest is much weaker (AP 0.0517). The apparent gain is heavily dependent on \emph{collision type}, which is recorded after a crash and therefore cannot justify a pre-crash occurrence prediction.
+
+Year-month-block bootstrap AP intervals (300 valid replicates) are 0.1320--0.1810 for HistGradientBoosting, 0.1256--0.1621 for the collision-based forest, 0.1216--0.1606 for logistic regression and 0.0471--0.0587 without collision. Small differences should be interpreted relative to these intervals, not just rank-ordered point estimates. The 2022--2024 holdout has already been inspected across v5/v6 iterations, so it is not independent \emph{new} external validation.
+
+The uncalibrated Brier scores are poor relative to a constant-prevalence reference (about 0.04248); a chronologically calibrated logistic model achieves about 0.0405 and is exported separately. The latter is a modest improvement in probability quality, not proof that probabilities are fit for unrestricted public deployment. Review-only saved models require further artifact and feature-contract testing.
+
+Exploratory MiniBatch K-means yields sampled silhouette 0.1172 for $k=4$ (weaker for $k=6,8$) and adjusted Rand stability about 0.826 between fits. These archetypes may help describe types of recorded crashes but are not screening priorities. The former large DBSCAN chain is no longer presented as a severity hotspot.
+
+\section{Baseline approval boundaries}
+The frozen manifest records \pathcode{NOT_APPROVED_FOR_PRODUCTION}, \pathcode{codebook_team_attested=false}, \pathcode{police_gps_format_verified=false}, and \pathcode{conditional_site_frequency_gate=false}. Five \pathcode{joblib} artifacts are research-review outputs, not public predictors. The fixed-input decision does not turn these \emph{false} statuses into successful verification. The 2004--2024 v6 aggregates, where checked and documented, may support the release Road Safety Overview; precise site attribution, site-year frequency, EB, real-site baseline and real-site CMF effects are unavailable. Preserve both the manifest and its limitations as frozen provenance.
+
+\chapter{Methodological principles and data limitations}
+\section{Reported crashes are not travel exposure}
+The file describes reportable recorded crashes, not all trips, near misses, kilometres travelled or unreported events. A dense crash cell can simply have high traffic throughput. Counts require an explicitly labelled time window and eligible population; exposure-adjusted facility comparisons require measures such as traffic volume, road length, observation days and suitable user-group exposure. For pedestrians or cyclists, car AADT alone is not an adequate denominator for individual-level risk.
+
+\section{CRN uniqueness, site types and intersection double-counting}
+PennDOT's crash primer distinguishes route/county/segment/offset state-road records from local-road descriptions \cite{Primer}. An intersection may relate to multiple roads. Assigning a crash to every nearby link would duplicate historical counts even if each \pathcode{CRASH_CRN} is unique. For diagnostic design, define candidate \pathcode{SEGMENT} and \pathcode{INTERSECTION} geometries separately, store competing candidates and make the additive primary-assignment rule explicit; \textbf{do not execute or approve any primary crash-to-site assignment for the v3 release}. Publish only v6-supported unique-CRN aggregates and distinct diagnostic match counts.
+
+\section{Temporal, missingness and coding safeguards}
+The severity standard changes in 2016; 2024 has severe hour/illumination missingness; weather/road codebooks and \pathcode{URBAN_RURAL} require year-specific verification. A numeric storage type does not make a categorical code a continuous measurement. Unknown severity codes (8,9, missing or unrecognised) must remain excluded from binary outcomes, and no missing injury component may silently become zero. Time-of-day comparisons are analyses of \emph{recorded} hours with possible heaping. Any retrospective association must disclose coverage and its analytical population.
+
+\section{Statistical, model and causal interpretation}
+Report denominators and effect sizes beside significance tests; pool sparse levels using a documented mapping, show adjusted confidence intervals, control multiple testing where appropriate, and use prior-period validation for model development. Class imbalance makes plain accuracy misleading. No classification model trained on only crash rows can establish a future crash-occurrence probability; no adjustment or CMF scenario alone establishes a local causal effect of a treatment.
+
+\section{Data-access and forecast boundary}
+The cumulative crash extract lacks exact dates and non-crash exposure. A 1--3 hour occurrence forecast and real-site modelling are unsupported and outside v3 release.
+
+\chapter{Prediction tasks, statistical models and evaluation strategy}
+\section{Task A: severity among already reported crashes}
+\textbf{Question:} Given a crash with recorded known severity, can we rank cases that are serious/fatal? The binary target is $1$ for severity codes 1 or 2; $0$ for codes 0,3,4; unknown/other codes and missing severity are excluded. The main comparable modelling era is 2016 onward.
+
+\textbf{Feature policy:} separate a retrospective model including post-crash collision type from a restricted-feature version that excludes collision type. For each feature record when it becomes available. Neither variant may be marketed as a validated \emph{pre-crash} model without stronger input-time evidence. Exclude injury-derived targets, unverified \pathcode{URBAN_RURAL}, and historically disputed environmental groupings.
+
+\textbf{Validation:} 2016--2021 training with 2022--2024 chronological test; calibrate and tune only using earlier years (forward-chaining or equivalent). The former test period has been consulted during iterations; a new fully external validation study would be needed to support stronger generalisation claims. Keep the original Random Forest benchmark for continuity; Logistic Regression, Random Forest and HistGradientBoosting are sufficient challenger families until a defined need justifies additions.
+
+\textbf{Measures:} AP/PR curve primary, ROC--AUC secondary; threshold precision/recall, confusion matrices, top-5/10/20\% capacity-constrained review, balanced accuracy, Brier score, prevalence baseline, reliability plots, permutation importance and temporal-block intervals. Calibrated probabilities and uncalibrated decision scores must be distinguished on every interface.
+
+\section{Task B: eligible site-year crash-frequency modelling}
+\textbf{Scientific target (documented, not implemented in v3):} expected reported-crash counts for each eligible \pathcode{SITE_ID}--year, including zero-crash site-years, based on a stable complete/bounded network, unique accepted attribution and time-aligned facility exposure. Grouping crash rows is not a zero-inclusive network panel. A conceptual baseline remains:
+\begin{equation}\log \mu_{s,t}=\beta_0+\boldsymbol\beta^{\mathsf T}\mathbf X_{s,t}+\log E_{s,t},\end{equation}
+where \(\mu_{s,t}\) is a site-year mean and \(E_{s,t}\) a justified exposure offset. For an eligible segment one conceptual measure is \(\mathrm{AADT}_{s,t}L_sD_t\) with consistent units; an intersection requires its own appropriate exposure definition. In a properly supplied later study, Poisson GLM, Negative Binomial dispersion checks, temporally held-out errors and spatial leakage checks would be required.
+
+\textbf{Final v3 decision: OUTSIDE RELEASE SCOPE.} Existing evidence does not establish an accepted primary crash-to-site mapping, all eligible zero-count facilities, aligned traffic for all site-years or a calibrated network reference. Hence there is no \pathcode{SITE_ID}--year modelling dataset, no Poisson/NB training, no site-frequency API or predicted crash counts. The archived 2023 traffic-section value of 11,072 vehicles/day for the section containing segment 0080 cannot close those missing components. Preserve this method as a scientifically explicit exclusion, not an unfulfilled release task.
+
+\section{Fallback if the frequency-model gate fails}
+The fixed-input evaluation yields a \textbf{final no-go} on site-level frequency modelling, not a request for more traffic or official crosswalks. The release fallback is \emph{reviewed descriptive analysis at supported v6 aggregation grains}: full-county annual counts, clearly defined year/era groupings, known-severity fractions and county-clipped historical grid counts. Every result identifies numerator, denominator, calendar years, geography level, coverage/exclusion rules and source run. Grid concentration must not be relabelled site ranking, network screening priority, exposure-adjusted risk or expected local crash frequency. Diagnostic road candidates are not joined to these aggregate counts.
+
+\section{Empirical Bayes is a separate conditional method}
+Empirical Bayes (EB) combines observed history and a facility-appropriate Safety Performance Function (SPF) to reduce regression-to-mean bias \cite{FHWA_EB}. It needs a valid reference facility population, expected baseline, exposure, site attribution and calibration; algebra alone is insufficient. Those inputs do not exist as an approved set in v3, so \textbf{no EB estimate, chart, priority list or public API} is part of the release. Keep the methodology in the research record to explain the exclusion.
+
+\chapter{The consolidated EDA\_v6 notebook: specification and handoff}
+\section{Single-file rule and present state}
+The research notebook remains exactly \pathcode{analysis/EDA_v6.ipynb}. Do not split, silently retrain or overwrite the frozen 11 November 2026 executed v6 baseline. Its 105 cells, including 44 executed code cells, contain the established EDA, statistics, geography, severity evaluation, written findings and review-only exports. The stored output ZIP and manifest define the reproducibility contract; checked, versioned derived aggregates may be generated separately for the website with lineage to this run. \emph{Analytical acceptance} is not source-format attestation or permission to serve the exported severity models.
+
+\section{Section-by-section v6 specification}
+The following sequence is the notebook's existing 0--22 narrative. The code-cell references are zero-based positions in the 105-cell file, so they can be located even if a notebook interface does not display numbered headings. Original v5 work is retained where still correct.
+\small
+\begin{longtable}{@{}L{9mm}L{48mm}L{17mm}L{67mm}@{}}\toprule
+No. & Notebook section & Cells & Method, product and interpretation\\\midrule\endfirsthead
+\toprule No. & Notebook section & Cells & Method, product and interpretation\\\midrule\endhead
+0 & Title, scope and definitions & 0 & Research questions, v6 lineage, 2004--2024 lock, retrospective versus conditional targets, limitations.\\
+1 & Environment and setup & 1--2 & Imports, seeds, package/version reporting, helper functions and paths; no hidden runtime state.\\
+2 & Load and validate & 3--5 & Fixed resource ID, complete CSV, year and CRN checks, source checksum, metadata.\\
+3 & Initial inspection & 6--8 & Shape, types, unique IDs and per-year counts; numeric codes not averaged as quantities.\\
+4 & Variable roles/dictionary & 9--11 & Counts, measurements, categorical codes, identifiers, roadway references and leakage/timing roles.\\
+5 & Missingness/coverage & 12--19 & Field-wise, year-wise and co-missingness; downstream denominator rules.\\
+6 & Duplicate/consistency audit & 20--23 & Exact and CRN duplicate checks, injury components, fatality and logical constraints.\\
+7 & Historical code harmonisation & 24--28 & Audits weather/road code maps, Missing versus Unknown/Unmapped; official verification gates.\\
+8 & Cleaning and derived features & 29--32 & Nullable severe target, valid speed/hour, recorded time bands and road-user flags.\\
+9 & Severity and temporal EDA & 33--41 & Severity and crash-time charts, 2016 break, 02:00 heaping and 2024 coverage.\\
+10 & Environment and roadway EDA & 42--48 & Weather, road surface, lighting, collision, intersection, raw road-context groups.\\
+11 & People, vehicles, road users & 49--54 & Counts and vulnerable-road-user descriptive coverage; preserve plausible tails.\\
+12 & Statistical associations & 55--71 & IQR flags, correlations, rates, cross-tabulations, rare-cell pooling, effect sizes, FDR, adjusted regression.\\
+13 & County coordinate audit & 72--73 & Candidate police DMS parsing, state-route decimal comparison, placeholders, official-source gate, county polygon.\\
+14 & Spatial concentration & 74--78 & County-clipped maps and grid aggregation, known-severity denominators, no chained DBSCAN hotspot claim.\\
+15 & Road-network feasibility & 79--80 & Route/segment/offset coverage; conditional verified crosswalk, centreline matching and attribution policy.\\
+16 & Severity classifier training & 81--87 & Original benchmark and enhanced chronological models, with/without collision type, correct feature gates.\\
+17 & Model evaluation & 88--93 & PR/AP, ROC, confusion, Brier/calibration, top-$k$, temporal-block intervals, exploratory cluster stability.\\
+18 & Site-year frequency (conditional) & 94--95 & Complete eligible zero-inclusive panel and exposure gate; Poisson/NB only if feasible.\\
+19 & EB screening (conditional) & 96--97 & Requires appropriate SPF/reference facility inputs and acceptance; otherwise skipped.\\
+20 & CMF evidence/what-if & 98--99 & Reviewed CMF schema, deterministic scenarios, no invented efficacy.\\
+21 & Evidence-based findings & 100--101 & Eight current-execution findings with evidence, interpretation, limitation and action.\\
+22 & Reproducibility and exports & 102--104 & Structured CSV/model exports, version manifest, approval controls and release checklist.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{What counts as v6 acceptance}
+The accepted v6 research record covers the intended 2004--2024 source, 248,810 distinct CRNs, duplicates/missingness checks, unknown severity, the 2016 definition boundary, 2024 time/illumination gaps, county polygon filtering, chronology-aware severity comparisons, stored outputs and a findings ledger. Forty-four code cells executed without stored errors.
+
+The standing limitations are unverified weather/surface history, unverified police-text GPS format with 2,146 large candidate disagreements, no accepted site crosswalk, incomplete site-year traffic exposure, repeated consultation of the severity holdout and \pathcode{NOT_APPROVED_FOR_PRODUCTION} models. \textbf{No v3 release criterion requires these scientific gaps to become verified}. The release instead checks that their diagnostic or unavailable states persist and no output changes the frozen v6 source/manifest. Full reproducibility of new derived reports is required, distinct from a false claim of independently rerunning the original CSV in this revision.
+
+\section{New execution evidence and exported artefact contract}
+The frozen v6 ZIP has the following logical output classes, for archival under \pathcode{analysis/outputs/}:
+\begin{itemize}
+\item \textbf{Provenance:} \pathcode{run_manifest.json} (source ID/checksum, environment, splits, approval gates and coordinate diagnostics).
+\item \textbf{EDA:} \pathcode{source_missingness.csv}, \pathcode{severity_by_year.csv}, \pathcode{injury_reconciliation.csv}, \pathcode{association_tests.csv}, \pathcode{association_pooling_audit.csv}, \pathcode{variable_roles.csv}, \pathcode{findings_review.csv}.
+\item \textbf{Spatial:} \pathcode{county_points_review.csv}, \pathcode{historical_grid_screening.csv}, \pathcode{coordinate_coverage_by_year.csv}, \pathcode{police_coordinate_encoding_audit.csv}, \pathcode{candidate_coordinate_comparison_summary.csv}, \pathcode{candidate_coordinate_disagreements_review.csv}.
+\item \textbf{Model metrics:} \pathcode{severity_model_comparison.csv} and \pathcode{severity_ap_temporal_intervals.csv}.
+\item \textbf{Private models:} Random Forest with/without collision, Logistic Regression, calibrated Logistic Regression and HistGradientBoosting (five \pathcode{.joblib} review-only files).
+\item \textbf{Intervention evidence:} the original v6 release directory is empty, not a source of validated CMFs.
+\end{itemize}
+The ZIP's \pathcode{model_artefacts/} spelling should be normalised to canonical \pathcode{model_artifacts/} on extraction, leaving archive bytes unchanged. New v3 release products are \emph{derived} rather than revisions of the v6 manifest: \pathcode{geography_diagnostics/} (inventory, maps, conflicts, QA); \pathcode{descriptive_release/} (aggregate tables, coverage and chart contracts); \pathcode{treatment_evidence/} (source/applicability register); and versioned calculator test vectors. Each points back to frozen \pathcode{RUN_ID}, source hash and approved derivation script.
+
+\chapter{Geography and site-level road-safety screening}
+\section{Geographical evidence hierarchy}
+A documented hierarchy governs \emph{diagnostics}, not release attribution:
+\begin{enumerate}
+\item State-route decimal coordinates and the v6 county polygon support the accepted county/grid descriptive display. Retain original values, method, bounds and known limitations.
+\item PennDOT route/segment/offset fields are road-reference \emph{candidates}; a formatted segment identifier alone does not verify a specific geometry, carriageway, intersection approach or crash membership.
+\item Police GPS DMS parsing is a hypothesis until source-format attestation. Compare candidate and state coordinates and retain all large disagreements; never replace accepted mapping coordinates with unverified parsing.
+\item Available centreline or road-segment shapes, if present in the closed inputs, may be overlaid and compared as \emph{diagnostic candidates} with projected CRS, distance thresholds, ambiguity flags and no forced snapping.
+\item Municipality, road names and intersections are supporting strings. Preserve \pathcode{CRASH_CRN}, source field, coordinate type, candidate geometry, distance, direction/carriageway, alternative candidates, status and reviewer notes without declaring a primary site.
+\end{enumerate}
+The 2024 Census GEOID 42003 500k county polygon is not a historic centreline or site boundary. A PASDA centreline reference \cite{PASDA} is documented as potential context, not presumed verified/obtained or indispensable for release. \textbf{Accepted primary crash-to-site assignments are zero.}
+
+\section{Immediate coordinate review work package}
+\begin{enumerate}
+\item Reuse the frozen v6 coordinate comparison and coverage outputs; write deterministic scripts to inventory candidate states/coordinates, missingness, placeholders, duplicate points and county filtering by year.
+\item Audit \pathcode{candidate_coordinate_disagreements_review.csv} (2,146 candidate discrepancies above 500 m) using source values, distance bins, road classes and years. Create a \emph{conflict register} with reproducible reason/status codes; do not decide that either source is automatically wrong.
+\item Produce county/grid maps and separate exploratory overlays of candidate road features. Legends must say \emph{reported-crash concentration} or \emph{coordinate conflict}, never ``validated dangerous site'' or exposure risk.
+\item Preserve the Station 375 pilot as \pathcode{INTERNAL_DIAGNOSTIC}. Show the traffic-section/segment identifier relationship and evidence lineage; its observed 2023 crash count is \pathcode{UNKNOWN}, not zero. Label the archived 2023 section count of 11,072 vehicles/day as applying to the traffic section \emph{containing} segment 0080, not necessarily to a validated Station 375 analytical site.
+\item Check QA invariants: input/hash and row reconciliation, CRS/units, count preservation, conflicting candidate visibility, no duplicate authoritative IDs, and an \emph{empty accepted-primary-assignment set}. Record unresolved official format, historic codebook and network questions as final limitations, not upstream blockers.
+\end{enumerate}
+\textbf{Phase 3 outputs:} diagnostic inventory, reproducible maps, conflict register, audit scripts, QA report and explicit \pathcode{PRIMARY_SITE_ASSIGNMENTS_ACCEPTED=0}. No site crosswalk is released as accepted ground truth.
+
+\section{Intersection and segment-site definition}
+Keep candidate \pathcode{SITE_ID}, \pathcode{SITE_TYPE} (\pathcode{SEGMENT} / \pathcode{INTERSECTION}) and \pathcode{SITE_VERSION} as \emph{schema design}, never a guarantee that a candidate is a validated analysis site. A segment would require carriageway/route and stable geometry; an intersection would require a junction and approach attribution policy. A diagnostic record may carry \pathcode{CRASH_CRN}, \pathcode{MATCH_SOURCE}, \pathcode{MATCH_DISTANCE_M}, \pathcode{ALTERNATIVE_COUNT}, \pathcode{REVIEW_STATUS}, \pathcode{ASSIGNMENT_STATUS} and era, with statuses \pathcode{CANDIDATE}, \pathcode{AMBIGUOUS} or \pathcode{UNMATCHED}. The value \pathcode{MATCHED_PRIMARY_ACCEPTED} is prohibited in v3 output. Candidate many-to-many links are not additive crash-to-site counts; their aggregate row sums may exceed unique CRNs and must never appear as public site statistics.
+
+\section{Traffic exposure and network feasibility}
+PennDOT TIRe information \cite{TIRe} describes traffic sections and measurements with distinct years, travel directions and collection cycles. The fixed evidence includes an \textbf{archived 2023 traffic-section base AADT value of 11,072 vehicles/day} for the section containing \pathcode{0080}. This is a section-level directional/year-specific source observation, \emph{not} proof of Station 375's complete segment-year exposure or a 2004--2024 traffic series. Store source label, measurement year, traffic-section reference, direction where documented, units and relationship to segment 0080.
+
+A valid frequency study would additionally need complete eligible sites including those with no crashes, fixed site boundaries, uniquely reviewed crash assignments and aligned exposure for each year and target. The closed data do not satisfy this standard. \textbf{Final feasibility disposition: NO-GO for site frequency/EB and site risk normalisation}; the evidence inventory and its decision log are acceptable deliverables in their own right. No further AADT acquisition appears on the release critical path.
+
+\section{Site screening outputs and interpretation}
+This chapter retains the original methodological heading to preserve navigation; \textbf{site-level historical screening results are not released}. Instead, publish a spatial diagnostic summary: available v6 county-boundary points, grid resolution/method, total unique CRNs, exclusions, coordinate source/ambiguity tables and conflict maps. For each displayed aggregate declare source years, geographic unit, count denominator and missing-location coverage. Station 375 can appear only in a clearly internal pilot audit, with a blank/\pathcode{UNKNOWN} 2023 observed crash count. No site rank, high-injury network location, per-vehicle rate, expected count or inferred treatment benefit may be derived from diagnostic candidates.
+
+\chapter{Flagship Road-Safety Intervention What-if Calculator}
+\section{Purpose and user journey}
+The flagship what-if calculator teaches how a Crash Modification Factor (CMF) relates an assumed baseline and a treatment scenario. It is a deterministic \textbf{illustration}, not a 3D traffic simulation, a real-site estimate, an observed local evaluation or a count of crashes that will be prevented. With the complete-input decision, there is no validated local site baseline to use.
+\begin{enumerate}
+\item Enter or select a clearly titled \emph{hypothetical example}, not a public map marker, station number, actual segment or intersection.
+\item Specify an invented annual expected \emph{target crash-type} count and its units/time interval; all user-entry labels must state \pathcode{HYPOTHETICAL}.
+\item Select a named treatment family, and distinguish \emph{cited qualitative treatment information} from a \emph{hypothetical numeric CMF} unless the exact study estimate has been separately reviewed and documented.
+\item Show factor applicability caveats, evidence status, before/after arithmetic and sensitivity checks. Never label a hypothetical number as measured, forecast, validated local or proven causal benefit.
+\item If a real location, Station 375, a site-year expected count or a treatment benefit at an actual place is requested, show \pathcode{UNAVAILABLE_SITE_BASELINE} or \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE}, with an explanation and no numeric result.
+\end{enumerate}
+
+\section{Deterministic CMF arithmetic and denominators}
+A CMF is a multiplicative factor for a specified treatment, facility context and crash outcome under study conditions \cite{CMF}. For \emph{hypothetical} expected baseline count \(N_{\mathrm{before}}\) and factor \(c\),
+\begin{align}
+N_{\mathrm{after}} &= N_{\mathrm{before}}c,\\
+\Delta N &= N_{\mathrm{before}}(1-c).
+\end{align}
+For a toy annual example, \(N_{\mathrm{before}}=10\) \emph{hypothetical target crashes/year} and \(c=0.80\) \emph{hypothetical CMF} produce 8/year after and a hypothetical difference of 2/year. These are algebraic examples only; \emph{neither 10 nor 0.80 is a measured or selected Allegheny site value}. Validate finite nonnegative baseline, positive finite CMF, consistent period/type, rounding rules and before/after sign (\(c>1\) is an increase). If a genuine source supplies \([c_L,c_U]\), endpoint sensitivity may be shown with the interval's provenance, but never call it a joint uncertainty interval for a local estimate. Do not multiply unrelated CMFs without supporting evidence.
+
+\section{Evidence selection and candidate countermeasures}
+Build a \textbf{treatment evidence register} from source references already in the project (including FHWA CMF Clearinghouse guidance \cite{CMF}) and any pre-existing documented treatment entries. Candidate categories remain pedestrian crossings/refuges, lighting, speed management and intersection control/geometric treatment. For each record store source URL/ID, treatment definition, target crash type, facility type, context, estimate \emph{if actually documented}, confidence interval, quality/rating, reviewer decision and \pathcode{EVIDENCE_STATUS}. The present v6 intervention-evidence folder is empty; \textbf{a bibliography or treatment category is not an approved study-specific numeric CMF}.
+
+Release requires a reviewed register with clear \pathcode{REFERENCE_ONLY}, \pathcode{VERIFIED_ENTRY} or \pathcode{NO_APPROVED_NUMERIC_CMF} records, as supported by the fixed inputs. A calculator demonstration may use \emph{hypothetical factors} regardless of register completeness, but the UI must separate their invented origin from the real source citations. Neither an external-data retrieval task nor a populated real-site CMF table is a release gate.
+
+\section{Decision gates and outputs}
+Two distinct policies prevent accidental promotion. \textbf{Illustrative mode} is allowed when every numeric input is labelled hypothetical, its type/units pass validation, the calculation is tested and the result is disconnected from all real location IDs. It emits \pathcode{ILLUSTRATIVE_ONLY}, assumptions, arithmetic and noncausal notice. \textbf{Real-site mode} is disabled throughout v3: there is no accepted primary crash-to-site count, no justified expected site baseline and no applicable validated local estimate. It must emit \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE} with no numbers, even if a traffic section, crash candidate or generic CMF exists. Reject mismatched factor type, invalid units and nonfinite values with deterministic error codes; test these responses in Phase 5 and Phase 7.
+
+\chapter{Website experience, software architecture and hosting}
+\section{Four core experiences and optional live view}
+\small
+\begin{tabularx}{\linewidth}{@{}L{38mm}Y L{19mm}@{}}\toprule
+Experience & Contents and evidence boundary & Priority\\\midrule
+Road Safety Overview & Aggregate v6 county/year/era statistics, county polygon and historical grid charts, eight findings, severity definitions, per-chart periods, denominators, geography grain and coverage; provenance and downloadable methodology. & \textbf{First release}\\
+Safety Locations & Diagnostic geography / coordinate-quality map, conflict counts and limitations only; no accepted site profile, no road-site historical ranking or site-level risk claim. & Bounded\\
+Predictive Intelligence & Read-only historical severity model metrics, features, calibration and \pathcode{REVIEW_ONLY} state. Site-frequency, EB and public severity inference unavailable. & Bounded\\
+Intervention Simulator & Separate hypothetical-input workspace, deterministic CMF examples, treatment evidence status and unavailable state for any real-place request. & Core demo\\
+Live Safety Explorer & Optional future context reference only; absent from v3 acceptance. & Outside scope\\
+\bottomrule\end{tabularx}
+\normalsize
+
+The navigation must never promise unsupported functionality merely because v2 anticipated a full site simulator. Display Road Safety Overview ahead of secondary views. The overview is the first deployable increment; the later pages are published only after their evidence and unavailable-state tests pass.
+
+\section{Canonical codebase and development boundaries}
+Use the existing React/Vite frontend and FastAPI backend in \pathcode{EDAgent_Completed_Extension/EDAgent/}. Root-level earlier/foundational \pathcode{backend/} and \pathcode{frontend/} copies may remain in the workspace but must not be treated as another live application. Once, compare Git history, Docker configuration, active server routes, environment variables and deployment entrypoints. Record the canonical decision in a short README and only extend the selected application. Preserve authentication, charting, jobs, reporting and the completed general AI analyser where already present.
+
+\section{Recommended hosting design (proposal, not deployment evidence)}
+The following service mix is appropriate for a moderately sized academic application; alternative providers may be selected following a cost, access and privacy review. These names do \emph{not} imply that subscriptions, servers, DNS records or databases have already been created.
+\begin{enumerate}
+\item \textbf{Frontend:} host the built React/Vite static bundle on \emph{Vercel} or another static HTTPS host/CDN. Configure environment-based API URL and map licence; never expose backend secrets in browser variables. Refer to the Vite deployment guide \cite{Vite}.
+\item \textbf{Python API/model serving:} containerise the existing FastAPI app with a Dockerfile; deploy on a persistent CPU-capable web service such as \emph{Render}, or an equivalent container host that supports memory, health checks, environment secrets and predictable startup \cite{Render}. This is the service that loads an approved trained model and answers inference requests. It is \emph{not} a separate large ML training server.
+\item \textbf{Operational database:} use managed \emph{PostgreSQL with PostGIS} (e.g. Supabase Postgres with extension enabled) for facilities, spatial geometries, site profiles, version metadata, intervention evidence and audit records. Use spatial indexes and SQL migrations; do not put large historical CSVs into ad-hoc request memory \cite{Supabase}.
+\item \textbf{Model/data artefacts:} use a private, versioned object store (e.g. Cloudflare R2 or another S3-compatible store) for approved \pathcode{joblib} pipelines, GeoJSON/Parquet/CSV releases and manifests. The API must verify allowed artifact ID, hash and approval state before loading \cite{R2}.
+\item \textbf{Developer and release automation:} GitHub (or existing Git provider) for source control and CI checks; Docker Compose for local full-stack integration; a container registry for reproducible backend images. Prefer minimal services rather than a new queue/microservice system.
+\end{enumerate}
+The provider choices are implementation proposals. Check current free-tier limits, geographic region, storage egress, cold-start behaviour, SSL, backups, quotas and rates before final selection; no hosting cost is guaranteed in this plan.
+
+\section{How trained ML actually runs on the website}
+\textbf{Research training:} the frozen v6 notebook contains pre-existing retrospective severity pipelines, metrics, feature timing and stored \pathcode{joblib} files. All five remain \pathcode{NOT_APPROVED_FOR_PRODUCTION}; v3 does not retrain them or create a real-site expected-frequency model. The public site may reproduce their \emph{reviewed summary metrics} as static evidence with target, years, prevalence, limits and source hashes.
+
+\textbf{Serving contract, not a v3 promise:} if another approved research release ever exists, trusted source-produced artifact hashes, feature schemas, compatible package versions and an \pathcode{APPROVED_FOR_INFERENCE} reviewer decision would be necessary before a FastAPI process loads a pipeline once at startup. No HTTP request should fit a model. Loading arbitrary \pathcode{joblib}/pickle is unsafe; never load uploads from users, and honour scikit-learn version constraints \cite{Sklearn}. In v3 \textbf{do not load or expose review-only models on public routes}; use precomputed results and explicit API unavailable responses.
+
+\textbf{Model-role boundary:} collision type is recorded after a crash and the severity classifiers condition on observed crash records. Neither those scores nor historical grid counts estimate an individual's pre-crash probability, a future number of crashes or the effect of a countermeasure.
+
+\section{Minimum database entities and approval fields}
+Use migrations for \pathcode{analysis_runs} (frozen source hash, v6 run, derivation ID, status), \pathcode{aggregate_metrics} (metric, period, population, numerator/denominator, resolution, coverage), \pathcode{geography_diagnostics} (candidate source, geometry or point, ambiguity, confidence/status, review record), \pathcode{coordinate_conflicts} (source comparisons, distance, reason, resolution state), \pathcode{model_registry} (read-only v6 model metadata and \pathcode{REVIEW_ONLY}), \pathcode{cmf_evidence} (reference, applicability, numeric-evidence status) and \pathcode{intervention_scenarios} (hypothetical input sets, factor origin, test/run version). Retain \pathcode{sites}, \pathcode{crash_site_matches} and \pathcode{site_year_stats} as \emph{future-schema names only} if useful for migration compatibility; public v3 tables/views must contain no accepted primary assignments, site-year expected results or approved local benefit data. Publish an allowlisted read-only schema/view rather than entire diagnostics tables.
+
+\section{Suggested API and frontend modules}
+Preserve existing authentication, error conventions and deployment entrypoint. Proposed v3 routes and response restrictions:
+\begin{lstlisting}
+GET  /api/v1/road-safety/summary       # accepted aggregates
+GET  /api/v1/road-safety/coverage      # years, denominators, grain
+GET  /api/v1/road-safety/locations     # diagnostic map only
+GET  /api/v1/road-safety/locations/{site_id} # UNAVAILABLE_SITE_BASELINE
+GET  /api/v1/road-safety/models        # review-only metrics
+POST /api/v1/road-safety/interventions/evaluate # hypothetical only
+GET  /api/v1/road-safety/live-events  # disabled/out of scope
+GET  /api/v1/health/ready
+\end{lstlisting}
+The summary response must contain \pathcode{RUN_ID}, \pathcode{SOURCE_SHA256}, \pathcode{METRIC_ID}, \pathcode{PERIOD_START/END}, \pathcode{GEOGRAPHIC_GRAIN}, \pathcode{NUMERATOR}, \pathcode{DENOMINATOR}, \pathcode{COVERAGE} and interpretation/status fields. Back-end services: \pathcode{data_service.py}, \pathcode{spatial_service.py}, \pathcode{screening_service.py} (disabled for site rankings), \pathcode{model_service.py} (metadata only), \pathcode{intervention_service.py}, optional \pathcode{live_context_service.py} (disabled). Frontend: Road Safety Overview first, then bounded Safety Locations, Predictive Intelligence and hypothetical Intervention Simulator; reusable CrashMap, diagnostic LocationProfile/UnavailablePanel, ModelEvaluationPanel and InterventionCalculator. These are implementation specifications, not assertions of already existing modules.
+
+\section{LLM-assisted Crash Data Assistant}
+The completed general analyser is preserved. A constrained domain assistant may explain only allowlisted published aggregate metrics, methodological text, review-only severity experiments and treatment reference statuses, with explicit source, period, coverage and grain. When asked for Station 375's 2023 observed crash count, respond \emph{unknown}; when asked for a site expected count, validated site screening result, real-location CMF effect or future crash probability, respond \emph{unavailable from the current evidence}. Do not calculate an answer from candidate matches, approximate map positions or hypothetical inputs. Store retrieval provenance and test refusal/uncertainty behaviour as part of the final release.
+
+\chapter{Repository structure, file ownership and reproducible handoff}
+\section{Canonical project tree}
+Retain existing files not listed below. This is a \emph{target layout}, subject only to one-time reconciliation of the actual active application path. The canonical research notebook is never duplicated across several analysis directories.
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+EDAgent/
+|-- .env.example                    # public template, no secrets
+|-- .gitignore
+|-- .gitattributes
+|-- README.md
+|-- docs/
+|   |-- EDAgent_Project_Plan_v3.pdf
+|   |-- v6_comparison.pdf
+|   `-- sources_and_decisions.md
+|-- analysis/
+|   |-- EDA_v6.ipynb              # ONE canonical research notebook
+|   |-- README.md                 # reproduce, inspect, freeze
+|   `-- outputs/
+|       |-- run_manifest.json
+|       |-- eda_summary/
+|       |-- spatial/
+|       |-- model_metrics/
+|       |-- model_artifacts/      # private/review-only until approved
+|       `-- intervention_evidence/ # frozen v6: empty by design
+|-- data/
+|   |-- raw/
+|   |   `-- 2c13021f-74a9-4289-a1e5-fe0472c89881.csv
+|   |-- reference/
+|   |   |-- municipal_boundaries/
+|   |   |-- street_centerlines/
+|   |   |-- codebooks/
+|   |   |-- traffic_counts/
+|   |   `-- cmf/
+|   |-- processed/
+|   `-- samples/
+|-- scripts/
+|   `-- build_descriptive_release.py   # v6 aggregate derivation, QA
+|-- geography_diagnostics/             # candidates only, no primary assignments
+|-- descriptive_release/               # aggregate tables/charts/coverage
+|-- treatment_evidence/                # register, no implied numeric CMF
+|-- tests/                             # numeric + unavailable-state contracts
+|-- backend/                      # older/foundational; reconcile
+|-- frontend/                     # older/foundational; reconcile
+|-- EDAgent.zip                   # package only for releases
+|-- EDAgent_Completed_Extension.zip
+`-- EDAgent_Completed_Extension/
+    `-- EDAgent/                 # intended active application
+        |-- backend/
+        |   |-- app/api/v1/endpoints/
+        |   |-- app/services/road_safety/
+        |   |-- app/models/
+        |   |-- app/schemas/
+        |   |-- alembic/
+        |   |-- tests/
+        |   `-- Dockerfile
+        |-- frontend/
+        |   |-- src/pages/road-safety/
+        |   |-- src/components/road-safety/
+        |   |-- src/services/
+        |   `-- package.json
+        |-- docs/
+        |-- tests/
+        `-- docker-compose.yml
+\end{lstlisting}
+
+\section{Colab versus repository input path}
+For interactive Google Colab, activate the runtime and upload the complete 2004--2024 CSV with the exact resource-ID filename to:
+\begin{lstlisting}
+/content/2c13021f-74a9-4289-a1e5-fe0472c89881.csv
+\end{lstlisting}
+The notebook detects the intended Colab working directory, checks uniqueness, years, columns and source metadata, and refuses ambiguous or wrong resource matches. In the repository, keep the same filename at \pathcode{data/raw/}; run the notebook from the root or \pathcode{analysis/} according to its documented path resolution. The Colab runtime is transient: files under \pathcode{/content/} are not durable storage after the runtime disappears.
+
+\section{Saving the accepted executed notebook and ZIP}
+\begin{enumerate}
+\item Archive the frozen executed v6 notebook and final ZIP/manifest with their existing timestamp and SHA-256. The one live research path remains \pathcode{analysis/EDA_v6.ipynb}; do not create an edited \pathcode{EDA_v7.ipynb} as a release dependency.
+\item Extract the archived \pathcode{EDA_v6 output(2).zip} into \pathcode{analysis/outputs/} when available in the project; remove only an extraneous wrapper, and normalise \pathcode{model_artefacts/} to \pathcode{model_artifacts/} outside the immutable ZIP.
+\item Retain all 2,146 candidate coordinate disagreements and the candidate comparison summary. Phase 3 works from these frozen exports and other \emph{already held} pilot records, not from promised additional source submissions.
+\item Verify integrity/row totals against the manifest and the already documented EDA/statistics/model tables; keep all five pipelines private, review-only and non-serving.
+\item Version Phase 3 diagnostics and Phase 4 aggregate release extracts as derivative artifacts with their own file inventory, generation script, \pathcode{RUN_ID}, source/hash lineage and test results; never modify the frozen baseline to make a missing datum appear present.
+\item Save this plan and its editable source as \pathcode{docs/EDAgent_Project_Plan_v3.pdf} and \pathcode{docs/EDAgent_Project_Plan_v3.tex}; retain \pathcode{docs/v6_comparison.pdf} as the companion fixed-run review.
+\item Document data placement, existing environment, commands to regenerate derived outputs, snapshot/checksum verification, expected unavailable outputs and ownership in \pathcode{analysis/README.md} and \pathcode{docs/sources_and_decisions.md}.
+\end{enumerate}
+
+\section{Versioning and archival policy}
+Every approved research/website release records source SHA-256, frozen v6 revision and run timestamp, derivation script commit, output inventory/hash, metric schema and denominator, model status, diagnostic conflict decisions, calculator test vectors, acceptance reviewer and deployment ID. Keep the original CSV/export ZIP untouched. Production releases are allowed to add reviewed \emph{derived aggregate} artifacts, not to rewrite the v6 evidence as a new verification. Version unavailable-state semantics in APIs and regression tests, so a later UI revision cannot silently expose a site estimate. Do not commit secrets or inappropriately redistributable raw crash records; use \pathcode{.env.example}, access controls, private storage and deliberate package snapshots.
+
+\section{Source-reconciliation protocol}
+Before beginning website work, compare root and nested app Git histories, dependency manifests, routes, Docker Compose files, database migrations, client-side API configuration and deployment command. Identify the actual \emph{running} entry point and write a decision record. The default expectation is \pathcode{EDAgent_Completed_Extension/EDAgent/}; a contrary decision requires concrete evidence. Then forbid routine parallel edits to both copies.
+
+\chapter{Execution roadmap and dependencies}
+\section{Dependency principle}
+The release is a \textbf{fixed-evidence pipeline}, not a chain of expected external deliveries. Each phase produces an independently testable artifact whose supported claims can be traced back to the frozen v6 run. Phase 3 candidates and conflicts may proceed with unresolved source-format differences; Phase 4 uses \emph{only already supported} v6 aggregates; Phase 5 uses invented inputs for arithmetic; Phase 6 deploys Road Safety Overview before bounded extras; Phase 7 certifies reproducibility and explicit unavailability. A missing official codebook, verified crash-to-site crosswalk, additional AADT panel, SPF or approved real-site CMF is recorded as a \emph{final scientific limit}, not a blocker to this scope. Site frequency, site historical screening and actual-location benefit numbers do not sit on the critical path.
+
+\section{Phase 0 --- scope, source and repository freeze (substantially done)}
+\textbf{Completed/frozen:} select the cumulative WPRDC 2004--2024 source (exclude 2025); preserve v5 lineage, the v6 run manifest and SHA-256, and the one-notebook rule. \textbf{Remaining bounded activity:} verify the existing root/nested app entrypoint once, inventory only currently held ancillary geography, traffic and treatment records, and write an evidence-availability ledger with approved/provisional/missing states. Official formats or new layers that are unavailable stay marked as such. \textbf{Outputs:} source register, canonical-app decision, closure-of-inputs log, final go/no-go ledger. No external acquisition is an acceptance prerequisite.
+
+\section{Phase 1 --- complete the v6 research baseline (analytical acceptance)}
+The accepted 105-cell/44-code-cell v6 record and source/manifest are not modified. Existing association tests, severity models, eight findings, the 2016 standard boundary, 2024 gaps, injury reconciliation and polygon/grid exports are retained. The five models remain \pathcode{NOT_APPROVED_FOR_PRODUCTION} and the open codebook/GPS/attribution flags remain accurate. \textbf{Outputs:} canonical executed \pathcode{EDA_v6.ipynb}, frozen output inventory, source checksum and \pathcode{v6_comparison.pdf}; no rebranding of historical review as fresh verification.
+
+\section{Phase 2 --- fixed-input geography and modelling feasibility decision}
+\textbf{Fixed-input feasibility decision before further implementation:}
+\begin{enumerate}
+\item Inventory available state-route decimal points, route/segment/offset text, county polygon, grid exports, police-text candidate conversions and pre-existing Station 375 pilot records. Preserve their distinct source semantics.
+\item Record unavailable official-format attestation, missing historic centreline confidence and absence of a reviewed one-CRN/one-site crosswalk; do not infer a validated site from successful coordinate parsing.
+\item Record the 2023 archived traffic-section value of 11,072 vehicles/day for the section containing segment 0080, along with direction/year/units and the prohibition against treating it as complete Station 375 exposure.
+\item Issue formal final \pathcode{NO_GO_SITE_SCREENING}, \pathcode{NO_GO_SITE_FREQUENCY} and \pathcode{NO_GO_REAL_SITE_CMF} decisions. Make Station 375's 2023 observed count \pathcode{UNKNOWN}.
+\end{enumerate}
+\textbf{Outputs:} evidence sufficiency matrix, candidate-source inventory specification and signed no-go decision. Phase 3 still produces high-quality diagnostic geography, but never an accepted site ranking or a production match table.
+
+\section{Phase 3 --- diagnostic geography inventory, maps and QA}
+\textbf{Deliverable: reproducible diagnostic geography.} Implement deterministic generation and checking of (i) a source/coordinate/network-candidate inventory; (ii) county/grid and conflict maps with stated source/grain; (iii) a conflict register, including the 2,146 candidate police/state differences over 500 m; and (iv) a QA report covering CRS, units, source hashes, coverage, ambiguous/missing records, unique CRNs, and nonadditive candidate associations. The Station 375 pilot remains \pathcode{INTERNAL_DIAGNOSTIC}; 2023 observed crash count \pathcode{UNKNOWN}; 11,072 vehicles/day is the archived traffic-section measurement for the section containing segment 0080.
+
+\textbf{Acceptance:} scripts regenerate each diagnostic artifact from existing inputs; every map declares limitations; reviewer confirms \pathcode{PRIMARY_SITE_ASSIGNMENTS_ACCEPTED=0}; no diagnostic candidate is published as an authoritative historical site count, network priority or site exposure. Retain the executed v6 severity comparisons as review evidence; do not retrain/promote models or implement Poisson/NB/EB here. \textbf{Outputs:} diagnostic inventory, map set, conflicts CSV, pilot note, QA/reproduction log and approved release-safe diagnostic summaries.
+
+\section{Phase 4 --- reviewed aggregate analysis and coverage}
+\textbf{Deliverable: reviewed descriptive analysis from supported v6 aggregates.} Build versioned county/year/era and county-clipped grid presentations from existing \pathcode{severity_by_year.csv}, \pathcode{historical_grid_screening.csv}, \pathcode{source_missingness.csv}, \pathcode{findings_review.csv} and other checked v6 outputs. Reproduce the eight documented findings only within their actual populations. Carry metric definitions, source run/hash, exact 2004--2024 or subset periods, numerator/denominator, known-severity exclusions, observation counts, 2016 comparability boundary, 2024 hour/lighting coverage, geographic resolution and missing/out-of-county count where applicable.
+
+\textbf{Acceptance:} each chart reconciles to its source table, has a captioned date range and geographic grain, preserves unknowns, distinguishes grid concentration from exposure risk and avoids site-level priority/frequency language. Provide a data dictionary, aggregate test fixtures, review sign-off and complete reproducibility instructions. \textbf{Outputs:} \pathcode{descriptive_release/} tables/graphics, coverage ledger, approved narratives and API contracts for the Road Safety Overview.
+
+\section{Phase 5 --- treatment evidence and hypothetical calculator}
+\textbf{Deliverable: treatment reference register and tested illustrative calculator.} From the existing sources, catalogue treatment families and any already documented actual CMF records with citations, population/type applicability, quality and \pathcode{EVIDENCE_STATUS}; do not invent a real study factor. Implement \(N_{\mathrm{after}}=N_{\mathrm{before}}c\) and \(\Delta N=N_{\mathrm{before}}(1-c)\) using labelled \emph{hypothetical} baseline, type, period and factor. Test valid examples (including \(c=1\), \(c>1\)), invalid/negative/nonfinite inputs, units, interval endpoints, mismatched target types, absent numeric evidence and exact rounding behaviour.
+
+\textbf{Acceptance:} public illustrative mode is physically separated from real map locations and exposes factor origin; no public real-site baseline can be entered as a purported observation. Real-place inputs always return \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE} without computed benefit. \textbf{Outputs:} treatment evidence register, versioned scenario schema, deterministic API/test vectors, error-state UX and noncausal display copy.
+
+\section{Phase 6 --- Road Safety Overview and bounded website deployment}
+\textbf{Deliverable: aggregate-first web integration and staging deployment.} Reconcile and extend the canonical React/Vite--FastAPI application; \textbf{publish Road Safety Overview first} using only Phase 4 reviewed aggregates and coverage metadata. Add a bounded diagnostic geographic view, retrospective model evaluation panel marked review-only and Phase 5 hypothetical calculator only after each passes release-safe acceptance. Preserve the existing general analyser, auth, charting, report and job workflows. Configure migration-tested PostGIS/relational storage or an equivalent minimal data store, stable APIs, source-hashed artifacts, environment secrets, container build, Docker Compose staging, and an agreed HTTPS deployment. Hosting choices in Chapter 9 remain proposals until configured.
+
+\textbf{Acceptance:} Overview loads with correct 2004--2024/era labels, denominators, grid resolutions and missingness; the app cannot serve site ranks, predicted site counts, Station 375's unknown crash number, unapproved model inference or real-site CMF benefits. A release candidate passes API/front-end integration and accessible chart/map checks. \textbf{Outputs:} overview-first UI and APIs, migrations, release manifest, runbook and staging demo.
+
+\section{Phase 7 --- reproducibility, release QA and demonstration}
+\textbf{Deliverable: final release verification and demonstration.} Verify frozen v6 checksums and derivation lineage; rerun Phase 3/4/5 generation and unit tests from recorded existing inputs; reconcile source and published aggregates; inspect per-chart population, temporal span, denominators, geography grain and coverage; verify v6 model status and source traceability; test security, backups, access control, accessibility, empty/error handling and API compatibility. Exercise a regression suite that queries unsupported real sites, Station 375 2023 observed crashes, site-year frequency/EB, future crash probability and real-location treatment benefits, and checks that each returns a documented \emph{unavailable/unknown} state, never fabricated zero or numeric output.
+
+\textbf{Release criterion:} D0--D5 and D7--D11 pass their v3 revised contracts; D6 is closed as \pathcode{OUT_OF_SCOPE_NO_GO}; D12--D15 remain optional outside the release. Archive test logs, reviewer/approval timestamp, deployment version, evidence source/hash, screenshots and a complete reproducible demonstration of Overview, diagnostics, retrospective limitations and the hypothetical simulator. \textbf{Outputs:} signed QA matrix, final deployment/rollback guide, demo script, limitation statement and v3 release package.
+
+\section{Dependency matrix}
+\small
+\begin{longtable}{@{}L{37mm}L{50mm}L{55mm}@{}}\toprule Output & Prerequisite & Why needed\\\midrule\endfirsthead
+\toprule Output & Prerequisite & Why needed\\\midrule\endhead
+Frozen v6 provenance (P0--1) & Existing resource checksum, executed notebook and manifest & Prevents accidental change to the 2004--2024 research reference.\\
+Final input/no-go ledger (P2) & Inventory of currently held geographic/traffic records & Closes false dependencies on later official source or network arrivals.\\
+Diagnostic geography (P3) & Frozen county/grid/coordinate exports; existing Station 375 pilot & Reproducible maps/conflicts without claiming accepted road attribution.\\
+Station 375 label (P3) & Traffic-section source, 2023 section year, segment 0080 relation & Keeps 11,072 vehicles/day distinct from unknown 2023 site crash count.\\
+Aggregate descriptive release (P4) & Supported v6 tables/findings, source run/hash, coverage rules & Documents time span, denominator, map grain and source coverage.\\
+Severity model narrative (P4/P6) & Frozen v6 holdout/feature/calibration metrics & Permits retrospective explanation, not public prediction.\\
+Treatment reference register (P5) & Already held citations/entries and evidence-status review & Names interventions without inventing an applicable numeric CMF.\\
+Hypothetical calculator (P5) & Explicit invented baseline/factor, units, deterministic test vectors & Permits demonstrative arithmetic without site or causal claims.\\
+Road Safety Overview (P6) & Approved Phase 4 aggregate schemas and captions & First releasable domain experience; not blocked by site matching.\\
+Bounded other pages (P6) & P3 diagnostics, review-only model status, P5 test contracts & Controls unsupported site, model and CMF queries.\\
+Public release (P7) & Reproduction logs, QA, source traceability, security and unavailable-state tests & Verifies v3 is complete with current evidence alone.\\
+Site-level historical screening & \textbf{Outside v3 release scope} & No accepted primary matches or defensible site denominators.\\
+Frequency / EB / site expected counts & \textbf{Outside v3 release scope} & No eligible zero-inclusive panel, aligned exposure or SPF.\\
+Real-site treatment benefit & \textbf{Unavailable in v3} & No accepted site baseline or local applicability basis.\\
+Live forecast / routing / replay & Optional external research only & Never a blocking condition for final acceptance.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\chapter{Optional live, routing and replay extensions}
+\section{Live Road Safety Context Explorer}
+An optional PennDOT road-condition/feed integration would require its own rights, acknowledgement and update-frequency checks \cite{RCRS}. No such new feed forms part of the final closed evidence. V3 does not enable this view or treat current incident context as a validated crash probability. Its absence is an explicitly accepted non-release feature, not an open prerequisite.
+
+\section{Requirements for a genuine one-to-three-hour forecast}
+A valid future-horizon occurrence model would require (1) actual historical event timestamps, (2) aligned traffic/speed or other space-time exposure, (3) historical weather/visibility, (4) work zones/closures where relevant, (5) non-crash site-time intervals, (6) equivalent live inputs and (7) future-period/spatial validation. Exact crash dates and required exposure are absent from the closed WPRDC v6 scope. Therefore this is a methodological note only, with no v3 milestone, API, claim or expected future data delivery.
+
+\section{Candidate route comparison and feedback}
+A later extension might use an existing routing provider \cite{GoogleRoutes} and separately assessed historical context, but the current evidence cannot support an exposure-adjusted ``safest route''. Routing decisions can shift driver demand and change the conditions being scored. No routing dependency or public safety recommendation is part of the v3 release.
+
+\section{Historical replay}
+Precomputed annual/monthly aggregated animation may be a low-cost presentation enhancement, not an event-level chronological reconstruction, validated road-site map or predictive model. It is outside v3 release tests and deliverables.
+
+\chapter{Quality assurance, scientific risks and viva readiness}
+\section{Risk register with mitigation}
+\small
+\begin{longtable}{@{}L{33mm}L{50mm}L{59mm}@{}}\toprule Risk & Failure mode & Control / decision\\\midrule\endfirsthead
+\toprule Risk & Failure mode & Control / decision\\\midrule\endhead
+Severity coding change & False long-term serious-injury trend & 2016 definition boundary; era-aware comparisons and denominators.\\
+Weather/surface code mapping & Unsupported historic grouping & Preserve unverified year-specific maps and unknown/unmapped status; no fabricated attestation.\\
+URBAN\_RURAL shift & Feature meaning changes with years & Exclude unverified predictor/grouping; disclose source-field limitations.\\
+Missing exact dates & Invented near-term forecasts & No 1--3 hour occurrence prediction in v3.\\
+Time missingness/heaping & Misleading temporal plot & Show per-year recorded-hour coverage; 2024 warning and nulls.\\
+GPS discrepancies & False segment/crash assignments & Register 2,146 large candidate conflicts; \textbf{zero approved primary matches}.\\
+Intersection duplication & Inflated supposed site totals & Candidate multi-matches nonadditive; no published site crash count.\\
+Station 375 unknown count & Invented zero or unreviewed crash estimate & Explicit \pathcode{UNKNOWN} in 2023; test no fallback to zero.\\
+Traffic section confusion & 11,072 mistaken for full station exposure & Label archived 2023 traffic section containing segment 0080; units/direction/source.\\
+Missing AADT panel & False risk or count models & Final frequency/EB no-go; aggregates only.\\
+Crash-only panel & Zero-count sites omitted & Do not train count model without a complete eligible frame.\\
+Logistic separation & Unstable association coefficients & Retain pooling, penalisation and v6 diagnostics.\\
+Class imbalance/holdout reuse & Oversold retrospective scores & AP/prevalence/calibration/intervals, holdout caveats, review-only models.\\
+Unsupported site screening & Grid cells called dangerous sites & Label county/grid concentration only; no site rankings.\\
+CMF evidence confusion & Fictional study estimate or real-site benefit & Distinguish evidence register from hypothetical factor; real-site API unavailable.\\
+Untrusted model files & Unsafe loader or misleading inference & Hash/pin privately; public v3 model serving disabled.\\
+AI hallucinations & Invented sites/station crashes & Retrieval allowlist, unknown/unavailable response tests.\\
+Duplicate app trees & Implementation drift & One-time codebase reconciliation.\\
+Irreproducible overview & Unsupported chart or wrong denominator & Fixed v6 lineage, deterministic derivations and aggregate reconciliation.\\
+Scope creep & Release blocked on unavailable data & Phase 2 fixed no-go; P3--P7 deliverable acceptance uses current inputs.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Notebook/data tests}
+\begin{itemize}
+\item Verify archived \pathcode{RUN_ID}, CSV resource ID and SHA-256, 2004--2024 years, 248,810 source rows/unique CRNs, notebook 105/44 cell record, output inventory and recorded no-exception execution. Clearly separate prior v6 execution from any newly reproducible v3 derived run.
+\item Preserve unknown severity, 2016 change, historical unverified mappings, source missingness, injury components and 2024 recorded-hour/illumination limitations.
+\item Reconcile county polygon accepted points (238,281), available coordinate source records, grid count sum (238,281), missing/outside counts and unique versus multiple \emph{candidate} associations. Check CRS, units, distance quantiles and full conflict register.
+\item Verify Phase 3 accepted primary matches remain \textbf{zero}; the Station 375 2023 observed crash count remains \pathcode{UNKNOWN}; 11,072 vehicles/day is stored only as archived 2023 traffic-section AADT for the section containing segment 0080, with no downstream site-year inference.
+\item For every Phase 4 metric assert period bounds, geographic grain, numerator/denominator, known-severity eligibility, coverage and link to source table/hash; compare aggregate sums and counts with v6 exports.
+\end{itemize}
+
+\section{Statistical/model tests}
+\begin{itemize}
+\item Preserve target definition and retrospective nature of Task A, 2016--2021 training/2022--2024 test, feature timing and prevalence; disclose reuse of test years.
+\item Check published metrics against frozen v6 model comparison, AP/PR, calibration/Brier, top-$k$ measures and year-month uncertainty without implying fresh external validation.
+\item Verify all five joblib artifacts remain \pathcode{NOT_APPROVED_FOR_PRODUCTION}, cannot be loaded by public request paths, and no public interface offers a prediction from crash-only training data.
+\item Assert site-year frequency model/EB status \pathcode{OUT_OF_SCOPE_NO_GO}, no site expected-count schema records, no trained count estimator and no chart that conflates grid counts with risk.
+\item Keep the original future-method specifications as research context; do not make absent network/exposure inputs a failed release test.
+\end{itemize}
+
+\section{Website and intervention tests}
+\begin{itemize}
+\item Reproduce Road Safety Overview charts/API payloads from fixed aggregate tables and validate labels for period, denominator, geography level, units, sample coverage, missingness, 2016 and 2024 caveats; test consistent CSV/JSON exports.
+\item Check map CRS, boundaries, legend, filters and tooltip text; distinguish candidate coordinate conflicts and grid concentration from road sites. Test no approved \pathcode{SITE_ID} result, no rank, no forced road assignment and correct empty/unknown states.
+\item Test hypothetical CMF calculator with \(10\times 0.8=8\) and difference \(2\), \(c=1\), \(c>1\), zero baseline, invalid/negative/nonfinite numbers, units, mismatched crash type, no referenced CMF, evidence provenance and disclaimer display.
+\item Request real-location examples, Station 375, real-site expected frequency and treatment benefit. Confirm \pathcode{UNAVAILABLE_SITE_BASELINE}, \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE} or \pathcode{UNKNOWN} with no numeric estimate or silent zero; verify all hypothetical examples are disconnected from real map points.
+\item Exercise FastAPI validation, CORS/auth, rate limits, health/readiness, API versioning, migrations, backup/rollback, accessibility and frontend loading/empty/error states; preserve existing general analyser functionality.
+\item Demonstrate aggregate-first Overview, a Phase 3 conflict/map, v6 review-only model metrics, Phase 5 illustration, and several intentional unavailable responses. Archive a reviewer-signed test matrix and release manifests.
+\end{itemize}
+
+\section{Viva readiness: questions and correct distinctions}
+\small
+\begin{longtable}{@{}L{67mm}L{80mm}@{}}\toprule Question & Answer concept\\\midrule\endfirsthead
+\toprule Question & Answer concept\\\midrule\endhead
+Why are reported-crash counts not risk? & No per-trip/vehicle-mile exposure; reporting threshold; high throughput can increase count.\\
+Why 2016 onward for severity comparisons? & Definition changed on 1 January 2016; use comparable eras and known-outcome denominators.\\
+Why are some outcomes unknown? & Missing/unmapped severity is excluded, never treated as non-severe.\\
+Why AP and chronological holdout? & Rare positives (4.44\% test) and future-period evaluation; holdout has been inspected in development.\\
+Why not pre-crash severity inference? & Collision type is known after an event and crash-row training has no no-crash comparison.\\
+What can the map really show? & County/grid historic concentration and diagnostic coordinate conflicts, not validated per-site risk.\\
+Why zero primary crash-to-site assignments? & Unverified coordinate interpretation, geometry/carriageway ambiguity and incomplete reviewed attribution evidence.\\
+What is Station 375's 2023 observed crash count? & \textbf{Unknown}; neither zero nor estimated from unapproved candidate matches.\\
+What does 11,072 vehicles/day represent? & Archived 2023 PennDOT traffic-section value for the section containing segment 0080; not an accepted site-year model offset.\\
+Why no Poisson/NB or EB site ranking? & Missing accepted unique site attribution, zero-inclusive eligible network, aligned exposure and calibrated SPF.\\
+What is the simulator measuring? & Purely hypothetical expected baseline times an assumed CMF; never a real Allegheny treatment benefit.\\
+What if treatment evidence is absent? & Declare no approved numeric CMF; qualitative reference remains, example factor is labelled invented.\\
+Why is Overview released first? & Already supported v6 aggregates can be reproduced without asserting new site-level scientific evidence.\\
+How does the final-input assumption affect schedule? & No release phase waits for unavailable crosswalk, codebook, AADT series or real-site CMF; unsupported features stay unavailable.\\
+Why no per-request ML training? & Models train offline; serving needs a trusted approved artifact, absent in this public release.\\
+Why is live data not a forecast? & Past aligned event/non-event exposure and future-period validation are missing.\\
+Why could routing claims backfire? & Travel recommendations shift traffic demand and invalidate static exposure assumptions.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\chapter{Workstreams, deliverables and release acceptance}
+\section{Ownership model}
+\begin{description}[style=nextline,leftmargin=0pt,labelwidth=0pt,topsep=2pt,itemsep=4pt]
+\item[Statistical analysis.] Steward frozen v6 source, historical code conventions, severity inference, descriptive-release metrics, denominators, uncertainty, temporal caveats and findings interpretation.
+\item[Geospatial analysis.] Own Phase 3 candidate coordinate/source inventory, county/grid diagnostic maps, conflict register, Station 375 pilot evidence, archived traffic-section label and zero-approved-assignment QA invariant.
+\item[ML and evaluation.] Maintain historic severity target/feature documentation and review-only registry; sign the no-go on site frequency, EB and public model inference; test false-claim guards.
+\item[Website and integration.] Own canonical FastAPI/React, aggregate-first Overview, source-bearing APIs, diagnostic map, illustrative CMF engine, status/error UX, migration, deployment and accessibility tests.
+\item[Data steward/release integrator.] Maintain source hashes, approved aggregate views, evidence-register statuses, release decision log, artifact inventory, reproducibility scripts and signed Phase 7 checks.
+\end{description}
+Assign one accountable owner and an independent reviewer to each deliverable. Every contributor should be able to articulate each chart's period/denominator/grain and why actual sites remain unavailable.
+
+\section{Deliverables register (D0--D15, current evidence and acceptance)}
+\small
+\begin{longtable}{@{}L{10mm}L{42mm}L{29mm}L{62mm}@{}}\toprule ID & Deliverable & Current status & Evidence needed for v3 acceptance\\\midrule\endfirsthead
+\toprule ID & Deliverable & Current status & Evidence needed for v3 acceptance\\\midrule\endhead
+D0 & Scope/source input closure & Source fixed & 2004--2024 lock, 2025 exclusion, final-input ledger, no-go decisions; no promised data.\\
+D1 & Canonical app decision & Verify once & Root/nested entrypoint comparison and recorded active React/FastAPI location.\\
+D2 & Frozen executed v6 notebook & Analytical accepted & 105/44 cell record, SHA-256/manifest, eight findings, restrictions preserved.\\
+D3 & Statistical and aggregate findings & Existing evidence; review & Supported v6 results plus period, denominator, geography grain, source and coverage ledger.\\
+D4 & Geographic diagnostic report & Phase 3 deliverable & Inventory, maps, 2,146-conflict register, Station 375 internal note, QA, \textbf{zero accepted primary matches}.\\
+D5 & Severity classifier comparison & Frozen review only & AP/PR, calibration, feature timing, temporal caveat and explicit no-public-inference state.\\
+D6 & Site-year frequency/EB model & \textbf{Out of scope} & Signed \pathcode{NO_GO}; no site model, expected count or EB API required for release.\\
+D7 & Reviewed descriptive / Overview dataset & Phase 4 deliverable & Reproducible county/year/grid aggregates, exact periods, denominators, resolution and coverage; no site rank.\\
+D8 & Treatment evidence register & Phase 5 deliverable & Source and applicability records with clear evidence-status; empty numeric CMF approval allowed.\\
+D9 & Hypothetical intervention calculator & Phase 5 deliverable & Tested arithmetic, type/unit validation, real-site refusal and prominent illustrative labels.\\
+D10 & Aggregate-first domain website & Phase 6 deliverable & Road Safety Overview first, bounded other pages, preserved general analyser and disabled unsupported routes.\\
+D11 & Release QA and demonstration & Phase 7 deliverable & Traceable hashes, full reproduction, API/UI/security, unavailable-state regression and signed release runbook.\\
+D12 & Live Safety Explorer & Outside v3 & No release gate; possible separately scoped future feed integration.\\
+D13 & Short-horizon forecast & Outside v3 & No release gate; missing timestamp/exposure prerequisites stated.\\
+D14 & Route comparison & Outside v3 & No release gate; historical context alone not safe-route guidance.\\
+D15 & Historical replay & Outside v3 & No release gate; optional labelled aggregate presentation.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Release acceptance rules}
+A complete v3 final release \textbf{accepts D0--D5 and D7--D11 under their revised contracts}; \textbf{D6 is formally closed as out of scope/no-go}, not a failed deliverable; D12--D15 are optional and cannot delay acceptance. D4 accepts \emph{diagnostic} artifacts with zero primary site matches, not a source-certified road network. D7 accepts aggregate descriptive evidence, not a site screen. D8 accepts an accurate treatment register even if no study-specific numeric CMF has been approved, and D9 accepts exclusively hypothetical arithmetic. D10 must release Road Safety Overview before other bounded pages. D11 must test both successful supported claims and unavailable states for all unsupported ones.
+
+\textbf{Mandatory cross-cutting gates:} (a) original source/run hash traceability; (b) deterministic script and test evidence for P3--P5 and published aggregates; (c) documented year range, denominator, geographic grain and coverage on charts and APIs; (d) \pathcode{PRIMARY_SITE_ASSIGNMENTS_ACCEPTED=0}; (e) Station 375 observed 2023 crashes \pathcode{UNKNOWN}, and 11,072 vehicles/day labelled as traffic-section AADT for the section containing segment 0080; (f) no review-only model or real-site CMF claim promoted; and (g) public unavailable/error states tested end-to-end. Record reviewer, timestamp, version, deployment hash and corrective/rollback decision for each gate.
+
+\chapter{Final operating rules and continuation}
+\section{Rules that should remain stable}
+\begin{enumerate}
+\item One EDAgent repository, one frozen canonical \pathcode{analysis/EDA_v6.ipynb}, source SHA-256, cumulative 2004--2024 WPRDC resource; exclude 2025.
+\item The nested completed extension is the intended app after one recorded entrypoint reconciliation; root copies cannot become parallel products.
+\item The general AI analyser remains operational; the aggregate Road Safety Overview is the first domain release.
+\item Reported crashes, county/grid concentration, post-crash severity ranks, site-year expected frequency and CMF arithmetic are different quantities; v3 publishes the first three only as appropriate \emph{descriptive or retrospective review}, and the last only as \emph{hypothetical arithmetic}.
+\item Never call raw counts or grid intensity risk without valid exposure; never treat unknown severity or Station 375's unknown 2023 crashes as zero.
+\item \textbf{Accepted primary crash-to-site assignments remain zero}. Candidate geometry and pilot diagnostics are not validated site profiles or screening priorities.
+\item The section containing segment 0080 has an archived 2023 traffic-section value of \textbf{11,072 vehicles/day}; do not convert it to a verified Station 375 site-year denominator.
+\item Site-level historical screening, site-year Poisson/NB and EB, public real-site crash expectations and real-site treatment benefits are \textbf{outside v3 release}; codebooks, network data and CMF gaps are documented, not awaited.
+\item Keep source hashes, independent version IDs for derivative outputs, exact denominator/grain definitions, evidence/approval states and release tests for auditability.
+\item The v6 models are private \pathcode{NOT_APPROVED_FOR_PRODUCTION} research outputs; train offline and load only separately approved trusted artifacts in any future application, never during an HTTP request.
+\item Cite treatment evidence carefully; a toy factor is not a verified CMF for an actual road, and the calculator's hypothetical space must be visually and technically isolated from real maps.
+\item Routing, deep learning, replay and live occurrence forecasts may not displace fixed-scope P3--P7 acceptance.
+\end{enumerate}
+
+\section{The project's complete evidence chain}
+\begin{center}
+\fbox{\begin{minipage}{.84\linewidth}\centering
+Frozen WPRDC 2004--2024 crash record + v6 manifest/hash\\[4pt]
+$\Downarrow$\\[4pt]
+Audited cleaning, historical codes, source coverage and EDA\\[4pt]
+$\Downarrow$\\[4pt]
+County/grid descriptive evidence + separate coordinate/conflict diagnostics\\[4pt]
+$\Downarrow$\\[4pt]
+Reviewed aggregate tables, captions and retrospective model limitations\\[4pt]
+$\Downarrow$\\[4pt]
+Existing treatment references + \emph{hypothetical-only} CMF calculator\\[4pt]
+$\Downarrow$\\[4pt]
+Road Safety Overview first + bounded domain pages\\[4pt]
+$\Downarrow$\\[4pt]
+Reproduction, traceability, unavailable-state and final release tests
+\end{minipage}}
+\end{center}
+\textbf{Deliberate non-branch:} a candidate crash/location overlay does \emph{not} lead to a public site count, site-year model or real-site intervention benefit. Those quantities remain unavailable throughout v3.
+
+\section{Immediate handoff and decommissioning note}
+Freeze the original v6 notebook, export inventory and run/source hashes under canonical names. Confirm the active application entrypoint, sign the current-input ledger and document the Phase 2 no-go for accepted sites, zero-inclusive frequency/EB and real-site treatment estimates. Execute Phase 3 conflict maps/inventory and QA with Station 375 restricted to internal evidence; execute Phase 4 supported aggregate analysis with all populations and coverage; execute Phase 5 reference register and hypothetical arithmetic tests; deploy Phase 6 Road Safety Overview before secondary diagnostic/explanatory/calculator pages; complete Phase 7 independent reproduction and unavailable-state tests. This roadmap reaches a final deliverable without any promised external dataset. The preceding 15 chapters and appendices fully contain the project purpose, preserved v6 technical baseline, architecture, source record, phase sequence and acceptance; earlier plans need not be consulted during routine v3 implementation.
+
+\chapter{Sources, provenance and reference library}
+\section{Primary project artefacts}
+\begin{description}[style=nextline,leftmargin=0pt,labelwidth=0pt,itemsep=5pt]
+\item[B1 -- Earlier analytical baseline.] \pathcode{EDA_Vishesh_Updated_v5_executed(2).ipynb}; 82 cells including 31 code cells, retained outputs and the full 2004--2024 dataset baseline. The accompanying seven-page \pathcode{v5_comparison(2).pdf}, dated 3 November 2026, compares v3/v4/v5 cell by cell. A 20-record sample preview mentioned in the earlier plan was a \emph{sample}, not the full CSV.
+\item[B2 -- Original planning record.] \pathcode{EDAgent_Project_Plan(1).pdf}, version 1.0, 10 November 2026, 49 physical pages (44 numbered substantive pages). Its goals, technical scope, roadmap and source references are rewritten into the present integrated plan; this PDF is not an appended replacement extract.
+\item[B3 -- Frozen executed v6 evidence.] \pathcode{EDA_v6(3).ipynb} and \pathcode{EDA_v6 output(2).zip} as documented in the v2 review, with final manifest 11 November 2026 03:13:38 UTC, seven EDA tables, six spatial outputs, two model metric tables, five private review-only model files and no curated CMF entries. The additional supplied \pathcode{EDA_v6(4).ipynb} was inspected for notebook structural consistency (105 cells, 44 code cells, no stored exceptions). Chapter 3 numbers inherit the original manifest/exports rather than a new independent source-CSV run.
+\item[B4 -- Companion report.] \pathcode{v6_comparison.pdf}, eight-page cell-wise v5-to-v6 review, delivered with the earlier documentation package; its fixed analytical benchmark should be read alongside the updated operating rules in this plan.
+\item[B5 -- Team/repository context.] The reported root/nested code trees, completed general analyser, professor feedback, one-notebook rule and current fixed-input release decision; code paths remain expectations until one-time reconciliation is logged.
+\item[B6 -- Station 375 and traffic-section evidence.] The pre-existing team pilot and archived PennDOT traffic-section record, as communicated for this v3 plan, support only the stated restricted facts: Station 375 is \pathcode{INTERNAL_DIAGNOSTIC}, its observed 2023 crash count is unknown, and the archived 2023 traffic-section value is 11,072 vehicles/day for the section containing segment \pathcode{0080}. No uploaded underlying station crosswalk or archived traffic-count extract was independently revalidated for this revision. These claims must remain source-labelled rather than expanded into accepted local crash/exposure estimates.
+\end{description}
+
+\section{Official/public sources and role of each reference}
+The following citations preserve the original public source record. URLs may move and should be reopened when the relevant stage is implemented. Inclusion means the source was identified for the project; it does not mean every codebook, dataset, feed or facility SPF has been downloaded or formally verified.
+
+\begin{thebibliography}{99}
+\bibitem{WPRDC}\textbf{R1.} Western Pennsylvania Regional Data Center. \emph{Allegheny County Crash Data}: dataset description, privacy constraints, 2004--2024 source and codebook/resource information.\par\url{https://data.wprdc.org/dataset/allegheny-county-crash-data}
+
+\bibitem{PASDA}\textbf{R2.} Pennsylvania Spatial Data Access. \emph{Allegheny County Street Centerlines}: maintained county reference data, REST service and completeness/accuracy caveats.\par\url{https://www.pasda.psu.edu/uci/DataSummary.aspx?dataset=1224}\par\url{https://mapservices.pasda.psu.edu/server/rest/services/pasda/AlleghenyCounty/MapServer}
+
+\bibitem{Primer}\textbf{R3.} PennDOT/WPRDC. \emph{Crash Data Introduction / Database Primer}, including crash counting, state-route location references and intersection double-counting cautions.\par\url{https://data.wprdc.org/dataset/3130f583-9499-472b-bb5a-f63a6ff6059a/resource/c884d6da-588d-45ec-b029-8aaec8018500/download/database-primer-4-15.pdf}
+
+\bibitem{PennDOT2016}\textbf{R4.} Pennsylvania Department of Transportation. \emph{2016 Crash Facts and Statistics} and Pennsylvania Crash Information Tool; the 1 January 2016 injury-severity-standard change.\par\url{https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/travelinpa/safety/documents/2016_CFB_linked.pdf}\par\url{https://crashinfo.penndot.pa.gov/PCIT/}
+
+\bibitem{TIRe}\textbf{R5.} PennDOT. \emph{Traffic Information and Traffic Information Repository (TIRe)}; count-site coverage and collection cycles.\par\url{https://www.pa.gov/agencies/penndot/about-penndot/results-data/traffic-information}\par\url{https://gis.penndot.pa.gov/TIRe}
+
+\bibitem{FHWA_screen}\textbf{R6.} Federal Highway Administration. \emph{Screening Your Network to Improve Roadway Safety Performance}; network-screening measures and methods.\par\url{https://highways.dot.gov/safety/data-analysis-tools/systemic/screening-your-network-imp}
+
+\bibitem{FHWA_EB}\textbf{R7.} Federal Highway Administration. \emph{Project Evaluation Using Empirical Bayes}; regression to the mean and appropriate SPF use.\par\url{https://highways.dot.gov/safety/learn-safety/noteworthy-practices/project-evaluation-us}
+
+\bibitem{CMF}\textbf{R8.} Federal Highway Administration. \emph{Crash Modification Factors Clearinghouse}, user guide and FAQs; CMF interpretation, applicability and evidence quality.\par\url{https://cmfclearinghouse.fhwa.dot.gov/}\par\url{https://cmfclearinghouse.fhwa.dot.gov/userguide_CMF.php}\par\url{https://cmfclearinghouse.fhwa.dot.gov/faqs.php}
+
+\bibitem{RCRS}\textbf{R9.} PennDOT. \emph{Request Access to Transportation-Related Data Feeds} and API documentation; RCRS access and attribution.\par\url{https://www.pa.gov/services/penndot/request-access-to-transportation-related-data-feeds}\par\url{https://www.pa.gov/agencies/penndot/programs-and-doing-business/online-services/developer-resources-documentation-api}
+
+\bibitem{GoogleRoutes}\textbf{R10.} Google Maps Platform. \emph{Routes API}; route/matrix capabilities for a potential provider-backed candidate comparison.\par\url{https://developers.google.com/maps/documentation/routes}
+
+\bibitem{Vite}\textbf{H1.} Vite. \emph{Deploying a Static Site}; frontend build/deployment options.\par\url{https://vite.dev/guide/static-deploy}
+
+\bibitem{Render}\textbf{H2.} Render. \emph{Web Services / FastAPI deployment / health checks}; Docker images, environment variables, health and web application hosting.\par\url{https://render.com/docs/web-services}\par\url{https://render.com/docs/deploy-fastapi}\par\url{https://render.com/docs/health-checks}
+
+\bibitem{Supabase}\textbf{H3.} Supabase. \emph{PostGIS: Geo Queries}; managed PostgreSQL/PostGIS geospatial data and indexing.\par\url{https://supabase.com/docs/guides/database/extensions/postgis}
+
+\bibitem{R2}\textbf{H4.} Cloudflare. \emph{R2 S3-Compatible API}; a candidate private model/data object store.\par\url{https://developers.cloudflare.com/r2/get-started/s3/}
+
+\bibitem{Sklearn}\textbf{H5.} scikit-learn. \emph{Model persistence}; trusted loading, version compatibility, ONNX and \texttt{joblib} caveats.\par\url{https://scikit-learn.org/stable/model_persistence.html}
+\end{thebibliography}
+
+\section{Interpretation of source citations}
+B1--B4 describe prior/frozen analytical project artifacts; B5 contains team/repository constraints; B6 records the restricted existing Station 375/traffic-section evidence and its verification boundary. R1--R10 are inherited public data/method references, and H1--H5 are proposed implementation/serving references. A reference URL does not prove its latest version was downloaded, a technical provider was provisioned, a study-specific numeric CMF was reviewed, or a site crosswalk was approved. The v3 evidence-closure rule forbids treating a listed external reference as an awaited release input; preserve provenance and mark any unsupported source-specific claim unavailable.
+
+\chapter{Data and output contracts for implementation}
+\section{Definitions to use everywhere}
+\small
+\begin{longtable}{@{}L{43mm}L{99mm}@{}}\toprule Term & Operational meaning\\\midrule\endfirsthead
+\toprule Term & Operational meaning\\\midrule\endhead
+CRASH\_CRN & Unique source crash identifier; aggregate unique CRNs at supported geography.\\
+Reported crash & Record in the WPRDC reporting process, not an observed trip or no-event time unit.\\
+Known severity & Source codes 0,1,2,3,4; binary serious/fatal target is 1 for 1/2.\\
+Unknown severity & Codes 8,9, missing or unmapped; excluded from known-outcome denominator.\\
+County/grid aggregate & V6-supported recorded-crash count with declared period, spatial resolution and coverage; not a road-site ranking/risk.\\
+Geographic diagnostic candidate & Unreviewed road/coordinate hypothesis with source, distance, conflict, ambiguity and internal status.\\
+Accepted primary crash assignment & Unique, reviewed \pathcode{CRASH_CRN} to validated \pathcode{SITE_ID} relation; \textbf{zero accepted in v3}.\\
+Station 375 pilot & Internal directional geographic evidence, not a public accepted site or local crash count.\\
+Station 375 2023 observed crash count & \textbf{Unknown}; never impute zero or use candidate matches as observed count.\\
+2023 traffic-section AADT & Archived 11,072 vehicles/day for the traffic section containing segment \pathcode{0080}; not complete site-year exposure.\\
+Site-year (not released) & Hypothetical eligible road facility/year including zero crashes, needing accepted site IDs and valid exposure.\\
+Exposure & Justified traffic/person-distance-duration reference aligned with site, time and outcome; missing for v3 site model.\\
+SPF / EB & Safety Performance Function and Empirical Bayes tools needing suitable reference population/calibration; not estimated in v3.\\
+Review-only severity artifact & Existing v6 joblib/research metrics not authorised for website inference.\\
+Treatment evidence record & Cited source/treatment/applicability/status; may have no approved numeric factor.\\
+Hypothetical CMF & Invented numeric scenario multiplier used only to demonstrate arithmetic; \emph{not} an observed/study-validated local effect.\\
+Real-site benefit & Expected local after/before crash difference; \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE} in v3.\\
+Approval record & Explicit derivative ID, source/run hash, reviewer, timestamp, test and allowed claim class.\\
+\bottomrule\end{longtable}
+\normalsize
+
+\section{Suggested minimum exchange schemas}
+\textbf{Descriptive metric:} \pathcode{METRIC_ID}, \pathcode{RUN_ID}, \pathcode{SOURCE_SHA256}, \pathcode{DERIVATION_ID}, \pathcode{PERIOD_START/END}, \pathcode{YEAR_ERA}, \pathcode{POPULATION}, \pathcode{GEOGRAPHIC_GRAIN}, \pathcode{GRID_RESOLUTION}, \pathcode{NUMERATOR}, \pathcode{DENOMINATOR}, \pathcode{COVERAGE_N}, \pathcode{EXCLUDED_N}, \pathcode{UNITS}, \pathcode{CAVEAT_CODES}, \pathcode{APPROVAL_STATE}. Do not equate displayed percentage with all-source share unless the denominator is all eligible source records.
+
+\textbf{Geography diagnostic candidate:} \pathcode{CRASH_CRN}, \pathcode{CRASH_YEAR}, \pathcode{CANDIDATE_ID}, \pathcode{SOURCE_COORDINATE_TYPE}, \pathcode{RAW_COORDINATE}, \pathcode{CRS}, \pathcode{CANDIDATE_SITE_TYPE}, \pathcode{MATCH_METHOD}, \pathcode{DISTANCE_M}, \pathcode{CONFLICT_CODE}, \pathcode{ALTERNATIVE_COUNT}, \pathcode{REVIEW_STATUS}, \pathcode{PRIMARY_ATTRIBUTION_ACCEPTED=false}. Rows are \emph{nonadditive} candidates. Do not populate an accepted \pathcode{CRASH_CRN}--\pathcode{SITE_ID} crosswalk in v3.
+
+\textbf{Pilot/traffic-section context:} \pathcode{PILOT_ID=Station375}, \pathcode{PILOT_STATUS=INTERNAL_DIAGNOSTIC}, \pathcode{OBSERVED_CRASH_COUNT_2023=null}, \pathcode{CRASH_COUNT_STATE=UNKNOWN}, \pathcode{SEGMENT_REFERENCE=0080}, \pathcode{TRAFFIC_SECTION_SOURCE}, \pathcode{AADT_YEAR=2023}, \pathcode{AADT_VEHICLES_PER_DAY=11072}, \pathcode{AADT_DIRECTION}, \pathcode{SITE_EXPOSURE_VALIDATED=false}. Add source metadata only when actually held; never infer a missing field.
+
+\textbf{Historical model metadata:} \pathcode{MODEL_ID}, \pathcode{RUN_ID}, \pathcode{ARTIFACT_SHA256}, \pathcode{FEATURE_SCHEMA}, \pathcode{TARGET}, \pathcode{TRAIN_YEARS}, \pathcode{TEST_YEARS}, \pathcode{METRICS}, \pathcode{CALIBRATION_STATUS}, \pathcode{LIMITATION_CODES}, \pathcode{APPROVAL_STATE=NOT_APPROVED_FOR_PRODUCTION}. No public inference route.
+
+\textbf{Treatment evidence and hypothetical scenario:} \pathcode{EVIDENCE_ID}, \pathcode{SOURCE_URL}, \pathcode{TREATMENT}, \pathcode{FACILITY_TYPE}, \pathcode{TARGET_CRASH_TYPE}, \pathcode{STUDY_FACTOR_IF_VERIFIED}, \pathcode{EVIDENCE_STATUS}, \pathcode{SCENARIO_KIND=HYPOTHETICAL}, \pathcode{HYPOTHETICAL_BASELINE_N}, \pathcode{HYPOTHETICAL_FACTOR}, \pathcode{BASELINE_PERIOD}, \pathcode{AFTER_N}, \pathcode{DELTA_N}, \pathcode{UNITS}, \pathcode{DISCLAIMERS}. A true site ID must never be accepted as a valid illustrative request's source baseline.
+
+\section{Status gates as machine-readable decisions}
+Use explicit \pathcode{MISSING_INPUT}, \pathcode{UNVERIFIED}, \pathcode{INTERNAL_DIAGNOSTIC}, \pathcode{REVIEW_ONLY}, \pathcode{APPROVED_FOR_ANALYSIS}, \pathcode{APPROVED_AGGREGATE_RELEASE}, \pathcode{ILLUSTRATIVE_ONLY}, \pathcode{OUT_OF_SCOPE_NO_GO}, \pathcode{UNKNOWN}, \pathcode{UNAVAILABLE_SITE_BASELINE}, \pathcode{REAL_SITE_BENEFIT_UNAVAILABLE}, \pathcode{NOT_APPROVED_FOR_PRODUCTION} and \pathcode{REJECTED} as relevant. \pathcode{APPROVED_FOR_INFERENCE} remains a possible future registry state but applies to no present v6 model. Backend and UI must check status codes, not file presence. Invariant: \pathcode{PRIMARY_SITE_ASSIGNMENTS_ACCEPTED=0}. The response for an unknown crash count is a typed null/unknown state, never numeric zero; the response for a prohibited real-site calculator request contains no invented expected crash number or treatment benefit. Retest these invariants on every release and rollback if violated.
+
+\chapter{Operational handoff checklist and decision log}
+\section{Checklist for the next project meeting}
+\begin{enumerate}
+\item Confirm the frozen \pathcode{EDA_v6.ipynb}, source hash and current export inventory; record which original artifacts are locally held and which facts are drawn only from the prior v2 manifest review.
+\item Record current-input closure and the Phase 2 formal no-go for accepted primary site attribution, site historical screening, site frequency/EB and real-site CMF effects.
+\item Resolve the active root-versus-nested FastAPI/React application once and record the decision.
+\item Build/check Phase 3 coordinate/source inventory, all 2,146 candidate disagreements, maps, \pathcode{PRIMARY_SITE_ASSIGNMENTS_ACCEPTED=0}, and internal-only Station 375 pilot.
+\item Label \textbf{11,072 vehicles/day} as an archived \textbf{2023 traffic-section} value for the section containing \pathcode{0080}; Station 375 observed 2023 crash count is \pathcode{UNKNOWN}.
+\item Review Phase 4 count/percentage tables, exact periods, severity denominators, 2016 and 2024 limitations, grid geography/resolution, source links and missing/outside coverage.
+\item Review existing treatment references without implying validated numeric CMFs; pass Phase 5 hypothetical calculator arithmetic, invalid-input and real-site-unavailable tests.
+\item Deploy Phase 6 Road Safety Overview first, followed by bounded diagnostic/research/calculator views in the one canonical app. Keep model inferencing and site predictions disabled.
+\item Run Phase 7 deterministic reproduction, traceability, API/UI/security, accessibility, unknown/unavailable regression and rollback tests; sign a complete v3 demonstration.
+\end{enumerate}
+
+\section{Decision log fields}
+For each material change record issue, source file/run and source hash, affected target/population/geographic grain, options, actual evidence, quality test, decision, reviewer/owner, timestamp, derivative artifact/commit, allowed public claim, API state and rollback rule. Mandatory final decisions are: v6 freeze; closed-input ledger; police GPS \pathcode{UNVERIFIED}; codebook status retained; zero accepted primary match; Station 375 \pathcode{INTERNAL_DIAGNOSTIC}/2023 \pathcode{UNKNOWN}; archived traffic-section 11,072 vehicles/day limited to the section containing segment 0080; site screening and frequency/EB \pathcode{OUT_OF_SCOPE_NO_GO}; treatment evidence availability; hypothetical-only calculator; review-only severity model; Overview-first web promotion and Phase 7 release approval. Treat unsupported future work as non-release research, not an unresolved commitment.
+
+\begin{center}
+\rule{.62\linewidth}{.5pt}\\[5pt]
+\textsc{End of EDAgent Project Master Plan, Version 3.0}\\[3pt]
+\small Standalone integrated plan --- 13 November 2026
+\end{center}
+\end{document}

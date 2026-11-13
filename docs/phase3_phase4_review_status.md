@@ -1,5 +1,7 @@
 # Phase 3 and 4 review status
 
+> **Superseded scope:** This dated review preserves its original findings and test results. [Project Plan v3](EDAgent_Project_Plan_v3.pdf) and the [v3 roadmap](implementation_plan.md#v3-transition-and-roadmap) replace pending site-screening and real-site treatment gates with final release exclusions; Phase 5 now covers hypothetical calculator work.
+
 **Reviewed 2026-11-12. Phase 3 is provisional. Phase 4 is no-go for frequency and blocked for historical screening. Phase 5 is no-go.** No named reviewer decision has been received for any real artifact. Earlier v1.0.0 completion, exposure, concentration and approval claims remain historical. The release gate requires a separately recorded approval for the exact staged manifest.
 
 ## Executive verdicts by phase

@@ -1,6 +1,6 @@
 """Poisson regression baseline for site-year crash frequency modelling.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Implements the Generalized Linear Model (GLM) with logarithmic link function,
 statistically justified exposure offset, standard error estimation, deviance diagnostics,
 and out-of-sample chronological evaluation.
@@ -258,7 +258,7 @@ class PoissonRegressionModel:
                         prediction_status=PredictionStatus.BLOCKED_INSUFFICIENT_EXPOSURE,
                         limitations=[
                             "Model not fitted due to unverified traffic exposure across road network.",
-                            "Predictive frequency forecasting prohibited under Project Plan v2 (§8, §18).",
+                            "Site frequency modelling is outside Project Plan v3 release scope.",
                         ],
                     )
                 )

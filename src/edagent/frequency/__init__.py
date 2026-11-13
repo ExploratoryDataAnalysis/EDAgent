@@ -1,6 +1,6 @@
 """Frequency modelling, statistical baseline, and historical concentration package.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 """
 
 from edagent.frequency.concentration import (

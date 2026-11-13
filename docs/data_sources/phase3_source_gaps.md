@@ -1,5 +1,7 @@
 # Phase 3 — Module A: Source Gaps, Coordinate Discrepancies & Research Blockers
 
+> **Superseded scope:** This report records earlier work and decisions. [Project Plan v3](../EDAgent_Project_Plan_v3.pdf) and the [v3 roadmap](../implementation_plan.md#v3-transition-and-roadmap) govern release scope: site-level historical screening, frequency/EB modelling and real-site treatment estimates are out of scope; geographic matches are diagnostic, with zero accepted primary assignments. Earlier claims of approval, mandatory pathways or pending release describe historical proposals, not current authorization.
+
 > Review update: the statements below that no historical centerline archives
 > exist and that the current Pub 153 cannot be obtained are superseded by the
 > [source review](../phase3_phase4_review_status.md#source-review-2026-11-12).

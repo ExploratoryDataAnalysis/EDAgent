@@ -1,6 +1,6 @@
 """Chronological validation, expanding-window evaluation, and calibration diagnostics.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Enforces strict temporal validation without future leakage, evaluates calibration
 by year and road class, and computes residual diagnostics.
 """

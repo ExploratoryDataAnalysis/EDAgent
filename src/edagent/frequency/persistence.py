@@ -1,6 +1,6 @@
 """Model artifact persistence, manifest generation, and integrity verification.
 
-Governed by Project Plan v2 (§8, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Stores model parameters, feature metadata, dataset checksums, and validation metrics
 in versioned JSON manifests for full reproducibility.
 """

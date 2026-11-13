@@ -1,6 +1,6 @@
 """Historical crash-concentration reporting pathway.
 
-Governed by Project Plan v2 (§8, §14, §18) and Phase 4 Module B requirements.
+Developed under historical Project Plan v2 (§8, §14, §18) and Phase 4 Module B requirements; v3 governs release scope.
 Mandated alternative when traffic exposure coverage is inadequate for predictive modelling.
 Computes empirical spatial crash density, severe injury (KSI) density, vulnerable road user
 (VRU) concentration, multi-epoch temporal persistence auditing, and within-road-class

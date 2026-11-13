@@ -1,9 +1,8 @@
 """Traffic exposure feasibility assessment and decision engine.
 
-Governed by Phase 4 Module A requirements and Project Plan v2 (§8, §14, §18).
-Evaluates explicit statistical and operational criteria to determine whether
-site-year crash-frequency modelling is feasible, or whether the historical
-crash-concentration alternative must be executed.
+Developed under historical Project Plan v2 (§8, §14, §18); v3 governs release scope.
+Evaluates historical statistical and operational feasibility criteria.
+Site-level screening and frequency modelling are outside v3 release scope.
 """
 
 from __future__ import annotations
@@ -129,12 +128,9 @@ class TrafficFeasibilityEvaluator:
 
         decision = OverallDecision.NO_GO
         recommended_action = (
-            "EXECUTE_HISTORICAL_CRASH_CONCENTRATION_ALTERNATIVE: "
-            "In strict accordance with Project Plan v2 (§8, §14, §18) and EDA v6 baseline (Sections 14 & 18), "
-            "predictive site-year frequency modelling (Poisson, Negative Binomial, Empirical Bayes, and CMF multipliers) "
-            "is REJECTED due to the complete absence of verified historical annual traffic exposure and local road AADT. "
-            "The project must proceed with the pre-specified Historical Crash-Concentration Alternative, "
-            "reporting verified empirical counts and spatial density without fabricating synthetic exposure."
+            "Project Plan v3 excludes site-level historical screening, frequency and Empirical Bayes modelling, "
+            "and real-site treatment estimates from release. Use reviewed v6 aggregates and diagnostic geography; "
+            "retain severity results for review and use hypothetical inputs for intervention arithmetic."
         )
 
         return {
