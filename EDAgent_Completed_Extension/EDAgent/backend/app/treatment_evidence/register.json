@@ -1,0 +1,115 @@
+{
+  "register_version": "v3-d8-1",
+  "status": "NO_APPROVED_NUMERIC_CMF",
+  "applicability_notice": "The contexts below describe candidate uses mentioned in the sources. Applicability to EDAgent road sites has not been established.",
+  "sources": {
+    "PLAN_V3_CH8": {
+      "citation": "EDAgent Project Plan v3, Chapter 8, Evidence selection and candidate countermeasures",
+      "path": "docs/EDAgent_Project_Plan_v3.tex"
+    },
+    "FHWA_CMF_R8": {
+      "citation": "FHWA Crash Modification Factors Clearinghouse, user guide and FAQs, cited as R8 in Project Plan v3",
+      "urls": [
+        "https://cmfclearinghouse.fhwa.dot.gov/",
+        "https://cmfclearinghouse.fhwa.dot.gov/userguide_CMF.php",
+        "https://cmfclearinghouse.fhwa.dot.gov/faqs.php"
+      ]
+    },
+    "LEGACY_CONCENTRATION_SEC5": {
+      "citation": "EDAgent Historical Crash-Concentration Report, Section 5, Actionable Infrastructure Recommendations",
+      "path": "docs/frequency/historical_concentration_report.md"
+    }
+  },
+  "records": [
+    {
+      "EVIDENCE_ID": "pedestrian-crossings-refuges",
+      "TREATMENT": "Pedestrian crossings and refuge islands",
+      "description": "High-visibility crosswalks, pedestrian refuges, leading pedestrian intervals, curb extensions and intersection daylighting.",
+      "source_ids": ["PLAN_V3_CH8", "LEGACY_CONCENTRATION_SEC5", "FHWA_CMF_R8"],
+      "facility_type": "Crossings and intersections along corridors with pedestrian activity",
+      "target_crash_type": "Pedestrian crashes, within the legacy report's broader vulnerable-road-user category",
+      "context": "Candidate measures named in the plan and legacy corridor discussion.",
+      "study_quality": null,
+      "limitations": "The legacy discussion supplies no treatment evaluation, study rating or study-level applicability criteria.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    },
+    {
+      "EVIDENCE_ID": "lighting",
+      "TREATMENT": "Roadway lighting",
+      "description": "Lighting improvements for relevant low-light conditions.",
+      "source_ids": ["PLAN_V3_CH8", "FHWA_CMF_R8"],
+      "facility_type": null,
+      "target_crash_type": null,
+      "context": "The plan names lighting as a candidate family. The fixed inputs specify no study facility, crash outcome or eligible lighting conditions.",
+      "study_quality": null,
+      "limitations": "General candidate and methodology references. No lighting study or rating is documented.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    },
+    {
+      "EVIDENCE_ID": "speed-management",
+      "TREATMENT": "Speed management and traffic calming",
+      "description": "Speed cushions, chicanes, traffic circles, curb extensions and radar speed displays.",
+      "source_ids": ["PLAN_V3_CH8", "LEGACY_CONCENTRATION_SEC5", "FHWA_CMF_R8"],
+      "facility_type": "Local streets and municipal corridors",
+      "target_crash_type": null,
+      "context": "The legacy report lists municipal traffic calming as a candidate family. It supplies no study-defined crash outcome for these measures.",
+      "study_quality": null,
+      "limitations": "The legacy discussion supplies no treatment evaluation, study rating or study-level applicability criteria.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    },
+    {
+      "EVIDENCE_ID": "dynamic-queue-warning",
+      "TREATMENT": "Dynamic queue warning and speed advisories",
+      "description": "Queue detection, overhead warnings and variable speed advisories.",
+      "source_ids": ["LEGACY_CONCENTRATION_SEC5", "FHWA_CMF_R8"],
+      "facility_type": "Interstate tunnel approaches and portals",
+      "target_crash_type": "Rear-end crashes",
+      "context": "Facility and outcome come from the legacy tunnel-approach discussion.",
+      "study_quality": null,
+      "limitations": "The legacy discussion supplies no treatment evaluation, study rating or study-level applicability criteria.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    },
+    {
+      "EVIDENCE_ID": "intersection-control-geometry",
+      "TREATMENT": "Intersection control and geometric treatments",
+      "description": "Signal changes and geometric changes such as turn-lane channelization.",
+      "source_ids": ["PLAN_V3_CH8", "LEGACY_CONCENTRATION_SEC5", "FHWA_CMF_R8"],
+      "facility_type": "Intersections and arterial approaches",
+      "target_crash_type": null,
+      "context": "The plan names the family. The legacy report mentions signal optimization and turn lanes alongside access management, without isolating a treatment-specific outcome.",
+      "study_quality": null,
+      "limitations": "The legacy discussion supplies no treatment evaluation, study rating or study-level applicability criteria.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    },
+    {
+      "EVIDENCE_ID": "access-management",
+      "TREATMENT": "Arterial access management",
+      "description": "Driveway consolidation, access control with raised medians and left-turn channelization.",
+      "source_ids": ["LEGACY_CONCENTRATION_SEC5", "FHWA_CMF_R8"],
+      "facility_type": "Commercial state arterials",
+      "target_crash_type": "Rear-end and angle crashes",
+      "context": "Facility and outcomes come from the legacy arterial discussion.",
+      "study_quality": null,
+      "limitations": "The legacy discussion supplies no treatment evaluation, study rating or study-level applicability criteria.",
+      "study_factor": null,
+      "study_confidence_interval": null,
+      "review_decision": "Retain for reference. The available sources document no approved numeric factor or site applicability.",
+      "EVIDENCE_STATUS": "REFERENCE_ONLY"
+    }
+  ]
+}
