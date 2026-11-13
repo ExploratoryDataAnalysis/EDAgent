@@ -43,48 +43,54 @@ def _upstream(inputs, approvals, output, kind, required):
                 scope = manifest["scope"].copy()
                 scope["crosswalk_version"] = manifest["version"]
     except ReleaseUnavailable as error:
-        output.mkdir(parents=True)
-        local_sources = ROOT / ".repro/source_review"
-        for path in (
-            ROOT / ".repro/penndot_roadwaysegments/segments.geojson",
-            ROOT / ".repro/tire_station_sample/sample.json",
-            local_sources / "Permanent_Site_Locations.pdf",
-            local_sources / "5_Year_Summary_AADT_Permanent_sites.pdf",
-            local_sources / "Permanent_Site_Locations_2023.pdf",
-            local_sources / "Permanent_Site_AADT_2023.pdf",
-            local_sources / "allegheny_permanent_aadt.csv",
-        ):
-            if path.is_file():
-                sources[path.name] = digest(path)
-        decision = {"decision": "NO_GO", "reason": str(error), "eligible_site_years": None,
-                    "observed_exposure_fraction": None, "estimated_exposure_fraction": None,
-                    "missing_exposure_fraction": None, "expected_baseline_scope": []}
-        if kind == "exposure" and "allegheny_permanent_aadt.csv" in sources:
-            annual = list(_csv(local_sources / "allegheny_permanent_aadt.csv"))
-            sample_path = ROOT / ".repro/tire_station_sample/sample.json"
-            stations = defaultdict(list)
-            if sample_path.is_file():
-                for feature in json.loads(sample_path.read_bytes())["features"]:
-                    row = feature["attributes"]
-                    stations[str(row["PERMANENT_SITE_ID"])].append(row)
-            rows = []
-            for row in annual:
-                candidates = [s for s in stations[row["permanent_site_id"]]
-                              if (s["CTY_CODE"], s["ST_RT_NO"], s["SEG_NO"])
-                              == (row["county_code"], row["route"], row["segment_2024"])]
-                station = candidates[0] if len(candidates) == 1 else {}
-                rows.append({**row, "tire_station_id": station.get("STATION_ID", ""),
-                             "tire_segment_offset": station.get("SEG_OFFSET", ""),
-                             "tire_sample_candidates": len(candidates)})
-            _write(output / "station_link_evidence.csv", list(rows[0]), rows)
-            decision["unlinked_published_station_years"] = len(rows)
-            decision["station_years_with_unique_station_sample_key"] = sum(
-                row["tire_sample_candidates"] == 1 for row in rows
-            )
-        (output / "decision.json").write_text(json.dumps(decision, indent=2), encoding="utf-8")
-        write_manifest(output, kind, kind + "-blocked-v1", scope, sources, "PROVISIONAL")
+        _stage_blocked(output, kind, scope, sources, error)
         return None
     return manifests, scope, sources
+
+
+def _stage_blocked(output, kind, scope, sources, error):
+    """Record local evidence without opening the approved site-year path."""
+    output.mkdir(parents=True)
+    local_sources = ROOT / ".repro/source_review"
+    sample_path = ROOT / ".repro/tire_station_sample/sample.json"
+    annual_path = local_sources / "allegheny_permanent_aadt.csv"
+    for path in (
+        ROOT / ".repro/penndot_roadwaysegments/segments.geojson",
+        sample_path,
+        local_sources / "Permanent_Site_Locations.pdf",
+        local_sources / "5_Year_Summary_AADT_Permanent_sites.pdf",
+        local_sources / "Permanent_Site_Locations_2023.pdf",
+        local_sources / "Permanent_Site_AADT_2023.pdf",
+        annual_path,
+    ):
+        if path.is_file():
+            sources[path.name] = digest(path)
+    decision = {"decision": "NO_GO", "reason": str(error), "eligible_site_years": None,
+                "observed_exposure_fraction": None, "estimated_exposure_fraction": None,
+                "missing_exposure_fraction": None, "expected_baseline_scope": []}
+    if kind == "exposure" and annual_path.name in sources:
+        annual = list(_csv(annual_path))
+        stations = defaultdict(list)
+        if sample_path.is_file():
+            for feature in json.loads(sample_path.read_bytes())["features"]:
+                station = feature["attributes"]
+                stations[str(station["PERMANENT_SITE_ID"])].append(station)
+        rows = []
+        for row in annual:
+            candidates = [s for s in stations[row["permanent_site_id"]]
+                          if (s["CTY_CODE"], s["ST_RT_NO"], s["SEG_NO"])
+                          == (row["county_code"], row["route"], row["segment_2024"])]
+            station = candidates[0] if len(candidates) == 1 else {}
+            rows.append({**row, "tire_station_id": station.get("STATION_ID", ""),
+                         "tire_segment_offset": station.get("SEG_OFFSET", ""),
+                         "tire_sample_candidates": len(candidates)})
+        _write(output / "station_link_evidence.csv", list(rows[0]), rows)
+        decision["unlinked_published_station_years"] = len(rows)
+        decision["station_years_with_unique_station_sample_key"] = sum(
+            row["tire_sample_candidates"] == 1 for row in rows
+        )
+    _write_decision(output, decision)
+    write_manifest(output, kind, kind + "-blocked-v1", scope, sources, "PROVISIONAL")
 
 
 def _unique(rows, get_key):
@@ -183,6 +189,7 @@ def stage_exposure(output, inputs, approvals):
                 status, aadt = traffic["quality"], value
         road_class, site_type = site["road_class"], site["site_type"]
         coverage[(year, road_class, site_type)][status] += 1
+        # Without an observation record the count is unknown, even with attributed crashes.
         panel.append({"site_id": site_id, "year": year, "road_class": road_class, "site_type": site_type,
                       "attributed_crashes": counts[key], "crash_count": counts[key] if key in observed else None,
                       "observation_status": "OBSERVED" if key in observed else "UNKNOWN",
@@ -236,12 +243,14 @@ def stage_screening(output, inputs, approvals):
     by_type = defaultdict(Counter)
     for row in panel:
         site_id, year = _site_year(row)
+        is_observed = (site_id, year) in observed
+        crash_count = int(row["crash_count"]) if is_observed else None
         for tally in (annual[year], by_class[row["road_class"]], by_type[row["site_type"]]):
             tally["eligible_site_years"] += 1
-            if (site_id, year) in observed:
+            if crash_count is not None:
                 tally["observed_site_years"] += 1
-                tally["crashes"] += int(row["crash_count"])
-        if (site_id, year) in observed:
+                tally["crashes"] += crash_count
+        if is_observed:
             by_site[site_id].append(row)
     rows = []
     for site_id, site_years in sorted(by_site.items()):

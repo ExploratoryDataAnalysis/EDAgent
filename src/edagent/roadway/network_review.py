@@ -1,6 +1,7 @@
 """Evidence for reviewing changes and junctions in projected centerline snapshots."""
 
 from collections import defaultdict
+from itertools import pairwise
 from math import isfinite
 
 from shapely.geometry import Point
@@ -47,10 +48,11 @@ def match_reviewed_site(point, candidates, *, when, road_class, direction, site_
 
 
 def line_edges(line):
+    """Use exact, undirected XY edges as snapshot lineage evidence."""
     parts = line.geoms if line.geom_type == "MultiLineString" else [line]
     edges = set()
     for part in parts:
-        for a, b in zip(part.coords, list(part.coords)[1:]):
+        for a, b in pairwise(part.coords):
             edge = tuple(sorted((a[:2], b[:2])))
             if edge[0] != edge[1]:
                 edges.add(edge)
