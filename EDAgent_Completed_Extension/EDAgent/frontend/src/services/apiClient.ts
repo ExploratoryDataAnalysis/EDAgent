@@ -54,7 +54,12 @@ apiClient.interceptors.response.use(
       tokenStore.clear();
       onUnauthorized?.();
     }
-    return Promise.reject(new Error(errorMessage(error)));
+    const body = error.response?.data as { detail?: { code?: string }; errors?: string[] } | undefined;
+    return Promise.reject(Object.assign(new Error(errorMessage(error)), {
+      status: error.response?.status,
+      code: body?.detail?.code,
+      problems: Array.isArray(body?.errors) ? body.errors : undefined,
+    }));
   }
 );
 

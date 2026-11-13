@@ -18,13 +18,16 @@ export const TopHeader: React.FC = () => {
   const { activeDataset, datasets, samples, selectDataset, loadSample } = useDataset();
   const [menuOpen, setMenuOpen] = useState(false);
   const [ai, setAi] = useState<AIStatus | null>(null);
+  const roadSafety = ['/road-safety', '/illustrative-scenario'].includes(location.pathname);
 
   useEffect(() => {
-    chatService.status().then(setAi).catch(() => setAi(null));
-  }, []);
+    if (!roadSafety) chatService.status().then(setAi).catch(() => setAi(null));
+  }, [roadSafety]);
 
   // Page title mapping based on current pathname
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
+    '/road-safety': { title: 'Road safety', subtitle: 'Reported crashes and data coverage' },
+    '/illustrative-scenario': { title: 'Road safety', subtitle: 'Treatment references and hypothetical arithmetic' },
     '/': { title: 'Home & Welcome', subtitle: 'Modern Autonomous Exploratory Data Analysis' },
     '/upload': { title: 'Dataset Upload', subtitle: 'Ingest CSV, TSV, or multi-sheet Excel workbooks' },
     '/overview': { title: 'Dataset Overview', subtitle: 'Automatic statistical profiling & quality checks' },
@@ -46,9 +49,9 @@ export const TopHeader: React.FC = () => {
     <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between z-20 shrink-0">
       {/* Page Title & Breadcrumb */}
       <div className="min-w-0">
-        <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2 min-w-0">
+        <div className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2 min-w-0">
           <span>{currentInfo.title}</span>
-          {activeDataset && (
+          {!roadSafety && activeDataset && (
             <>
               <span className="hidden md:inline text-slate-300 dark:text-slate-600">•</span>
               <span className="hidden md:inline text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md truncate max-w-[16rem]">
@@ -56,14 +59,14 @@ export const TopHeader: React.FC = () => {
               </span>
             </>
           )}
-        </h1>
+        </div>
         <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">
           {currentInfo.subtitle}
         </p>
       </div>
 
       {/* Right Controls: Dataset Switcher, AI status & Upload Button */}
-      <div className="flex items-center space-x-3">
+      {!roadSafety && <div className="flex items-center space-x-3">
         {/* Dataset quick switcher (click to open so it also works on touch screens) */}
         <div className="relative">
           <button
@@ -142,7 +145,7 @@ export const TopHeader: React.FC = () => {
           <UploadCloud className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Upload</span>
         </Link>
-      </div>
+      </div>}
     </header>
   );
 };

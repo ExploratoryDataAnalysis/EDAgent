@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 /** Sign-in / registration screen. Shown to anyone without a valid session. */
@@ -104,6 +105,7 @@ export const LoginPage: React.FC = () => {
           Your datasets stay private to your account. If an AI provider is configured, dataset structure and a few
           sanitised sample values are sent to it to plan analyses and explain results; all numbers are computed locally.
         </p>
+        <Link to="/road-safety" className="text-sm text-indigo-700 underline dark:text-indigo-300">Road Safety Overview</Link>
       </div>
     </div>
   );

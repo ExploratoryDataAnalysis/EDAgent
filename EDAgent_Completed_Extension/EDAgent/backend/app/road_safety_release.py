@@ -26,7 +26,7 @@ def _checksums(values):
     )
 
 
-def verify_release(directory, approval_file, kind):
+def verify_release(directory, approval_file, kind, *, expected_manifest_sha256=None):
     """The approval ledger lives in deployment configuration, outside the bundle."""
     directory = Path(directory).resolve()
     try:
@@ -37,6 +37,8 @@ def verify_release(directory, approval_file, kind):
         manifest_bytes = (directory / "manifest.json").read_bytes()
         manifest = json.loads(manifest_bytes)
         fingerprint = hashlib.sha256(manifest_bytes).hexdigest()
+        if expected_manifest_sha256 is not None and fingerprint != expected_manifest_sha256:
+            raise ValueError("Unsupported manifest fingerprint")
         decision = decisions[kind]
         if (
             manifest["kind"] != kind or manifest["status"] != "REVIEW_CANDIDATE"
