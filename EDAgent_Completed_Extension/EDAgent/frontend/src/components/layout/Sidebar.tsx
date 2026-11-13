@@ -18,6 +18,8 @@ import {
   Database,
   Sparkles,
   LogOut,
+  Map,
+  Calculator,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useDataset } from '../../context/DatasetContext';
@@ -31,7 +33,9 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
 
   const navigationItems = [
-    { to: '/', label: 'Home', icon: Home },
+    { to: '/road-safety', label: 'Road Safety Overview', icon: Map },
+    { to: '/illustrative-scenario', label: 'Illustrative scenario', icon: Calculator },
+    { to: '/', label: user ? 'Home' : 'Sign in to analyser', icon: Home },
     { to: '/upload', label: 'Upload Dataset', icon: UploadCloud },
     { to: '/overview', label: 'Dataset Overview', icon: LayoutDashboard },
     { to: '/inventory', label: 'Column Inventory', icon: Table2 },
@@ -42,6 +46,7 @@ export const Sidebar: React.FC = () => {
     { to: '/reports', label: 'Report Builder', icon: FileSpreadsheet },
     { to: '/exports', label: 'Export Centre', icon: Download },
   ];
+  const visibleItems = user ? navigationItems : navigationItems.slice(0, 3);
 
   return (
     <aside
@@ -77,7 +82,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Active Dataset Pill */}
-      {!collapsed && (
+      {!collapsed && user && (
         <div className="p-3 mx-3 my-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/50">
           <div className="flex items-center space-x-2">
             <Database className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -97,7 +102,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        {navigationItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -111,6 +116,7 @@ export const Sidebar: React.FC = () => {
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-200'
                 }`
               }
+              aria-label={item.label}
               title={collapsed ? item.label : undefined}
             >
               <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
@@ -124,6 +130,7 @@ export const Sidebar: React.FC = () => {
       <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
         <button
           onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           className="flex items-center w-full px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           {theme === 'dark' ? (

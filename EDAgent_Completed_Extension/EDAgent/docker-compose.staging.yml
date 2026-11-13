@@ -1,0 +1,48 @@
+# Use with docker-compose.yml. The host paths contain only the reviewed release and its external ledger.
+services:
+  postgres:
+    container_name: !reset null
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a staging database password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+  backend:
+    container_name: !reset null
+    ports: !reset []
+    environment:
+      ENVIRONMENT: production
+      SECRET_KEY: ${SECRET_KEY:?Set a staging signing secret}
+      DATABASE_URL: ${DATABASE_URL:?Set the staging PostgreSQL connection URL}
+      ROAD_SAFETY_RELEASE_ROOT: /run/edagent/road-safety
+      ROAD_SAFETY_APPROVALS: /run/edagent/road-safety-approvals.json
+    volumes: !override
+      - staging_uploads:/app/data/uploads
+      - staging_exports:/app/data/exports
+      - type: bind
+        source: ${D7_RELEASE_ROOT:?Set the verified release root}
+        target: /run/edagent/road-safety
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${D7_APPROVAL_LEDGER:?Set the external approval ledger path}
+        target: /run/edagent/road-safety-approvals.json
+        read_only: true
+        bind:
+          create_host_path: false
+
+  frontend:
+    container_name: !reset null
+    ports: !override
+      - "127.0.0.1:${STAGING_PORT:-5173}:5173"
+    environment:
+      VITE_API_BASE_URL: /api/v1
+      VITE_PROXY_TARGET: http://backend:8000
+    volumes: !reset []
+    command: ["sh", "-c", "npm run build && exec ./node_modules/.bin/vite preview --host 0.0.0.0 --port 5173 --strictPort"]
+
+volumes:
+  staging_uploads:
+  staging_exports:

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DatasetProvider } from './context/DatasetContext';
@@ -7,7 +7,6 @@ import { LoginPage } from './pages/LoginPage';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { AppLayout } from './components/layout/AppLayout';
 
-// 10 Specified Pages
 import { HomePage } from './pages/HomePage';
 import { UploadPage } from './pages/UploadPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -18,6 +17,8 @@ import { VisualizePage } from './pages/VisualizePage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ReportBuilderPage } from './pages/ReportBuilderPage';
 import { ExportCentrePage } from './pages/ExportCentrePage';
+import { RoadSafetyPage } from './pages/RoadSafetyPage';
+import { InterventionPage } from './pages/InterventionPage';
 
 /** Shows the login screen until a valid session exists. */
 const Gate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -36,48 +37,29 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-      <Gate>
-      <DatasetProvider>
-        <BrowserRouter>
-          <AppLayout>
+        <DatasetProvider>
+          <BrowserRouter>
             <Routes>
-              {/* 1. Home / Landing page */}
-              <Route path="/" element={<HomePage />} />
-
-              {/* 2. Dataset upload page */}
-              <Route path="/upload" element={<UploadPage />} />
-
-              {/* 3. Dataset overview dashboard */}
-              <Route path="/overview" element={<OverviewPage />} />
-
-              {/* 4. Dataset preview & column inventory */}
-              <Route path="/inventory" element={<InventoryPage />} />
-
-              {/* 5. Analysis workspace */}
-              <Route path="/workspace" element={<WorkspacePage />} />
-
-              {/* 6. AI dataset chat interface */}
-              <Route path="/chat" element={<ChatPage />} />
-
-              {/* 7. Visualization workspace */}
-              <Route path="/visualize" element={<VisualizePage />} />
-
-              {/* 8. Analysis history & audit trail */}
-              <Route path="/history" element={<HistoryPage />} />
-
-              {/* 9. Report builder */}
-              <Route path="/reports" element={<ReportBuilderPage />} />
-
-              {/* 10. Export centre */}
-              <Route path="/exports" element={<ExportCentrePage />} />
-
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route element={<AppLayout><Outlet /></AppLayout>}>
+                <Route path="/road-safety" element={<RoadSafetyPage />} />
+                <Route path="/illustrative-scenario" element={<InterventionPage />} />
+              </Route>
+              <Route element={<Gate><AppLayout><Outlet /></AppLayout></Gate>}>
+                <Route index element={<HomePage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/overview" element={<OverviewPage />} />
+                <Route path="/inventory" element={<InventoryPage />} />
+                <Route path="/workspace" element={<WorkspacePage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/visualize" element={<VisualizePage />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/reports" element={<ReportBuilderPage />} />
+                <Route path="/exports" element={<ExportCentrePage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
             </Routes>
-          </AppLayout>
-        </BrowserRouter>
-      </DatasetProvider>
-      </Gate>
+          </BrowserRouter>
+        </DatasetProvider>
       </AuthProvider>
     </ThemeProvider>
   );
