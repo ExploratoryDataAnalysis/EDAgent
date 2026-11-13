@@ -5,7 +5,7 @@ import io
 import json
 import math
 import zipfile
-from collections import Counter
+from collections import Counter, defaultdict
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -53,6 +53,7 @@ def frozen_inputs():
 
 
 def station_375(output):
+    """Record archived section AADT without imputing a pilot count or site exposure."""
     source = json.loads(SOURCE_REGISTRY.read_bytes())["traffic_202411"]
     traffic_archive = ROOT / source["path"]
     checksum = checked_digest(traffic_archive, source["sha256"])
@@ -106,8 +107,12 @@ def audit_geography(output, county, frozen):
         point_counts[points[crn][1:]] += 1
 
     prepared = prep(county)
-    counts, grid_counts, grid_years, candidate_counts = Counter(), Counter(), {}, Counter()
+    counts = Counter()
+    grid_counts = Counter()
+    grid_years = defaultdict(set)
+    candidate_counts = Counter()
     seen = set()
+    # Candidate rows follow the raw CSV order and must leave every primary site blank.
     for raw, candidate in zip(rows(RAW), rows(output / "crosswalk.csv"), strict=True):
         crn, year = raw["CRASH_CRN"], raw["CRASH_YEAR"]
         if (not crn or crn in seen or candidate["crash_id"] != crn or candidate["crash_year"] != year
@@ -119,9 +124,15 @@ def audit_geography(output, county, frozen):
         counts[year, "road_reference_key_present"] += all(
             raw[field].strip() for field in ("ROADWAY_COUNTY", "ROUTE", "SEGMENT"))
         counts[year, "road_offset_present"] += bool(raw["OFFSET"].strip())
-        n = int(candidate["candidate_count"])
-        candidate_counts["zero" if n == 0 else "one" if n == 1 else "multiple"] += 1
-        candidate_counts["associations"] += n
+        candidate_count = int(candidate["candidate_count"])
+        if candidate_count == 0:
+            band = "zero"
+        elif candidate_count == 1:
+            band = "one"
+        else:
+            band = "multiple"
+        candidate_counts[band] += 1
+        candidate_counts["associations"] += candidate_count
         candidate_counts["source_" + (candidate["coordinate_source"] or "none")] += 1
         status, point = decimal_point(raw)
         counts[year, status] += 1
@@ -138,15 +149,17 @@ def audit_geography(output, county, frozen):
         counts[year, "inside_county"] += 1
         counts[year, "crns_at_repeated_point"] += point_counts[exported[1:]] > 1
         lon, lat = exported[1:]
-        key = round(lat * 1000) / 1000, round(lon * 1000) / 1000
-        grid_counts[key] += 1
-        grid_years.setdefault(key, set()).add(year)
+        # Match the frozen LAT_BIN/LON_BIN grid (0.001°); see the Phase 3 review status.
+        cell = round(lat * 1000) / 1000, round(lon * 1000) / 1000
+        grid_counts[cell] += 1
+        grid_years[cell].add(year)
 
     if points or len(seen) != frozen["data"]["rows"]:
         raise ValueError("Frozen CRN and county populations did not reconcile")
     coverage = {(r["CRASH_YEAR"], r["LOCATION_SOURCE"]): int(r["crashes"])
                 for r in rows(SPATIAL / "coordinate_coverage_by_year.csv")}
-    for year in sorted({year for year, _ in counts}):
+    years = sorted({year for year, _ in counts})
+    for year in years:
         if (counts[year, "state_route_decimal"] != coverage[year, "state_route_decimal"]
                 or counts[year, "raw_crns"] - counts[year, "state_route_decimal"]
                 != coverage[year, "unavailable_or_ambiguous"]):
@@ -162,12 +175,15 @@ def audit_geography(output, county, frozen):
         writer = csv.writer(file)
         metrics = sorted({key for _, key in counts})
         writer.writerow(["year", *metrics])
-        for year in sorted({year for year, _ in counts}):
+        for year in years:
             writer.writerow([year, *(counts[year, key] for key in metrics)])
-    totals = {key: sum(n for (_, metric), n in counts.items() if metric == key) for _, key in sorted(counts)}
+    totals = Counter()
+    # Keep the first occurrence of each metric in year/metric order for stable JSON bytes.
+    for year, metric in sorted(counts):
+        totals[metric] += counts[year, metric]
     return grid_counts, {
         "PRIMARY_SITE_ASSIGNMENTS_ACCEPTED": 0,
-        "unique_crns": len(seen), "coverage": totals, "grid_cells": len(grid_counts),
+        "unique_crns": len(seen), "coverage": dict(totals), "grid_cells": len(grid_counts),
         "unique_coordinate_pairs_inside_county": len(point_counts),
         "candidate_associations_nonadditive": dict(candidate_counts),
     }

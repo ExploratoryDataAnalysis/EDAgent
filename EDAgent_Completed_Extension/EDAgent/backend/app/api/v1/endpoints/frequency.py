@@ -58,35 +58,42 @@ def _payload(bundle, name, parse):
         raise HTTPException(status_code=503, detail=UNAVAILABLE) from exc
 
 
-def _rows(bundle, name):
-    return _payload(bundle, name, lambda data: list(csv.DictReader(io.StringIO(data))))
+def _csv_rows(bundle, name, convert=None):
+    # Keep decoding and type conversions inside the same unavailable-response boundary.
+    def parse(data):
+        rows = list(csv.DictReader(io.StringIO(data)))
+        if convert is not None:
+            convert(rows)
+        return rows
+
+    return _payload(bundle, name, parse)
 
 
 def _summary_rows(bundle, name, year=False):
-    def parse(data):
-        rows = list(csv.DictReader(io.StringIO(data)))
+    def convert(rows):
         fields = ["eligible_site_years", "observed_site_years", "crashes"]
         if year:
             fields.append("crash_year")
         for row in rows:
             for field in fields:
                 row[field] = int(row[field])
-        return rows
 
-    return _payload(bundle, name, parse)
+    return _csv_rows(bundle, name, convert)
 
 
 def _site_rows(bundle):
-    def parse(data):
-        rows = list(csv.DictReader(io.StringIO(data)))
+    def convert(rows):
         for row in rows:
             for field in ("crashes", "observed_site_years"):
                 row[field] = int(row[field])
             row["screening_value"] = float(row["screening_value"])
             row["segment_length_km"] = float(row["segment_length_km"]) if row["segment_length_km"] else None
-        return rows
 
-    return _payload(bundle, "historical_crash_concentration.csv", parse)
+    return _csv_rows(bundle, "historical_crash_concentration.csv", convert)
+
+
+def _find_site(bundle, site_id):
+    return next((row for row in _site_rows(bundle) if row["site_id"] == site_id), None)
 
 
 @router.get("/status")
@@ -113,7 +120,7 @@ async def get_site_prediction(site_id: str, year: int = 2024) -> APIResponse[dic
     site_id = site_id.strip()
     try:
         bundle = require_reviewed_concentration()
-        screening = next((row for row in _site_rows(bundle) if row["site_id"] == site_id), None)
+        screening = _find_site(bundle, site_id)
     except HTTPException:
         bundle, screening = None, None
     return APIResponse(success=True, message="Predictive frequency is unavailable pending review.", data={
@@ -156,7 +163,7 @@ async def get_retrospective_severity(bundle=Depends(require_reviewed_concentrati
         "analysis_type": "RETROSPECTIVE_SEVERITY_ASSOCIATION",
         "is_predictive": False,
         "is_causal": False,
-        "results": _rows(bundle, "severity_retrospective_associations.csv"),
+        "results": _csv_rows(bundle, "severity_retrospective_associations.csv"),
         "metadata": _standard_metadata(bundle),
     })
 
@@ -177,8 +184,8 @@ async def get_top_concentration_sites(
 
 @router.get("/concentration/{site_id}")
 async def get_site_concentration(site_id: str, bundle=Depends(require_reviewed_concentration)) -> APIResponse[dict[str, Any]]:
-    for row in _site_rows(bundle):
-        if row["site_id"] == site_id.strip():
-            return APIResponse(success=True, message="Historical concentration record retrieved.",
-                               data={"site": row, "metadata": _standard_metadata(bundle)})
-    raise HTTPException(status_code=404, detail="Site is outside the approved historical screening records.")
+    row = _find_site(bundle, site_id.strip())
+    if row is None:
+        raise HTTPException(status_code=404, detail="Site is outside the approved historical screening records.")
+    return APIResponse(success=True, message="Historical concentration record retrieved.",
+                       data={"site": row, "metadata": _standard_metadata(bundle)})
