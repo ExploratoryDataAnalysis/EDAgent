@@ -1,5 +1,128 @@
 # Phase 3 and 4 review status
 
+## Project Plan v3 D7 audit follow-up — 2026-11-13
+
+**D7 technical work is complete. Phase 4 remains open pending sign-off.** The current candidate is `v3-d7-2`, schema version 1, in `.repro/v3-d7-2-a/descriptive_release/` with an identical second build in `.repro/v3-d7-2-b/descriptive_release/`. The exact candidate [manifest](../.repro/v3-d7-2-a/descriptive_release/manifest.json) has SHA-256 `ec9def348fc67561f7ee2a5c7b3307a7db42b6e8832d7df7cc04252b87e70a82`. The [Phase 6 API contract](descriptive_release_data_dictionary.md#phase-6-road-safety-overview-api-contract) defines the eight tables, approved asset allowlist, response metadata, and unavailable behavior.
+
+The dictionary is the only changed payload. Its bundled file and repository source `docs/descriptive_release_data_dictionary.md` both hash to `6967abf0aacff18aed926b3c9da156b238011a12b041e461beb60e6b88eefbb6`. The manifest records that digest in both inventories. The two manifests and all 19 declared payloads match across the verified builds. The fallback at `.repro/v3-d7-2-fallback/descriptive_release/` reproduces all 19 payloads with a different manifest that records its fallback lineage. The other 18 payload hashes are identical to the v3-d7-1 inventory below. The findings builder validates each frozen label, reports missing, duplicate and unexpected labels, and emits the same eight narratives, populations, periods and IDs even when the ledger is reordered.
+
+The checked tables retain 248,810 reports, of which 238,281 map to 38,332 occupied cells. The 10,529 exclusions are 10,232 missing coordinate pairs, 10 invalid pairs, 12 placeholders and 275 usable pairs outside the county polygon. All table exports retain CSV/JSON parity. Codes 8 and 9 account for 43,266 unknown-severity reports. Pre-2016 and cross-era serious/fatal trend values and cross-era injury-code shares remain null. In 2024, 387 of 10,228 reports have valid hours and zero have populated illumination. The map labels 2004–2024, the clipped 0.001° grid, and the unmeasured exposure.
+
+### Reproduction and review
+
+Run from the repository root with the pinned sources and dependencies from the earlier reproduction. Use fresh directories when repeating the build.
+
+```powershell
+$env:PYTHONPATH = 'src;.repro/geodeps'
+$env:OPENBLAS_NUM_THREADS = '1'
+python scripts/build_descriptive_release.py --input .repro/v3-phase3-verified-a --stage .repro/v3-d7-2-a/descriptive_release
+python scripts/build_descriptive_release.py --input .repro/v3-phase3-verified-b --stage .repro/v3-d7-2-b/descriptive_release
+$env:PROVISIONAL_STAGE = '.repro/v3-phase3-verified-a'
+$env:DESCRIPTIVE_STAGE = '.repro/v3-d7-2-a/descriptive_release'
+python -m pytest -o addopts= -q tests/test_descriptive_release.py
+python -m pytest -o addopts= -q -rs tests
+Push-Location EDAgent_Completed_Extension/EDAgent/backend
+$env:PYTHONPATH = 'C:/Darshan/EDAgent/src;C:/Darshan/EDAgent/.repro/geodeps'
+../.venv/Scripts/python.exe -m pytest -o addopts= -q tests
+Pop-Location
+```
+
+To exercise the fallback without moving the verified Phase 3 files, point the builder's default upstream at an absent path for the isolated run.
+
+```powershell
+@'
+from pathlib import Path
+import sys
+sys.path.insert(0, "scripts")
+import build_descriptive_release as d7
+d7.PHASE3 = Path(".repro/v3-d7-2-missing-input")
+d7.stage(Path(".repro/v3-d7-2-fallback/descriptive_release"), None, None)
+'@ | python -
+```
+
+The candidate is `REVIEW_CANDIDATE` with null approval. The reviewer needs the exact manifest above, the dictionary and evidence reconciliation in this record. A named, dated decision must approve the historical descriptive aggregate claims for this hash in the external `descriptive_release` ledger. The previous manifest hash cannot authorize this bundle. No genuine decision for the new hash was available. Phase 6 can implement against the contract. Public consumption remains gated.
+
+The focused D7 suite passed **9 tests** with `DESCRIPTIVE_STAGE` set to the rebuilt bundle. Road-safety tests passed **140**, with **9** existing skips for unapproved legacy artifacts. The backend passed **110**, with one TestClient deprecation warning. The HTTP tests used Windows loopback. Release regressions rejected absent or pending approvals, the wrong manifest hash, an altered payload, and D7 through legacy site and retrospective routes. Fixture approvals stayed in test temporary directories. `git diff --check` passed. The diff against `d1c721c` contains no changes to `analysis/` or the project plans and their TeX and PDF files. `main` remains at `4de5fd4`.
+
+## Project Plan v3 D7 aggregate review — 2026-11-13 (v3-d7-1 record)
+
+The build started from clean `main` at `4de5fd457ba9793058c8d8927d0f9327b52594a5`, with Phase 3 closeout `e211292` and cleanup `c0ed6ff` verified as ancestors. D7 uses the frozen v6 run `v6/6.1-targeted-corrections/2026-11-11T03:13:38.038283+00:00`. The original manifest state remains `NOT_APPROVED_FOR_PRODUCTION`. The [data dictionary](descriptive_release_data_dictionary.md) defines the Phase 6 table contract, source paths, periods, populations, units, missingness and chart interpretation.
+
+### Reconciled evidence
+
+- The pinned WPRDC CSV contains 248,810 unique CRNs spanning all 21 years from 2004 through 2024. Each year agrees with the frozen severity export for all reports, known severity, fatal, and serious/fatal recorded code counts. Codes 0–4 total 205,544 (82.61% of reports). Codes 8 and 9 account for the remaining 43,266, split into 32,946 and 10,320. Missing and unrecognised severity have measured counts of zero. The other code totals are 128,621 property damage only, 1,396 fatal, 5,656 serious injury, 29,892 minor injury and 39,979 possible injury. Fatal and serious/fatal shares use known severity. Known-severity coverage uses all reports.
+- PennDOT's revised injury-severity standard took effect on 1 January 2016. Possible injury changed from 2,264/10,352 (21.87%) in 2015 to 1,392/10,093 (13.79%) in 2016. Minor injury changed from 875/10,352 (8.45%) to 1,524/10,093 (15.10%). Use the 2004–2015 and 2016–2024 eras for injury composition. D7 leaves pre-2016 and cross-era serious/fatal trends null and withholds cross-era shares for injury codes 2–4. Annual recorded code counts remain auditable. The fatal-only trend uses its own known-severity denominator and carries severity coverage.
+- Only 387 of 10,228 reports in 2024 have a valid hour (3.78%) and zero have populated illumination. Withhold 2024 hourly and lighting distributions and comparisons that assume normal recording for those fields. Earlier hourly comparisons require caution about the 02:00 spike and whole/half-hour heaping. The raw time code 9999 appears 3,781 times in the frozen record and is a likely unknown-time sentinel. Exact dates are absent. The 2024 source total, severity and mapping coverage remain available with their respective denominators.
+- The Phase 3 manifest and both consumed output hashes match the pinned record. The pre-polygon split is 238,556 usable and 10,254 unusable state-decimal pairs across all 248,810 reports. Unusable pairs comprise 10,232 missing pairs, 10 invalid pairs and 12 placeholders. Column-null counts (10,202 latitude and 10,210 longitude) measure individual fields and overlap. Of usable pairs, 275 (0.1153%) fall outside the county and 238,281 (95.77% of all reports) are mapped. The frozen annual coordinate eligibility agrees with the ledger. The separate 238,517 diagnostic DMS comparisons, including 2,146 differences over 500 m, do not affect the state-decimal coverage calculation.
+- Grouping the frozen mapped CRNs reproduces each of 38,332 occupied cells, including its crash count and distinct years represented. The 2024 Census 500k boundary for GEOID 42003 has WGS 84 bounds west −80.360802, south 40.194285, east −79.688975, north 40.674935. Occupied centres span 40.198° to 40.674°N and −80.348° to −79.694° longitude. The 0.001° cells are approximately 111 m north–south by 85 m east–west near 40.45°N. Clip the displayed cells to the county boundary. Counts describe historical reported crashes. Travel exposure is unmeasured.
+- The four categorical tests used 77,476 known-severity reports, 100% of the known outcomes in 2016–2023, 82.72% of the 93,662 in-period reports and 31.14% of the full 248,810-report extract. The frozen `overall_source_fraction_percent` uses the last denominator. The frozen collision test's adjusted q rounds to numerical zero. D7 withholds a numeric value for that q and flags underflow. Its unitless Cramér's V is about 0.202. The pooling labels accompany each test. The assumed 2018/2019 weather and road-surface transition remains `UNVERIFIED`.
+- The injury reconciliation compares person-count fields only where all required values exist. `INJURY_COUNT` differs from its component sum for 743 of 182,782 eligible reports and exceeds `PERSON_COUNT` once in 2016. `TOT_INJ_COUNT` agrees for all 24,954 eligible reports, limited to 2017–2018. `FATAL_COUNT` never exceeds `PERSON_COUNT` on the 248,810 eligible reports. Zero eligible reports means the corresponding flag percentage and maximum difference are unavailable. Countywide person injury totals are withheld. Crash severity uses the source crash code and reconciles independently. No unresolved count discrepancy affects the selected D7 crash aggregates.
+
+### Scope and release decision
+
+The candidate has eight matched CSV/JSON tables. Phase 6 can integrate `county_periods` (24 rows), `severity_composition` (216), `coordinate_coverage` (24), `field_coverage_by_year` (42), `source_missingness` (191), `historical_grid` (38,332), `severity_associations` (4) and `findings` (8), along with the county polygon, aggregate grid SVG and data dictionary.
+
+The Phase 3 crash-level crosswalk, county points, conflict register, candidate road and junction layers, and Station 375 evidence remain `INTERNAL_DIAGNOSTIC`. Accepted primary assignments remain zero. Station 375's 2023 observed crash count is JSON null with state `UNKNOWN`. The 11,072 vehicles/day archive value belongs to the eastbound 2023 traffic section containing segment `0080`. Site-level screening, rankings, frequency modelling, Empirical Bayes, expected crash counts and real-site treatment benefits are `OUT_OF_SCOPE_NO_GO`. The 2022–2024 severity evaluation remains retrospective `REVIEW_ONLY`, with 27,697 known-severity reports and a previously examined test interval. The bundle contains no model scores or artifacts.
+
+**D7 build and QA:** complete under the v3 descriptive scope. **Aggregate release approval:** pending. The exact candidate is `.repro/v3-phase4-final-a/descriptive_release/`, version `v3-d7-1`, manifest SHA-256 `fcc79f07b82e9af02e3f99899d7f74eecf6e5bf044c597de5d5e08cbe83ad30c`. A named reviewer must approve the historical aggregate claims for this version and exact manifest hash in the external `descriptive_release` approval ledger entry, with a date. The candidate carries `REVIEW_CANDIDATE` and null approval. No approval was recorded. The legacy fixture approvals apply to their own test bundles.
+
+### Reproduction and artifact inventory
+
+From the repository root with the pinned raw CSV, Phase 3 evidence and the dependencies in `scripts/requirements-provisional.txt`. These commands use the existing local dependency path. Choose fresh stage directories on repeat runs.
+
+```powershell
+$env:PYTHONPATH = 'src;.repro/geodeps'
+$env:OPENBLAS_NUM_THREADS = '1'
+python scripts/build_descriptive_release.py --stage .repro/v3-phase4-final-a/descriptive_release
+python scripts/build_descriptive_release.py --stage .repro/v3-phase4-final-b/descriptive_release
+$stageA = '.repro/v3-phase4-final-a/descriptive_release'
+$stageB = '.repro/v3-phase4-final-b/descriptive_release'
+$files = (Get-ChildItem $stageA -File).Name
+if (Compare-Object $files (Get-ChildItem $stageB -File).Name) { throw 'File inventories differ' }
+foreach ($name in $files) {
+    if ((Get-FileHash "$stageA/$name").Hash -ne (Get-FileHash "$stageB/$name").Hash) {
+        throw "Staged hash differs for $name"
+    }
+}
+$env:PROVISIONAL_STAGE = '.repro/v3-phase3-verified-a'
+$env:DESCRIPTIVE_STAGE = $stageA
+python -m pytest -o addopts= -q -rs tests
+git diff --check
+Push-Location EDAgent_Completed_Extension/EDAgent/backend
+$env:PYTHONPATH = 'C:/Darshan/EDAgent/src;C:/Darshan/EDAgent/.repro/geodeps'
+../.venv/Scripts/python.exe -m pytest -q tests
+Pop-Location
+```
+
+The default upstream is `.repro/v3-phase3-verified-a`. Use `--input` for a relocated copy of the verified stage. When the default stage is absent, the exporter recomputes only coordinate coverage from the pinned raw CSV and polygon, compares it with the frozen coordinate and mapped-point exports, and redraws the aggregate grid. The fallback run produced identical bytes for all 19 payloads and records its different lineage in its manifest. An existing stage with a mismatched hash stops the build.
+
+Both verified stages match byte-for-byte across all 20 files. The manifest inventories all 19 payload hashes. The run identity and full verified source hashes are also in that manifest.
+
+The road-safety suite passed 135 tests with nine existing skips for unapproved legacy artifacts. It checked input and output hashes, CSV/JSON agreement, nulls, denominators, the D7 approval gate and legacy HTTP refusal for D7 and Phase 3 diagnostics. The backend suite passed 110 tests with one TestClient deprecation warning. The HTTP suites completed on retry with Windows loopback available. `git diff --check` passed, and the diff against the verified base contained no changes to `analysis/`, project plans, TeX files or PDFs.
+
+| File in both `descriptive_release/` stages | SHA-256 |
+| --- | --- |
+| `coordinate_coverage.csv` | `4da0a4e4312625509de00bda97b0eab68d71e97b362e307f679a471e77375dd1` |
+| `coordinate_coverage.json` | `766aeac1582885d5229aea153bc635e82a2d43273321504839472c3d22bc8a6a` |
+| `county_boundary.geojson` | `86c85c5af1c37be2825a2e956fef9d592941d043813119c02927d2dcf988ab6b` |
+| `county_grid.svg` | `e6cc909e708e524f832c0e01ec6d380dee77f53fd5d445544445a18660cdfff5` |
+| `county_periods.csv` | `50f59c4df8727142a7f58b5cd27b9ac24d577bacdeb42f10be279a60bb475177` |
+| `county_periods.json` | `5b64fb5eff5f38fd6e5fb9d8672923fb9a9cf072d42acf4969f33ead8b77d56e` |
+| `descriptive_release_data_dictionary.md` | `2b0d59a717c8d1bf101b3ae759e2062e86cbad946fedc0a5952a285e60509f12` |
+| `field_coverage_by_year.csv` | `d976ca2b2c62a0281298b38a6c94c620ca9ec6e57bb51003023b891040c24d7f` |
+| `field_coverage_by_year.json` | `675f6c4eb6f90177b76af92d1c1b83817e62a69c46e016c25ed71dfd6248769a` |
+| `findings.csv` | `b186290bf0e1afc98413c882de9a0c1d488b7f9d655766fbb365fe7641349620` |
+| `findings.json` | `5c7dff3d58024892882b5619ab76052bc0caa2855676c5820d729c0396d5b4c0` |
+| `historical_grid.csv` | `350cb493d9398245857b981d4daaadbf23199a17519bf545bfbadaf38a87fffa` |
+| `historical_grid.json` | `7042e4554fa64faf786ca036627f8f1adc609f3b7fab8698561bf241721354d6` |
+| `manifest.json` | `fcc79f07b82e9af02e3f99899d7f74eecf6e5bf044c597de5d5e08cbe83ad30c` |
+| `severity_associations.csv` | `1191aedd35f06ff7f29506edba79fd16c9f41e78cfad742e64a38465cae92b8a` |
+| `severity_associations.json` | `4878c330b256ff06567d90cacafc40fc89be2858d2c70b59f97f84ab1fd21207` |
+| `severity_composition.csv` | `8bd8356699720ffeffc886bc0121c924ce318a4fe21570dc6310efd159cd753d` |
+| `severity_composition.json` | `784f0f7711ba979cff86f1fa250b9c18d32c0b9c396fb3166b074a8748e85068` |
+| `source_missingness.csv` | `367b45491d81e48fbcd55df1202cb6641057f30d81c1e23595d8fdd944e08585` |
+| `source_missingness.json` | `cd4992ae9f6097e20f6860095bc7cb039278447d88a916e438f2419e0bc926e1` |
+
 ## Project Plan v3 diagnostic review — 2026-11-13
 
 **Verdict: CLOSED under v3 for diagnostic geography.** The aggregate county/grid materials pass the Phase 3 handoff checks for Phase 4 review. The staged diagnostic bundle retains `PROVISIONAL` publication status and has no named deployment approval.

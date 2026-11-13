@@ -196,11 +196,12 @@ def county_path(county):
                                     for ring in (polygon.exterior, *polygon.interiors)))
 
 
-def draw_maps(output, county, grid_counts, conflicts):
+def draw_maps(output, county, grid_counts, conflicts=None):
     boundary = county_path(county)
     plt.switch_backend("Agg")
     matplotlib.rcParams.update({"svg.hashsalt": "edagent-phase3-v3", "svg.fonttype": "none"})
-    for name in ("county_grid", "coordinate_conflicts"):
+    names = ("county_grid",) if conflicts is None else ("county_grid", "coordinate_conflicts")
+    for name in names:
         fig, ax = plt.subplots(figsize=(10, 7), layout="constrained")
         ax.add_patch(PathPatch(boundary, facecolor="none", edgecolor="#344054", linewidth=0.8, zorder=3))
         ax.set(xlabel="Longitude (WGS 84)", ylabel="Latitude (WGS 84)",
