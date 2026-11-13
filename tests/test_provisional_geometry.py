@@ -1,5 +1,6 @@
 import importlib.util
 import csv
+import json
 import os
 from pathlib import Path
 import pytest
@@ -82,3 +83,47 @@ def test_staged_population_and_candidate_references():
     assert by_id['2007016949']['route'] and by_id['2007016949']['match_status'] == 'AMBIGUOUS'
     assert by_id['2004000022']['decision_reason'] == 'MISSING_OR_INVALID_COORDINATES'
     assert by_id['2004000001']['decision_reason'] == 'HISTORICAL_VALIDITY_AND_TOPOLOGY_UNREVIEWED'
+
+
+def test_police_format_metadata_keeps_frozen_parser_unverified():
+    config = Path("data/reference/coordinates/police_gps_format.json")
+    assert json.loads(config.read_bytes())["verified"] is False
+
+
+def test_v3_diagnostic_handoff_and_pilot():
+    path = os.environ.get("PROVISIONAL_STAGE")
+    if not path:
+        pytest.skip("Set PROVISIONAL_STAGE to validate generated artifacts")
+    path = Path(path)
+    manifest = json.loads((path / "manifest.json").read_bytes())
+    assert manifest["status"] == "PROVISIONAL"
+    assert manifest["scope"]["supported_assignment_scope"] == []
+    assert manifest["scope"]["PRIMARY_SITE_ASSIGNMENTS_ACCEPTED"] == 0
+    for name, checksum in manifest["outputs"].items():
+        assert provisional.digest(path / name) == checksum
+
+    qa = json.loads((path / "diagnostic_qa.json").read_bytes())
+    assert qa["unique_crns"] == 248810
+    assert qa["PRIMARY_SITE_ASSIGNMENTS_ACCEPTED"] == 0
+    assert qa["police_gps_parser_status"] == "UNVERIFIED"
+    assert qa["conflicts_with_withheld_disposition"] == 2146
+    assert qa["coverage"]["inside_county"] == 238281
+    assert qa["coverage"]["outside_county"] == 275
+    assert qa["grid_cells"] == 38332
+    with (path / "conflict_review.csv").open(encoding="utf-8", newline="") as file:
+        conflicts = list(csv.DictReader(file))
+    assert len({r["CRASH_CRN"] for r in conflicts}) == len(conflicts) == 2146
+    assert all(r["disposition"].startswith("WITHHELD") and not r["primary_site_id"] for r in conflicts)
+    junctions = json.loads((path / "junction_review.geojson").read_bytes())
+    assert all(f["properties"]["grade_status"] == "AT_GRADE_UNVERIFIED" for f in junctions["features"])
+    assert "Reported-crash concentration" in (path / "county_grid.svg").read_text(encoding="utf-8")
+    assert "Police DMS hypothesis" in (path / "coordinate_conflicts.svg").read_text(encoding="utf-8")
+
+    pilot = json.loads((path / "station_375_pilot.json").read_bytes())
+    assert pilot["status"] == "INTERNAL_DIAGNOSTIC"
+    assert pilot["observed_crash_count_status"] == "UNKNOWN"
+    assert pilot["observed_crash_count"] is pilot["site_year_exposure"] is None
+    section = pilot["traffic_section"]
+    assert section["status"] == "ARCHIVED_TRAFFIC_SECTION_ONLY"
+    assert (section["BASE_ADT_Y"], section["BASE_ADT"], section["contains_segment"]) == (2023, 11072, "0080")
+    assert "linked_annual_aadt.csv" not in manifest["outputs"]

@@ -208,6 +208,17 @@
     "terms": "Archive metadata disclaims warranties and includes Commonwealth indemnification language. Review source-specific terms before republication.",
     "downloadable_archive": true
   },
+  "traffic_202411": {
+    "publisher": "Pennsylvania Department of Transportation via Pennsylvania Spatial Data Access",
+    "url": "https://www.pasda.psu.edu/download/padot/state/historic/PaTraffic/PaTraffic2024_11.zip",
+    "version_or_snapshot": "2024-11",
+    "retrieved_or_verified_date": "2026-11-13",
+    "path": ".repro/phase34-sources/PaTraffic2024_11.zip",
+    "sha256": "733b95a79c3cab0c6115fdcb6f5d922344dd54ce8e5ba841aac55e219c81ddb9",
+    "coverage": "PennDOT traffic sections, including 2023 base AADT for the eastbound section containing US 22 segment 0080 in county 02",
+    "terms": "Internal diagnostic use; downstream redistribution requires source review.",
+    "downloadable_archive": true
+  },
   "permanent_station_locations": {
     "publisher": "Pennsylvania Department of Transportation",
     "url": "https://gis.penndot.pa.gov/BPR_PDF_FILES/Documents/Traffic/Traffic_Information/Annual_Report/2024/Permanent_Site_Locations.pdf",

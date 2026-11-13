@@ -3,6 +3,8 @@
 import csv
 import importlib
 import json
+import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -190,3 +192,36 @@ def test_unapproved_http_and_publication(published, tmp_path, case):
     assert client.get("/concentration/top").status_code == 503
     with pytest.raises(ReleaseUnavailable, match="blocked"):
         publish_release(directory, tmp_path / "never-published", ledger, "visualizations")
+
+
+def test_v3_diagnostics_cannot_feed_site_release(tmp_path, monkeypatch):
+    stage = os.environ.get("PROVISIONAL_STAGE")
+    if not stage:
+        pytest.skip("Set PROVISIONAL_STAGE to validate generated artifacts")
+    stage = Path(stage)
+    ledger = tmp_path / "approvals.json"
+    approve(ledger, "crosswalk", stage)
+    published = tmp_path / "published"
+    with pytest.raises(ReleaseUnavailable, match="blocked"):
+        publish_release(stage, published, ledger, "crosswalk")
+    assert not published.exists()
+    exposure = tmp_path / "exposure"
+    stage_exposure(exposure, stage, ledger)
+    decision = json.loads((exposure / "decision.json").read_bytes())
+    assert decision["decision"] == "NO_GO" and decision["eligible_site_years"] is None
+    assert not (exposure / "site_year_panel.csv").exists()
+
+    # Simulate an operator putting the diagnostic manifest in the site map directory.
+    visualizations = tmp_path / "visualizations"
+    visualizations.mkdir()
+    shutil.copyfile(stage / "manifest.json", visualizations / "manifest.json")
+    approve(ledger, "visualizations", visualizations)
+    monkeypatch.setenv("ROAD_SAFETY_RELEASE_ROOT", str(tmp_path))
+    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
+    app = FastAPI()
+    app.include_router(router)
+    with TestClient(app) as client:
+        for endpoint in ("concentration/annual", "concentration/breakdown", "concentration/top",
+                         "concentration/geojson", "concentration/375", "severity/retrospective"):
+            assert client.get("/" + endpoint).status_code == 503
+        assert client.get("/predictions/375").json()["data"]["expected_crash_frequency"] is None

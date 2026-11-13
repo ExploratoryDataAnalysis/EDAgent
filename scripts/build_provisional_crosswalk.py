@@ -105,7 +105,11 @@ def build(out):
         w = csv.DictWriter(f, fieldnames=['site_id','feature_key','street','fcc','oneway','length_m'])
         w.writeheader(); w.writerows(sites)
     with (out / 'network.geojson').open('w', encoding='utf8') as f:
-        f.write('{"type":"FeatureCollection","features":[')
+        metadata = {"type": "FeatureCollection", "title": "Candidate road segments",
+                    "source": "PASDA Allegheny County street centerlines, 2024-12",
+                    "grain": "Snapshot line feature",
+                    "limitations": "Internal snapshot geometry. Crash-era validity and site attribution are unverified."}
+        f.write(json.dumps(metadata, separators=(',', ':'))[:-1] + ',"features":[')
         for i, (s, line) in enumerate(zip(sites, lines)):
             if i: f.write(',')
             json.dump({'type':'Feature','properties':s,'geometry':mapping(transform(to_wgs, line))}, f, separators=(',', ':'))
@@ -120,7 +124,7 @@ def build(out):
             w.writerow([f'PASDA202412:JUNC:{jid}', x, y, '|'.join(ids), 'REVIEW_GRADE_AND_TOPOLOGY'])
     validator = CoordinateValidator()
     counts = Counter(); by_year = Counter(); by_road = Counter(); seen = set(); seen_conflicts = set()
-    fields = ['crash_id','crash_year','road_class','match_status','primary_site_id','candidate_site_id','candidate_distance_m','candidate_count','candidates','route','segment','offset','reference_version','decision_reason']
+    fields = ['crash_id','crash_year','road_class','match_status','primary_site_id','candidate_site_id','candidate_distance_m','candidate_count','candidates','route','segment','offset','reference_version','decision_reason','coordinate_source']
     with RAW.open(encoding='utf8', newline='') as source, (out / 'crosswalk.csv').open('w', encoding='utf8', newline='') as dest:
         w = csv.DictWriter(dest, fieldnames=fields); w.writeheader()
         for row in csv.DictReader(source):
@@ -129,6 +133,7 @@ def build(out):
             seen.add(crn)
             road = map_road_class(road_owner=row.get('ROAD_OWNER'), route=row.get('ROUTE') or '').value
             reason = 'HISTORICAL_VALIDITY_AND_TOPOLOGY_UNREVIEWED'; status = 'UNMATCHED'; candidates = []
+            coordinate_source = ''
             if crn in conflicts:
                 status = 'AMBIGUOUS'; reason = 'V6_COORDINATE_CONFLICT_WITHHELD'; seen_conflicts.add(crn)
             else:
@@ -136,6 +141,9 @@ def build(out):
                 if coord.validation_status == ValidationStatus.CONFLICT:
                     status = 'AMBIGUOUS'; reason = 'COORDINATE_CONFLICT_WITHHELD'
                 elif coord.validation_status in (ValidationStatus.VALID, ValidationStatus.WARNING) and coord.decoded_latitude is not None and coord.decoded_longitude is not None:
+                    coordinate_source = coord.coordinate_source.value
+                    if coordinate_source == 'police_dms':
+                        coordinate_source = 'police_dms_unverified'
                     x, y = to_plane.transform(coord.decoded_longitude, coord.decoded_latitude)
                     candidates = candidate_for_point(Point(x, y), tree, sites)
                     if not candidates: reason = 'NO_LINE_WITHIN_50M_OR_HISTORY_UNVERIFIED'
@@ -146,7 +154,7 @@ def build(out):
                         'candidate_site_id':candidates[0][1] if candidates else '', 'candidate_distance_m':round(candidates[0][0],3) if candidates else '',
                         'candidate_count':len(candidates), 'candidates':';'.join(f'{s}@{d:.3f}m' for d,s in candidates),
                         'route':row.get('ROUTE',''),'segment':row.get('SEGMENT',''),'offset':row.get('OFFSET',''),
-                        'reference_version':VERSION,'decision_reason':reason})
+                        'reference_version':VERSION,'decision_reason':reason,'coordinate_source':coordinate_source})
     if seen_conflicts != conflicts or len(seen) != manifest['data']['rows']:
         raise ValueError('Crash population or v6 conflict set did not reconcile')
     for name, data, column in [('qa_by_year.csv',by_year,'year'),('qa_by_road_class.csv',by_road,'road_class')]:
