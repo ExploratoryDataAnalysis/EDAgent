@@ -1,0 +1,72 @@
+
+.public-site {
+  --paper: #f7f3e8;
+  --ink: #182021;
+  --muted: #4e5b56;
+  --teal: #0e6059;
+  --rust: #8d3821;
+  --rule: #bfbeb1;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  color-scheme: light;
+  font: 1.075rem/1.65 'Source Sans 3', system-ui, sans-serif;
+}
+
+.public-container { width: min(100% - 3rem, 72rem); margin-inline: auto; }
+.public-masthead { border-bottom: 1px solid var(--rule); }
+.public-masthead .public-container {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem 2rem;
+  padding-block: 1.2rem;
+}
+.public-site a { color: var(--teal); text-decoration: underline; text-underline-offset: 0.2em; }
+.public-site a:hover { text-decoration-thickness: 2px; }
+.public-site :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.public-site .public-brand { color: var(--ink); font: 1.4rem Georgia, serif; text-decoration: none; }
+.public-nav { display: flex; flex-wrap: wrap; gap: 0.3rem 1.5rem; font-size: 0.9rem; }
+.public-nav a { text-decoration: none; }
+.public-nav a[aria-current], .public-nav a:hover { text-decoration: underline; }
+.public-skip { position: absolute; top: 0.75rem; left: 1rem; z-index: 10; background: var(--paper); padding: 0.4rem 0.75rem; }
+.public-skip:not(:focus) { clip-path: inset(50%); }
+.public-main { padding-block: clamp(2rem, 5vw, 4.5rem); }
+.public-main:focus { outline: none; }
+.public-document { min-width: 0; }
+.public-measure { max-width: 68ch; }
+.public-hero { margin-bottom: 1.6rem; }
+.public-kicker {
+  margin-bottom: 0.75rem;
+  color: var(--teal);
+  font: 0.8rem/1.5 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.public-site h1, .public-document h2 { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+.public-site h1 { max-width: 24ch; font-size: clamp(2rem, 5vw, 3.75rem); line-height: 1.12; letter-spacing: -0.025em; }
+.public-document h2 { font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.22; margin-bottom: 0.55rem; }
+.public-hero .public-lede { margin-top: 0.9rem; color: var(--muted); font-size: 1.12rem; }
+.public-status { padding: 1rem 1.15rem; background: #eceee3; border-left: 4px solid var(--teal); }
+.public-status[data-state="unavailable"], .public-status[data-state="error"] {
+  background: #f3e6dc;
+  border-color: var(--rust);
+}
+.public-status h2 { font-size: 1.4rem; }
+.public-actions { display: flex; flex-wrap: wrap; gap: 0.35rem 1.35rem; margin-top: 0.65rem; font-size: 0.95rem; font-weight: 600; }
+.public-actions button { color: var(--teal); text-decoration: underline; text-underline-offset: 0.2em; }
+.public-actions button[aria-disabled="true"] { color: var(--muted); text-decoration: none; }
+.public-section { margin-top: 2rem; border-top: 1px solid var(--rule); padding-top: 1.35rem; }
+.public-section p + p { margin-top: 0.72rem; }
+.public-topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem 2rem; margin-top: 1rem; }
+.public-topics h3 { font-weight: 650; }
+.public-topics p { color: var(--muted); margin-top: 0.25rem; font-size: 1rem; }
+.public-footer { border-top: 1px solid var(--rule); padding-block: 1.1rem 1.5rem; color: var(--muted); font-size: 0.86rem; }
+
+@media (max-width: 43rem) {
+  .public-container { width: calc(100% - 2rem); }
+  .public-masthead .public-container { padding-block: 0.8rem; }
+  .public-nav { gap: 0.2rem 1rem; }
+  .public-topics { grid-template-columns: 1fr; gap: 0.85rem; }
+}

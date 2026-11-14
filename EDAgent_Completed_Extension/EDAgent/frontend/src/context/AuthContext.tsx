@@ -1,17 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { User } from '../types';
 import { authService } from '../services/api';
-import { apiClient, setUnauthorizedHandler, tokenStore } from '../services/apiClient';
-
-export const DEFAULT_OPEN_USER: User = {
-  id: 'f61c13bc-4cb0-4e0f-bab2-2bd4564ef094',
-  email: 'analyst@edagent.local',
-  full_name: 'Lead Analyst',
-  is_active: true,
-};
+import { setUnauthorizedHandler, tokenStore } from '../services/apiClient';
 
 interface AuthContextType {
-  user: User;
+  user: User | null;
   initialising: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName?: string) => Promise<void>;
@@ -21,45 +14,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User>(DEFAULT_OPEN_USER);
-  const [initialising, setInitialising] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [initialising, setInitialising] = useState(() => Boolean(tokenStore.get()));
 
   const logout = useCallback(() => {
     tokenStore.clear();
     localStorage.removeItem('edagent_active_dataset_id');
     localStorage.removeItem('edagent_active_session_id');
-    setUser(DEFAULT_OPEN_USER);
+    setUser(null);
   }, []);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => setUser(DEFAULT_OPEN_USER));
+    setUnauthorizedHandler(logout);
     return () => setUnauthorizedHandler(null);
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     const token = tokenStore.get();
-    if (token) {
-      authService
-        .me()
-        .then(setUser)
-        .catch(() => {
-          tokenStore.clear();
-          setUser(DEFAULT_OPEN_USER);
-        });
-    } else {
-      apiClient
-        .post<{ data: { access_token: string; user: User } }>('/auth/guest')
-        .then((res) => {
-          if (res.data?.data?.access_token) {
-            tokenStore.set(res.data.data.access_token);
-            if (res.data.data.user) setUser(res.data.data.user);
-          }
-        })
-        .catch(() => {
-          // Open access without token is supported by backend
-        });
+    if (!token) {
+      setInitialising(false);
+      return;
     }
-  }, []);
+    let active = true;
+    authService.me()
+      .then(user => { if (active && tokenStore.get() === token) setUser(user); })
+      .catch(() => { if (active && tokenStore.get() === token) logout(); })
+      .finally(() => { if (active) setInitialising(false); });
+    return () => { active = false; };
+  }, [logout]);
 
   const login = async (email: string, password: string) => {
     const res = await authService.login(email, password);

@@ -1,8 +1,5 @@
 """Serve approved historical D7 aggregates and their declared assets."""
 
-import csv
-import hashlib
-import io
 import json
 import logging
 import os
@@ -13,7 +10,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.road_safety_release import ReleaseUnavailable, approved_bytes, verify_release
 from app.schemas.common import APIResponse
-from app.services import canonical_road_safety as canonical
 from app.services.overview_metadata import CAVEATS, RATIOS, TABLES, caveats, counts, state, units
 
 router = APIRouter()
@@ -96,120 +92,13 @@ class Release:
                 "mapped_percent_of_reported": full["mapped_percent_of_reported"]}
 
 
-class CanonicalRelease:
-    def __init__(self):
-        self.path = canonical.ANALYSIS_OUTPUTS
-        self.manifest = {
-            "kind": KIND,
-            "version": VERSION,
-            "schema_version": SCHEMA_VERSION,
-            "status": "APPROVED",
-            "run_id": "v6-canonical-research",
-            "scope": {
-                "county": "Allegheny County, PA",
-                "geoid": "42003",
-                "period_start": 2004,
-                "period_end": 2024,
-                "claim_class": "HISTORICAL_DESCRIPTIVE_AGGREGATES",
-                "PRIMARY_SITE_ASSIGNMENTS_ACCEPTED": 0,
-            },
-            "inputs": {
-                "crash_data": "c58a3901ee9aa845f5b33a9a3e930a2b95027367e5b2fef0225d4539db884511",
-                "census_boundary": "e285a864d4dca83f2187bf5947bcf0b59b589df0b6e92e7428801937ff7a8761",
-            },
-            "outputs": {name: hashlib.sha256(name.encode()).hexdigest() for name in OUTPUTS},
-            "tables": {t: {"rows": len(self.rows(t))} for t in TABLES},
-            "grid": {
-                "side_degrees": 0.001,
-                "occupied_cells": 38332,
-                "mapped_crashes": 238281,
-                "reported_crashes": 248810,
-            },
-        }
-
-    def rows(self, table: str):
-        loaders = {
-            "county_periods": canonical.load_county_periods,
-            "coordinate_coverage": canonical.load_coordinate_coverage,
-            "severity_composition": canonical.load_severity_composition,
-            "field_coverage_by_year": canonical.load_field_coverage_by_year,
-            "findings": canonical.load_findings,
-            "historical_grid": canonical.load_historical_grid,
-            "severity_associations": canonical.load_severity_associations,
-            "source_missingness": canonical.load_source_missingness,
-        }
-        if table in loaders:
-            return loaders[table]()
-        return []
-
-    def payload(self, name: str) -> bytes:
-        if name == "county_grid.svg":
-            return canonical.generate_county_grid_svg().encode("utf-8")
-        if name == "county_boundary.geojson":
-            return json.dumps(canonical.load_top_hotspots()).encode("utf-8")
-        if name == "descriptive_release_data_dictionary.md":
-            dict_path = canonical.REPO_ROOT / "docs" / "descriptive_release_data_dictionary.md"
-            if dict_path.exists():
-                return dict_path.read_bytes()
-            return b"# Road Safety Descriptive Release Data Dictionary\n"
-        if name.endswith(".json"):
-            table = name[:-5]
-            return json.dumps(self.rows(table)).encode("utf-8")
-        if name.endswith(".csv"):
-            table = name[:-4]
-            rows = self.rows(table)
-            if not rows:
-                return b""
-            buf = io.StringIO()
-            writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
-            writer.writeheader()
-            writer.writerows(rows)
-            return buf.getvalue().encode("utf-8")
-        return b""
-
-    def bundle(self, name: str | None = None):
-        out_sha = hashlib.sha256(self.payload(name) if name else b"").hexdigest()
-        return {
-            "kind": KIND,
-            "version": VERSION,
-            "manifest_sha256": MANIFEST_SHA256,
-            "output_sha256": out_sha,
-            "approval_state": APPROVED,
-        }
-
-    def provenance(self, name: str | None = None):
-        return {
-            "schema_version": SCHEMA_VERSION,
-            "run_id": self.manifest["run_id"],
-            "sources": self.manifest["inputs"],
-            "bundle": self.bundle(name),
-        }
-
-    def period(self, row):
-        scope = self.manifest["scope"]
-        start = row.get("period_start", scope["period_start"])
-        end = row.get("period_end", scope["period_end"])
-        return {
-            "period_start": start,
-            "period_end": end,
-            "period_grain": row.get("period_grain", "year" if start == end else "period"),
-        }
-
-    def grid(self):
-        return {
-            **self.manifest["grid"],
-            "mapped_percent_of_reported": 95.77,
-        }
-
-
 def reviewed_release(response: Response):
     # Approval can be revoked by changing the external ledger. Recheck it on every read.
     root = Path(os.environ.get("ROAD_SAFETY_RELEASE_ROOT", "data/exports/road_safety"))
     approvals = os.environ.get("ROAD_SAFETY_APPROVALS")
-    if not approvals:
-        response.headers["Cache-Control"] = "no-store"
-        return CanonicalRelease()
     try:
+        if not approvals:
+            raise ReleaseUnavailable("Approval ledger is absent")
         path = root / KIND
         manifest = verify_release(path, approvals, KIND, expected_manifest_sha256=MANIFEST_SHA256)
         scope = manifest["scope"]
@@ -326,18 +215,3 @@ def asset(name: str, release: Release = Depends(reviewed_release)):
     if name not in ASSETS:
         raise unavailable()
     return artifact(release, name, ASSETS[name])
-
-
-@router.get("/spatial/hotspots", summary="Top Concentration Crash Sites GeoJSON")
-def hotspots():
-    return canonical.load_top_hotspots()
-
-
-@router.get("/models/comparison", response_model=APIResponse[list], summary="Severity Model Performance Comparison")
-def model_comparison():
-    return APIResponse(success=True, message="Severity models compared across out-of-time test interval.", data=canonical.load_model_comparison())
-
-
-@router.get("/concentration/road-classes", response_model=APIResponse[list], summary="Crash Concentration by Road Class")
-def road_classes():
-    return APIResponse(success=True, message="Historical crash concentration across functional roadway classes.", data=canonical.load_road_classes())

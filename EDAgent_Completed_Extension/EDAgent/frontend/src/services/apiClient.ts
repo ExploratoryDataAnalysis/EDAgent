@@ -50,7 +50,10 @@ apiClient.interceptors.response.use(
   (r) => r,
   (error: AxiosError) => {
     const url = error.config?.url || '';
-    if (error.response?.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register')) {
+    const token = tokenStore.get();
+    // A request from a previous session can finish after a different user signs in.
+    if (error.response?.status === 401 && token && error.config?.headers.Authorization === `Bearer ${token}`
+      && !url.includes('/auth/login') && !url.includes('/auth/register')) {
       tokenStore.clear();
       onUnauthorized?.();
     }

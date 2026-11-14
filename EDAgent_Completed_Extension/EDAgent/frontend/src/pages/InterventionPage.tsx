@@ -24,7 +24,7 @@ type Result = {
   display: { hypothetical_baseline_n: string; after_n: string; delta_n: string;
     sensitivity: { label: string; after_n: Interval; delta_n: Interval } | null };
 };
-const panel = 'min-w-0 space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900';
+const panel = 'min-w-0 space-y-4 border border-stone-300 bg-[#fffcf4] p-4 sm:p-6';
 const input = 'block w-full rounded-lg border border-slate-400 bg-transparent px-3 py-2 font-normal';
 const decimalPattern = '[0-9]{1,12}(\\.[0-9]{1,6})?';
 
@@ -95,9 +95,9 @@ export function InterventionPage() {
   const delta = result?.exact.delta_n;
   const change = delta === undefined ? '' : Number(delta) === 0 ? 'no change' : delta.startsWith('-') ? 'more hypothetical crashes' : 'fewer hypothetical crashes';
 
-  return <article className="mx-auto max-w-6xl space-y-5 p-3 text-slate-900 sm:p-6 dark:text-slate-100">
+  return <article className="space-y-5">
     <header className="space-y-2">
-      <h1 className="text-2xl font-bold sm:text-3xl">Illustrative scenario</h1>
+      <h1 className="text-2xl font-bold sm:text-3xl">What-if calculator</h1>
       <p>Explore hypothetical crash-count changes using a crash modification factor (CMF) you supply.</p>
     </header>
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

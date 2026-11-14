@@ -57,11 +57,11 @@ export const HomePage: React.FC = () => {
 
           <div className="pt-2 flex flex-wrap gap-3">
             <Link
-              to="/road-safety"
+              to="/"
               className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 shadow-lg shadow-indigo-600/25 transition-all"
             >
-              <Compass className="w-4 h-4 text-cyan-200 animate-spin" />
-              <span>Explore Road Safety Narrative (248k Crashes)</span>
+              <Compass className="w-4 h-4 text-cyan-200" />
+              <span>Read the Allegheny County investigation</span>
             </Link>
 
             <Link

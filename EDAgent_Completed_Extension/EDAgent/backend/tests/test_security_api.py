@@ -27,6 +27,17 @@ def test_registration_login_and_password_handling(anon_client):
     assert h != PASSWORD and verify_password(PASSWORD, h) and not verify_password("x", h)
 
 
+def test_rejects_sessions_issued_before_guest_removal(client):
+    from datetime import datetime, timedelta, timezone
+
+    from jose import jwt
+
+    expires = datetime.now(timezone.utc) + timedelta(minutes=5)
+    old = jwt.encode({"sub": client.current_user["id"], "exp": expires}, settings.SECRET_KEY, algorithm="HS256")
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {old}"}).status_code == 401
+    assert client.get("/api/v1/auth/me").status_code == 200
+
+
 @pytest.mark.parametrize("url", [
     "http://127.0.0.1/data.csv", "http://localhost:8000/data.csv", "http://169.254.169.254/latest/meta-data",
     "http://[::1]/x.csv", "http://10.0.0.5/x.csv", "file:///etc/passwd", "ftp://example.com/x.csv", "http://user:pw@example.com/x.csv",

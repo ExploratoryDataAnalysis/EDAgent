@@ -20,6 +20,8 @@ router = APIRouter()
 # A real bcrypt hash of a throwaway string. Verifying against it when the e-mail is
 # unknown keeps login timing the same whether or not the account exists.
 _DUMMY_HASH = hash_password("timing-equaliser")
+# The removed open-access path provisioned this account with a fixed password.
+_LEGACY_OPEN_EMAIL = "analyst@edagent.local"
 
 
 def _token_for(user: User) -> Token:
@@ -32,6 +34,8 @@ async def register_user(payload: UserCreate, db: AsyncSession = Depends(get_db))
     if not settings.ALLOW_REGISTRATION:
         raise HTTPException(status_code=403, detail="Registration is disabled on this server.")
     email = payload.email.lower().strip()
+    if email == _LEGACY_OPEN_EMAIL:
+        raise HTTPException(status_code=422, detail="This e-mail address is reserved.")
     existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=409, detail="An account with this e-mail already exists.")
@@ -47,18 +51,10 @@ async def login_user(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     email = payload.email.lower().strip()
     user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     ok = verify_password(payload.password, user.hashed_password if user else _DUMMY_HASH)
-    if not user or not ok or not user.is_active:
+    if not user or not ok or not user.is_active or email == _LEGACY_OPEN_EMAIL:
         # One generic message for every failure mode: never reveal which part was wrong.
         raise HTTPException(status_code=401, detail="Incorrect e-mail or password.")
     return APIResponse(success=True, message="Signed in.", data=_token_for(user))
-
-
-@router.post("/guest", response_model=APIResponse[Token], summary="Guest / Open Access Login")
-async def guest_login(db: AsyncSession = Depends(get_db)):
-    """Provides instant open-ended access without requiring registration or credentials."""
-    from app.core.deps import get_or_create_open_user
-    user = await get_or_create_open_user(db)
-    return APIResponse(success=True, message="Open access analyst session initialized.", data=_token_for(user))
 
 
 @router.get("/me", response_model=APIResponse[UserResponse], summary="Current User")

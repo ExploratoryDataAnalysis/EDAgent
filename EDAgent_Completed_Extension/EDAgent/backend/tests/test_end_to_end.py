@@ -115,18 +115,25 @@ def test_full_workflow(client):
     assert client.get(f"/api/v1/analysis/results/{result_id}").status_code == 404
 
 
-def test_report_and_export_isolation(client, second_user):
+def test_report_and_export_isolation(client, second_user, monkeypatch):
+    from app.core.config import settings
+
+    # Cover the runtime mode in which the anonymous account fallback used to run.
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     ds = client.post("/api/v1/datasets/samples/sales_demo.csv").json()["data"]["dataset_id"]
     sid = client.post("/api/v1/sessions", json={"dataset_id": ds}).json()["data"]["id"]
     res = client.post("/api/v1/analysis/execute", json={"session_id": sid, "plan": {"operation": "frequency", "column": "region"}}).json()["data"]
     rep = client.post("/api/v1/reports/generate", json={"session_id": sid, "format": "html"}).json()["data"]
     wait_for(client, rep["job_id"])
     other = second_user["headers"]
+    assert client.post("/api/v1/auth/guest", headers={"Authorization": ""}).status_code == 404
     for path in [
+        f"/api/v1/datasets/{ds}", f"/api/v1/analysis/results/{res['id']}",
         f"/api/v1/reports/{rep['report_id']}", f"/api/v1/reports/{rep['report_id']}/download", f"/api/v1/jobs/{rep['job_id']}",
         f"/api/v1/exports/results/{res['id']}/metadata", f"/api/v1/exports/results/{res['id']}/bundle", f"/api/v1/exports/sessions/{sid}/bundle",
         f"/api/v1/exports/datasets/{ds}/profile", f"/api/v1/analysis/suggestions/{ds}",
     ]:
+        assert client.get(path, headers={"Authorization": ""}).status_code == 401, path
         assert client.get(path, headers=other).status_code == 404, path
     assert client.post("/api/v1/reports/generate", json={"session_id": sid}, headers=other).status_code == 404
     assert client.delete(f"/api/v1/reports/{rep['report_id']}", headers=other).status_code == 404

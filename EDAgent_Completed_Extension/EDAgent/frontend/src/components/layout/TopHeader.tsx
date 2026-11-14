@@ -18,17 +18,14 @@ export const TopHeader: React.FC = () => {
   const { activeDataset, datasets, samples, selectDataset, loadSample } = useDataset();
   const [menuOpen, setMenuOpen] = useState(false);
   const [ai, setAi] = useState<AIStatus | null>(null);
-  const roadSafety = ['/road-safety', '/illustrative-scenario'].includes(location.pathname);
 
   useEffect(() => {
-    if (!roadSafety) chatService.status().then(setAi).catch(() => setAi(null));
-  }, [roadSafety]);
+    chatService.status().then(setAi).catch(() => setAi(null));
+  }, []);
 
   // Page title mapping based on current pathname
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
-    '/road-safety': { title: 'Road safety', subtitle: 'Reported crashes and data coverage' },
-    '/illustrative-scenario': { title: 'Road safety', subtitle: 'Treatment references and hypothetical arithmetic' },
-    '/': { title: 'Home & Welcome', subtitle: 'Modern Autonomous Exploratory Data Analysis' },
+    '/analyser': { title: 'Home & Welcome', subtitle: 'Modern Autonomous Exploratory Data Analysis' },
     '/upload': { title: 'Dataset Upload', subtitle: 'Ingest CSV, TSV, or multi-sheet Excel workbooks' },
     '/overview': { title: 'Dataset Overview', subtitle: 'Automatic statistical profiling & quality checks' },
     '/inventory': { title: 'Column Inventory', subtitle: 'Storage types, semantic roles & sample preview' },
@@ -51,7 +48,7 @@ export const TopHeader: React.FC = () => {
       <div className="min-w-0">
         <div className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2 min-w-0">
           <span>{currentInfo.title}</span>
-          {!roadSafety && activeDataset && (
+          {activeDataset && (
             <>
               <span className="hidden md:inline text-slate-300 dark:text-slate-600">•</span>
               <span className="hidden md:inline text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md truncate max-w-[16rem]">
@@ -66,7 +63,7 @@ export const TopHeader: React.FC = () => {
       </div>
 
       {/* Right Controls: Dataset Switcher, AI status & Upload Button */}
-      {!roadSafety && <div className="flex items-center space-x-3">
+      {<div className="flex items-center space-x-3">
         {/* Dataset quick switcher (click to open so it also works on touch screens) */}
         <div className="relative">
           <button

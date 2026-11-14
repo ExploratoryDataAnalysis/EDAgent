@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,18 +31,11 @@ export const LoginPage: React.FC = () => {
     'w-full px-3 py-2.5 rounded-xl text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
       <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-8 space-y-6">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-white shadow-md">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-              EDA<span className="text-indigo-600 dark:text-indigo-400">gent</span>
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Verified exploratory data analysis</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold">Dataset analyser</h1>
+          <p className="text-sm">Sign in to upload, analyse and export your own data.</p>
         </div>
 
         <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-semibold">
@@ -63,18 +56,19 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={submit} className="space-y-4">
           {mode === 'register' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Name (optional)</label>
-              <input className={input} value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
+              <label htmlFor="full-name" className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Name (optional)</label>
+              <input id="full-name" className={input} value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
             </div>
           )}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
-            <input className={input} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
+            <input id="email" className={input} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
+            <label htmlFor="password" className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
             <input
               className={input}
+              id="password"
               type="password"
               required
               minLength={mode === 'register' ? 8 : 1}
@@ -105,9 +99,9 @@ export const LoginPage: React.FC = () => {
           Your datasets stay private to your account. If an AI provider is configured, dataset structure and a few
           sanitised sample values are sent to it to plan analyses and explain results; all numbers are computed locally.
         </p>
-        <Link to="/road-safety" className="text-sm text-indigo-700 underline dark:text-indigo-300">Road Safety Overview</Link>
+        <Link to="/" className="text-sm text-indigo-700 underline dark:text-indigo-300">Back to the investigation</Link>
       </div>
-    </div>
+    </main>
   );
 };
 

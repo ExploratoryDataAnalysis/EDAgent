@@ -42,7 +42,7 @@ def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> 
     """Returns (jwt, expires_in_seconds). `sub` is the user id; nothing else sensitive is embedded."""
     minutes = expires_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES
     expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-    token = jwt.encode({"sub": subject, "exp": expire}, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
+    token = jwt.encode({"sub": subject, "exp": expire, "session_version": 2}, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
     return token, minutes * 60
 
 
@@ -51,6 +51,9 @@ def decode_access_token(token: str) -> Optional[str]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[JWT_ALGORITHM])
     except JWTError:
+        return None
+    # Old tokens could be issued by guest login for any stored account.
+    if payload.get("session_version") != 2:
         return None
     sub = payload.get("sub")
     return str(sub) if sub else None

@@ -23,7 +23,127 @@ async function tabTo(page, locator) {
 }
 
 const widths = { desktop: 1440, narrow: 390 };
+const provenancePath = '**/api/v1/road-safety/overview/provenance';
+const gateDetail = {
+  code: 'OVERVIEW_UNAVAILABLE', message: 'The reviewed Road Safety Overview dataset is unavailable.',
+  approval_state: null, data: null,
+};
+
+async function assertDocument(page) {
+  assert.equal(await page.getByRole('main').count(), 1);
+  assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+}
+
+async function assertWithheld(page) {
+  assert.equal(await page.getByRole('region', { name: 'Crash totals' }).count(), 0);
+  assert.equal(await page.locator('a[href*="/downloads/"], img[src*="/assets/"]').count(), 0);
+  assert.doesNotMatch(await page.getByRole('main').innerText(), /248,810|238,281|Manifest SHA-256/);
+}
+
+async function publicRoutes(size, width) {
+  const page = await browser.newPage({ viewport: { width, height: 900 } });
+  if (evidence) await page.context().tracing.start({ screenshots: true, snapshots: true });
+  let releaseCheck;
+  const hold = new Promise(resolve => { releaseCheck = resolve; });
+  const servePending = async route => {
+    await hold;
+    await route.fulfill({ status: 503, json: { detail: gateDetail } });
+  };
+  await page.route(provenancePath, servePending);
+
+  await page.goto(fixture);
+  await page.getByRole('status').filter({ hasText: 'Checking the release' }).waitFor();
+  await assertWithheld(page);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.getByRole('link', { name: 'Skip to content' }).evaluate(el => el === document.activeElement), true);
+  await page.keyboard.press('Enter');
+  assert.equal(await page.getByRole('main').evaluate(el => el === document.activeElement), true);
+  releaseCheck();
+  await page.getByRole('heading', { name: 'Reviewed findings unavailable' }).waitFor();
+  await assertDocument(page);
+  await assertWithheld(page);
+  const navigation = page.getByRole('navigation', { name: 'Main navigation' });
+  for (const [name, href] of [['Methods', '/methods'], ['What-if calculator', '/illustrative-scenario'], ['Dataset analyser', '/analyser']]) {
+    assert.equal(await navigation.getByRole('link', { name, exact: true }).getAttribute('href'), href);
+  }
+  const accessibility = await page.getByRole('main').ariaSnapshot();
+  assert.match(accessibility, /status:[\s\S]*Reviewed findings unavailable[\s\S]*Read the Methods/);
+  await screenshot(page, `public-index-pending-${size}`);
+  await page.getByRole('link', { name: 'Which reports can be mapped' }).click();
+  const mapping = page.getByRole('heading', { name: 'Why the map covers fewer reports' });
+  await mapping.waitFor();
+  await page.waitForFunction(() => document.activeElement?.id === 'mapping');
+  await page.reload();
+  await mapping.waitFor();
+  await assertDocument(page);
+  await screenshot(page, `public-methods-${size}`);
+  await page.goBack();
+  await page.getByRole('link', { name: 'Open the crash record' }).waitFor();
+  await page.goForward();
+  await mapping.waitFor();
+
+  await page.goto(`${fixture}/road-safety`);
+  await page.getByRole('heading', { name: 'Reviewed findings unavailable' }).waitFor();
+  await assertDocument(page);
+  await assertWithheld(page);
+  await screenshot(page, `public-record-unavailable-${size}`);
+
+  await page.unroute(provenancePath, servePending);
+  const offline = route => route.abort('internetdisconnected');
+  await page.route(provenancePath, offline);
+  await page.getByRole('button', { name: 'Retry release check' }).click();
+  await page.getByRole('heading', { name: 'Could not check the findings' }).waitFor();
+  await assertWithheld(page);
+  await screenshot(page, `public-record-transport-${size}`);
+  await page.unroute(provenancePath, offline);
+  if (size === 'tablet') {
+    let finish;
+    const wait = new Promise(resolve => { finish = resolve; });
+    const timeout = async route => {
+      await wait;
+      await route.abort().catch(() => {});
+    };
+    await page.route(provenancePath, timeout);
+    await page.getByRole('button', { name: 'Retry release check' }).click();
+    await page.getByRole('status').filter({ hasText: 'Checking the release' }).waitFor();
+    try {
+      await page.getByRole('heading', { name: 'Could not check the findings' }).waitFor({ timeout: 18000 });
+      await assertWithheld(page);
+    } finally {
+      finish();
+      await page.unroute(provenancePath, timeout);
+    }
+  }
+  const tablePath = '**/api/v1/road-safety/overview/tables/county_periods';
+  const mix = async route => {
+    const response = await route.fetch();
+    const json = await response.json();
+    json.data.bundle.manifest_sha256 = '0'.repeat(64);
+    await route.fulfill({ response, json });
+  };
+  await page.route(tablePath, mix);
+  await page.getByRole('button', { name: 'Retry release check' }).click();
+  await page.getByRole('heading', { name: 'Could not check the findings' }).waitFor();
+  await assertWithheld(page);
+  await page.unroute(tablePath, mix);
+  await page.getByRole('button', { name: 'Retry release check' }).click();
+  await page.getByText('Synthetic test fixture. Counts are invented for verification.').waitFor();
+
+  // Exercise 200% CSS zoom at the intermediate width.
+  if (width === 768) {
+    await page.goto(`${fixture}/methods`);
+    await page.addStyleTag({ content: 'body { zoom: 2; }' });
+    await assertDocument(page);
+    await screenshot(page, 'public-methods-200-percent');
+  }
+  if (evidence) await page.context().tracing.stop({ path: `${evidence}/public-${size}.zip` });
+  await page.close();
+  console.log(`PASS ${size} ${width}px — public routes, slow check, unavailable, transport, mixed identity and retry`);
+}
+
 try {
+  for (const [size, width] of Object.entries({ ...widths, tablet: 768 })) await publicRoutes(size, width);
   for (const [size, width] of Object.entries(widths)) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.goto(`${fixture}/road-safety`);
@@ -39,13 +159,17 @@ try {
     await image.waitFor();
     await page.waitForFunction(() => document.querySelector('figure img')?.naturalWidth > 0);
     assert.equal(await page.locator('.js-plotly-plot').count(), 3);
+    const gridCsv = await page.request.get(new URL(await page.getByRole('link', { name: 'Download grid cell counts (CSV)' }).getAttribute('href'), fixture).href);
+    assert.equal(gridCsv.status(), 200);
+    assert.match(gridCsv.headers()['x-artifact-sha256'], /^[0-9a-f]{64}$/);
+    assert.match(await gridCsv.text(), /mapped_crashes/);
     assert.ok(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth + 1));
     await screenshot(page, `fixture-overview-${size}`);
 
     const next = page.getByRole('link', { name: 'Open the illustrative scenario workspace' });
     await tabTo(page, next);
     await page.keyboard.press('Enter');
-    await page.getByRole('heading', { name: 'Illustrative scenario', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'What-if calculator', exact: true }).waitFor();
     const select = page.getByLabel('Select a treatment reference');
     await select.getByRole('option', { name: 'Roadway lighting' }).waitFor({ state: 'attached' });
     assert.equal(await select.getByRole('option').count(), 7);
@@ -117,13 +241,10 @@ try {
     for (const [size, width] of Object.entries(widths)) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       await page.goto(`${staging}/road-safety`);
-      await page.getByRole('heading', { name: 'Reviewed data unavailable' }).waitFor();
+      await page.getByRole('heading', { name: 'Reviewed findings unavailable' }).waitFor();
       const response = await page.request.get(`${staging}/api/v1/road-safety/overview/provenance`);
       assert.equal(response.status(), 503);
-      assert.deepEqual((await response.json()).detail, {
-        code: 'OVERVIEW_UNAVAILABLE', message: 'The reviewed Road Safety Overview dataset is unavailable.',
-        approval_state: null, data: null,
-      });
+      assert.deepEqual((await response.json()).detail, gateDetail);
       assert.equal(await page.getByRole('region', { name: 'Crash totals' }).count(), 0);
       await screenshot(page, `staging-pending-${size}`);
       await page.close();
@@ -138,14 +259,19 @@ try {
     await page.getByLabel('Hypothetical CMF', { exact: true }).fill('1.25');
     await page.getByRole('button', { name: 'Calculate scenario' }).click();
     await page.getByText('-2.50 (more hypothetical crashes)', { exact: true }).waitFor();
-    console.log('PASS Compose calculator — evidence and hypothetical arithmetic while the real Overview is gated');
+    console.log('PASS Pending-release calculator — evidence and hypothetical arithmetic while the real Overview is gated');
     const credentials = { email: `phase6-${randomUUID()}@example.com`, password: randomUUID() };
     const registration = await page.request.post(`${staging}/api/v1/auth/register`, { data: credentials });
     assert.equal(registration.status(), 201);
-    await page.goto(staging);
+    await page.goto(`${staging}/upload`);
+    await page.getByRole(`heading`, { name: `Dataset analyser` }).waitFor();
     await page.locator('input[type=email]').fill(credentials.email);
     await page.locator('input[type=password]').fill(credentials.password);
     await page.locator('button[type=submit]').click();
+    await page.getByRole('link', { name: 'Upload Dataset' }).waitFor();
+    assert.equal(new URL(page.url()).pathname, '/upload');
+    await page.goto(`${staging}/analyser`);
+    await page.getByRole('link', { name: 'Home Workspace' }).waitFor();
     await page.getByRole('link', { name: 'Upload Dataset' }).click();
     const upload = page.waitForResponse(response => response.url().endsWith('/datasets/upload'));
     await page.locator('input[type=file]').setInputFiles({
@@ -165,8 +291,12 @@ try {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     assert.equal((await readFile(await (await download).path())).subarray(0, 4).toString(), '%PDF');
+    await page.getByRole('link', { name: 'Export Centre' }).click();
+    const exportReady = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Profile (.json)' }).click();
+    assert.ok(JSON.parse(await readFile(await (await exportReady).path(), 'utf8')));
     await page.close();
-    console.log('PASS Compose analyser — sign-in, CSV upload, analysis, and PDF report download');
+    console.log('PASS Signed-in analyser — sign-in, CSV upload, analysis, PDF report download and JSON profile export');
   }
 } finally {
   await browser.close();

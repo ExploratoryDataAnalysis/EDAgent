@@ -71,11 +71,13 @@ def test_metric_ratios_and_nulls(anon_client, release):
     assert (data["period_start"], data["period_end"]) == (2016, 2023)
 
 
-@pytest.mark.parametrize("failure", ["missing_ledger", "pending", "wrong_approval_hash", "altered_manifest",
+@pytest.mark.parametrize("failure", ["unconfigured_ledger", "missing_ledger", "pending", "wrong_approval_hash", "altered_manifest",
                                      "unsupported_schema", "unsupported_kind", "tampered", "missing"])
 def test_unavailable_without_exact_verified_release(anon_client, release, monkeypatch, failure):
     path, ledger, fingerprint = release
-    if failure == "missing_ledger":
+    if failure == "unconfigured_ledger":
+        monkeypatch.delenv("ROAD_SAFETY_APPROVALS")
+    elif failure == "missing_ledger":
         ledger.unlink()
     elif failure == "pending":
         write_decision(ledger, fingerprint, "PENDING")
@@ -98,9 +100,12 @@ def test_unavailable_without_exact_verified_release(anon_client, release, monkey
         r = anon_client.get(f"{BASE}{route}")
         assert r.status_code == 503
         assert r.json()["detail"] == overview.UNAVAILABLE
+        assert r.headers["cache-control"] == "no-store"
 
 
 def test_d7_cannot_serve_internal_or_legacy_site_artifacts(anon_client, release):
+    for route in ("/spatial/hotspots", "/models/comparison", "/concentration/road-classes"):
+        assert anon_client.get(f"{BASE}{route}").status_code == 404
     for route in ("/assets/manifest.json", "/assets/county_points_review.csv", "/tables/crosswalk", "/downloads/conflicts"):
         assert anon_client.get(f"{BASE}{route}").status_code == 503
     for route in ("annual", "breakdown", "geojson", "top", "Station%20375"):

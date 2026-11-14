@@ -33,8 +33,8 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
 
   const navigationItems = [
-    { to: '/', label: 'Home Workspace', icon: Home },
-    { to: '/road-safety', label: 'Road Safety Narrative', icon: Map },
+    { to: '/analyser', label: 'Home Workspace', icon: Home },
+    { to: '/', label: 'Investigation', icon: Map },
     { to: '/upload', label: 'Upload Dataset', icon: UploadCloud },
     { to: '/overview', label: 'Dataset Overview', icon: LayoutDashboard },
     { to: '/inventory', label: 'Column Inventory', icon: Table2 },
@@ -56,7 +56,7 @@ export const Sidebar: React.FC = () => {
     >
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-slate-100 dark:border-slate-800">
-        <NavLink to="/" className="flex items-center space-x-3 overflow-hidden">
+        <NavLink to="/analyser" className="flex items-center space-x-3 overflow-hidden">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-white shadow-md shadow-indigo-500/20 shrink-0">
             <Sparkles className="w-5 h-5 animate-pulse" />
           </div>
