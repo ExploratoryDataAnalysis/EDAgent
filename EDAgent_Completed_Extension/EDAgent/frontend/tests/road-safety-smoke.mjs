@@ -163,6 +163,70 @@ try {
     assert.equal(gridCsv.status(), 200);
     assert.match(gridCsv.headers()['x-artifact-sha256'], /^[0-9a-f]{64}$/);
     assert.match(await gridCsv.text(), /mapped_crashes/);
+
+    // --- Phase 7B Verification: Annual slice, year control, coverage, URL sync, and CSV ---
+    const yearSelect = page.getByLabel('Select observation year');
+    await yearSelect.waitFor();
+    assert.equal(await yearSelect.inputValue(), '2024');
+
+    const coverage = page.getByTestId('selected-year-coverage');
+    await coverage.waitFor();
+    assert.match(await coverage.innerText(), /Selected Year: 2024/);
+    assert.match(await coverage.innerText(), /Examining 12 police-reported crashes/);
+    assert.match(await coverage.innerText(), /LOW_2024_HOUR_COVERAGE/);
+    assert.match(await coverage.innerText(), /Observed zero \(NO_2024_ILLUMINATION_COVERAGE\)/);
+    assert.match(await coverage.innerText(), /Serious or fatal crashes \(codes 1 & 2\):\s*2/);
+    assert.match(await coverage.innerText(), /Zero accepted road-site assignments/);
+    assert.match(await coverage.innerText(), /Travel exposure and traffic volumes are unmeasured/);
+    assert.match(await coverage.innerText(), /Supports no inference regarding per-trip risk/);
+
+    // Change year to 2015 and verify coverage details and URL sync
+    await yearSelect.selectOption('2015');
+    await page.waitForFunction(() => new URL(window.location.href).searchParams.get('year') === '2015');
+    assert.match(await coverage.innerText(), /Selected Year: 2015/);
+    assert.match(await coverage.innerText(), /Unavailable[\s\S]*SEVERITY_CODING_BREAK_2016/);
+    assert.match(await coverage.innerText(), /Populated illumination:[\s\S]*11\s*\/\s*12/);
+    assert.match(await coverage.innerText(), /Valid hour of day:[\s\S]*10\s*\/\s*12/);
+
+    // Verify row selection state in table
+    const row2015 = annual.getByRole('row', { name: /^2015/ });
+    assert.equal(await row2015.getAttribute('aria-selected'), 'true');
+
+    // Click 2024 row in table to select it
+    const row2024 = annual.getByRole('row', { name: /^2024/ });
+    await row2024.click();
+    await page.waitForFunction(() => new URL(window.location.href).searchParams.get('year') === '2024');
+    assert.equal(await yearSelect.inputValue(), '2024');
+
+    // Verify direct link with parameter and invalid year fallback
+    await page.goto(`${fixture}/road-safety?year=2015`);
+    await yearSelect.waitFor();
+    assert.equal(await yearSelect.inputValue(), '2015');
+    await page.goto(`${fixture}/road-safety?year=9999`);
+    await yearSelect.waitFor();
+    assert.equal(await yearSelect.inputValue(), '2024');
+    await page.goBack();
+    await page.waitForFunction(() => document.querySelector('#annual-year-select')?.value === '2015');
+
+    // Verify verified CSV export for annual series
+    const annualCsv = await page.request.get(new URL(await page.getByRole('link', { name: 'Download complete annual series (county_periods.csv)' }).getAttribute('href'), fixture).href);
+    assert.equal(annualCsv.status(), 200);
+    assert.match(annualCsv.headers()['x-artifact-sha256'], /^[0-9a-f]{64}$/);
+    assert.match(annualCsv.headers()['x-manifest-sha256'], /^[0-9a-f]{64}$/);
+    assert.match(await annualCsv.text(), /reported_crashes/);
+
+    // Verify root InvestigationPage displays approved evidence entry when ready
+    await page.goto(fixture);
+    await page.getByRole('heading', { name: 'What can Allegheny County’s crash reports tell us?' }).waitFor();
+    await page.getByRole('heading', { name: 'Annual crash reports in Allegheny County' }).waitFor();
+    assert.equal(await page.locator('.js-plotly-plot').count(), 1);
+    await page.getByRole('link', { name: 'Open the complete road-safety crash record' }).waitFor();
+    await screenshot(page, `fixture-root-ready-${size}`);
+
+    // Return to road-safety page for existing calculator sequence
+    await page.goto(`${fixture}/road-safety`);
+    await page.getByText('Synthetic test fixture. Counts are invented for verification.').waitFor();
+
     assert.ok(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth + 1));
     await screenshot(page, `fixture-overview-${size}`);
 

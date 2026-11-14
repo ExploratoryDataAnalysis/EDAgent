@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PlotlyChart } from '../components/charts/PlotlyChart';
 import { ReleaseStatus, useReleaseRequest } from '../components/layout/ReleaseStatus';
-import { loadOverview, overviewUrl, type Period } from '../services/roadSafetyService';
+import { loadOverview, overviewUrl, type Period, type OverviewData } from '../services/roadSafetyService';
+import { AnnualCrashFigure } from '../components/road-safety/AnnualCrashFigure';
 
 const formatCount = new Intl.NumberFormat('en-US');
 const count = (n: number | null) => n === null ? 'Unavailable' : formatCount.format(n);
@@ -53,7 +54,7 @@ export function RoadSafetyPage() {
   </article>;
 }
 
-function VerifiedRecord({ data }: { data: Awaited<ReturnType<typeof loadOverview>> }) {
+function VerifiedRecord({ data }: { data: OverviewData }) {
   const [mapError, setMapError] = useState(false);
   const { scope, bundle, grid } = data.provenance;
   const synthetic = bundle.version.startsWith('fixture-');
@@ -72,23 +73,18 @@ function VerifiedRecord({ data }: { data: Awaited<ReturnType<typeof loadOverview
       <div className={card}><h2 className="font-semibold">Mapped crashes</h2><p className="text-3xl font-bold">{count(mapped.mapped_crashes)}</p>
         <Caption>{context} Reports inside or on the county boundary. {percent(mapped.mapped_percent_of_reported)} of all {count(mapped.reported_crashes)} reports.</Caption></div>
     </section>
-    <section className={`${card} space-y-3`} aria-labelledby="annual-crashes">
-      <h2 id="annual-crashes" className="text-lg font-bold">Annual crash trends</h2>
-      <Caption>{context} Counts use all reports per year. Severity shares use reports with known severity (codes 0–4) per year.</Caption>
-      <Chart years={years} yLabel="Crashes" series={[{ name: 'Reported crashes', values: annual.map(row => row.reported_crashes) }]} />
+
+    {/* Reference Implementation for Phase 7B: Annual Crash Reports & Selected-Year Coverage */}
+    <AnnualCrashFigure data={data} />
+
+    <section className={`${card} space-y-3`} aria-labelledby="severity-composition">
+      <h2 id="severity-composition" className="text-lg font-bold">Severity composition and trends</h2>
+      <Caption>{scope.county} · Source: {source}. The 2016 coding change defines the two reporting eras. Known groups use known-severity reports. Unknown, missing and unrecognised groups use all reports.</Caption>
       <Chart years={years} yLabel="% of known severity" series={[
         { name: 'Fatal crashes', values: annual.map(row => row.fatal_percent_of_known) },
         { name: 'Serious or fatal crashes', values: annual.map(row => row.serious_fatal_percent_of_known) },
       ]} />
       <Caption>The 2016 severity coding change limits the combined serious/fatal series to 2016 onward. Fatal shares use the known-severity counts shown below.</Caption>
-      <details><summary className="cursor-pointer font-semibold">Annual trends data table</summary>
-        <DataTable label="Annual reported crashes and severity" columns={['Year', 'Reported', 'Known severity', 'Unknown severity', 'Fatal', 'Fatal share', 'Serious or fatal', 'Serious or fatal share']}
-          rows={annual.map(row => [period(row), count(row.reported_crashes), count(row.known_severity_crashes), count(row.unknown_severity_crashes), count(row.fatal_crashes), percent(row.fatal_percent_of_known), count(row.serious_fatal_crashes), percent(row.serious_fatal_percent_of_known)])} />
-      </details>
-    </section>
-    <section className={`${card} space-y-3`} aria-labelledby="severity-composition">
-      <h2 id="severity-composition" className="text-lg font-bold">Severity composition</h2>
-      <Caption>{scope.county} · Source: {source}. The 2016 coding change defines the two reporting eras. Known groups use known-severity reports. Unknown, missing and unrecognised groups use all reports.</Caption>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {data.county.filter(row => row.period_grain === 'era').map(era => <div key={period(era)} className="min-w-0">
           <h3 className="font-semibold">{period(era)}</h3>

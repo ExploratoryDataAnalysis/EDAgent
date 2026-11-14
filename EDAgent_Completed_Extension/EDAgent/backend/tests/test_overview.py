@@ -138,3 +138,50 @@ def test_default_release_pin_excludes_fixture(anon_client, tmp_path, monkeypatch
     response = anon_client.get(f"{BASE}/provenance")
     assert response.status_code == 503
     assert response.json()["detail"] == overview.UNAVAILABLE
+
+
+def test_phase7b_annual_and_coverage_slice_contract(anon_client, release):
+    path, _, fingerprint = release
+    # 1. County periods table and annotations
+    res_county = anon_client.get(f"{BASE}/tables/county_periods")
+    assert res_county.status_code == 200
+    county_data = res_county.json()["data"]
+    assert county_data["table_id"] == "county_periods"
+    assert county_data["row_key"] == ["period_grain", "period_start", "period_end"]
+    annual_rows = [r for r in county_data["rows"] if r["period_grain"] == "year"]
+    assert len(annual_rows) >= 2
+    row_2015 = next(r for r in annual_rows if r["period_start"] == 2015)
+    row_2024 = next(r for r in annual_rows if r["period_start"] == 2024)
+    # 2016 seam: pre-2016 serious/fatal is null
+    assert row_2015["serious_fatal_crashes"] is None
+    assert row_2015["serious_fatal_percent_of_known"] is None
+    # 2016 seam: post-2016 serious/fatal is available
+    assert row_2024["serious_fatal_crashes"] == 2
+    assert row_2024["serious_fatal_percent_of_known"] is not None
+
+    # 2. Coordinate coverage joinable by year
+    res_coord = anon_client.get(f"{BASE}/tables/coordinate_coverage")
+    assert res_coord.status_code == 200
+    coord_data = res_coord.json()["data"]
+    assert coord_data["row_key"] == ["period_grain", "period_start", "period_end"]
+    coord_2024 = next(r for r in coord_data["rows"] if r["period_grain"] == "year" and r["period_start"] == 2024)
+    assert coord_2024["mapped_crashes"] == 10
+    assert coord_2024["reported_crashes"] == 12
+
+    # 3. Field coverage caveats: 2024 valid hour and illumination
+    res_fields = anon_client.get(f"{BASE}/tables/field_coverage_by_year")
+    assert res_fields.status_code == 200
+    fields_data = res_fields.json()["data"]
+    assert fields_data["row_key"] == ["period_start", "metric_id"]
+    hour_2024 = next(r for r in fields_data["rows"] if r["period_start"] == 2024 and r["metric_id"] == "valid_hour")
+    light_2024 = next(r for r in fields_data["rows"] if r["period_start"] == 2024 and r["metric_id"] == "nonmissing_illumination")
+    assert hour_2024["covered_crashes"] == 1
+    assert light_2024["covered_crashes"] == 0  # Measured zero count
+
+    # 4. Verified CSV export route bound to release identity
+    res_csv = anon_client.get(f"{BASE}/downloads/county_periods")
+    assert res_csv.status_code == 200
+    assert res_csv.headers["content-type"].startswith("text/csv")
+    assert res_csv.headers["x-manifest-sha256"] == fingerprint
+    assert "reported_crashes" in res_csv.text
+
