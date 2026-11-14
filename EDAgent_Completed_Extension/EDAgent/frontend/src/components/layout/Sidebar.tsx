@@ -33,20 +33,20 @@ export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
 
   const navigationItems = [
-    { to: '/road-safety', label: 'Road Safety Overview', icon: Map },
-    { to: '/illustrative-scenario', label: 'Illustrative scenario', icon: Calculator },
-    { to: '/', label: user ? 'Home' : 'Sign in to analyser', icon: Home },
+    { to: '/', label: 'Home Workspace', icon: Home },
+    { to: '/road-safety', label: 'Road Safety Narrative', icon: Map },
     { to: '/upload', label: 'Upload Dataset', icon: UploadCloud },
     { to: '/overview', label: 'Dataset Overview', icon: LayoutDashboard },
     { to: '/inventory', label: 'Column Inventory', icon: Table2 },
     { to: '/workspace', label: 'Analysis Workspace', icon: Cpu },
-    { to: '/chat', label: 'AI Dataset Chat', icon: MessageSquare },
     { to: '/visualize', label: 'Visualizations', icon: BarChart2 },
+    { to: '/chat', label: 'AI Dataset Chat', icon: MessageSquare },
+    { to: '/illustrative-scenario', label: 'Scenario Calculator', icon: Calculator },
     { to: '/history', label: 'Analysis History', icon: History },
     { to: '/reports', label: 'Report Builder', icon: FileSpreadsheet },
     { to: '/exports', label: 'Export Centre', icon: Download },
   ];
-  const visibleItems = user ? navigationItems : navigationItems.slice(0, 3);
+  const visibleItems = navigationItems;
 
   return (
     <aside

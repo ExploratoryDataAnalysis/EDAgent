@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Database,
   CheckCircle2,
+  Compass,
 } from 'lucide-react';
 import { useDataset } from '../context/DatasetContext';
 import { Modal } from '../components/ui/Modal';
@@ -55,6 +56,14 @@ export const HomePage: React.FC = () => {
           </p>
 
           <div className="pt-2 flex flex-wrap gap-3">
+            <Link
+              to="/road-safety"
+              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 shadow-lg shadow-indigo-600/25 transition-all"
+            >
+              <Compass className="w-4 h-4 text-cyan-200 animate-spin" />
+              <span>Explore Road Safety Narrative (248k Crashes)</span>
+            </Link>
+
             <Link
               to="/upload"
               className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-lg shadow-indigo-600/25 transition-all"

@@ -1,10 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { DatasetProvider } from './context/DatasetContext';
 import { LoginPage } from './pages/LoginPage';
-import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { AppLayout } from './components/layout/AppLayout';
 
 import { HomePage } from './pages/HomePage';
@@ -20,19 +19,6 @@ import { ExportCentrePage } from './pages/ExportCentrePage';
 import { RoadSafetyPage } from './pages/RoadSafetyPage';
 import { InterventionPage } from './pages/InterventionPage';
 
-/** Shows the login screen until a valid session exists. */
-const Gate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, initialising } = useAuth();
-  if (initialising) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <LoadingSpinner text="Restoring your session…" />
-      </div>
-    );
-  }
-  return user ? <>{children}</> : <LoginPage />;
-};
-
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
@@ -41,10 +27,6 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <Routes>
               <Route element={<AppLayout><Outlet /></AppLayout>}>
-                <Route path="/road-safety" element={<RoadSafetyPage />} />
-                <Route path="/illustrative-scenario" element={<InterventionPage />} />
-              </Route>
-              <Route element={<Gate><AppLayout><Outlet /></AppLayout></Gate>}>
                 <Route index element={<HomePage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/overview" element={<OverviewPage />} />
@@ -55,6 +37,9 @@ export const App: React.FC = () => {
                 <Route path="/history" element={<HistoryPage />} />
                 <Route path="/reports" element={<ReportBuilderPage />} />
                 <Route path="/exports" element={<ExportCentrePage />} />
+                <Route path="/road-safety" element={<RoadSafetyPage />} />
+                <Route path="/illustrative-scenario" element={<InterventionPage />} />
+                <Route path="/login" element={<LoginPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
