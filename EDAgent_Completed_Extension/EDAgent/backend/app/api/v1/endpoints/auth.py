@@ -53,6 +53,14 @@ async def login_user(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     return APIResponse(success=True, message="Signed in.", data=_token_for(user))
 
 
+@router.post("/guest", response_model=APIResponse[Token], summary="Guest / Open Access Login")
+async def guest_login(db: AsyncSession = Depends(get_db)):
+    """Provides instant open-ended access without requiring registration or credentials."""
+    from app.core.deps import get_or_create_open_user
+    user = await get_or_create_open_user(db)
+    return APIResponse(success=True, message="Open access analyst session initialized.", data=_token_for(user))
+
+
 @router.get("/me", response_model=APIResponse[UserResponse], summary="Current User")
 async def read_current_user(user: User = Depends(get_current_user)):
     return APIResponse(success=True, message="Current user.", data=UserResponse.model_validate(user))

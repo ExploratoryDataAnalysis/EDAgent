@@ -22,7 +22,7 @@ interface DatasetContextType {
   session: SessionSummary | null;
   isLoading: boolean;
   error: string | null;
-  refreshDatasets: () => Promise<void>;
+  refreshDatasets: () => Promise<DatasetListItem[]>;
   selectDataset: (id: UUID) => Promise<void>;
   /** Loads an uploaded dataset (already stored on the server) as the active one. */
   setUploadedDataset: (datasetId: UUID) => Promise<void>;
@@ -53,12 +53,15 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const message = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback);
 
-  const refreshDatasets = useCallback(async () => {
+  const refreshDatasets = useCallback(async (): Promise<DatasetListItem[]> => {
     try {
       const res = await datasetService.listDatasets();
-      setDatasets(res.items || []);
+      const items = res.items || [];
+      setDatasets(items);
+      return items;
     } catch (e) {
       setError(message(e, 'Could not load your datasets'));
+      return [];
     }
   }, []);
 
@@ -99,17 +102,22 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Load everything for the signed-in user; clear everything on sign-out.
+  // Load everything for the user; auto-select active dataset; clear on sign-out.
   useEffect(() => {
     if (!user) {
       reset();
       setDatasets([]);
       return;
     }
-    refreshDatasets();
     sampleApi().then(setSamples).catch(() => setSamples([]));
-    const saved = localStorage.getItem(DATASET_KEY);
-    if (saved) selectDataset(saved);
+    refreshDatasets().then((items) => {
+      const saved = localStorage.getItem(DATASET_KEY);
+      if (saved && items.some((d) => d.id === saved)) {
+        selectDataset(saved);
+      } else if (items.length > 0) {
+        selectDataset(items[0].id);
+      }
+    });
   }, [user, refreshDatasets, selectDataset]);
 
   const setUploadedDataset = useCallback(async (datasetId: UUID) => {

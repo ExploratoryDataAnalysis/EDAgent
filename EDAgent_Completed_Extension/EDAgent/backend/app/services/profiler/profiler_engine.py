@@ -128,6 +128,27 @@ class ProfilerEngine:
         warnings: List[str] = list(parsing_warnings or [])
 
         fmt = format_str.lower().lstrip(".")
+        warnings: List[str] = list(parsing_warnings or [])
+
+        # For larger files (>200 KB) in CSV/TSV format, use fast vectorized pandas profiling
+        # to process 250k+ rows in seconds instead of hanging the HTTP worker thread.
+        if file_size > 200_000 and fmt in ("csv", "tsv"):
+            try:
+                return cls._profile_dataset_fast(
+                    file_path=file_path,
+                    fmt=fmt,
+                    sheet_name=sheet_name,
+                    delimiter=delimiter,
+                    encoding=encoding,
+                    parsing_warnings=warnings,
+                    file_size_bytes=file_size,
+                    dataset_name=dataset_name,
+                    start_time=start_time,
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger("edagent.profiler").warning(f"Fast profiling failed, falling back to legacy path: {e}")
+
         headers: List[str] = []
         rows: List[List[Any]] = []
 
@@ -154,6 +175,285 @@ class ProfilerEngine:
             load_time_seconds=load_time,
             parsing_warnings=warnings,
         )
+
+    @classmethod
+    def _profile_dataset_fast(
+        cls,
+        file_path: str,
+        fmt: str,
+        sheet_name: Optional[str],
+        delimiter: Optional[str],
+        encoding: Optional[str],
+        parsing_warnings: List[str],
+        file_size_bytes: int,
+        dataset_name: str,
+        start_time: float,
+    ) -> Dict[str, Any]:
+        """Vectorized fast profiling using pandas and numpy for large files (>200 KB)."""
+        import pandas as pd
+        import numpy as np
+        from app.services.ingestion.validator import IngestionValidator
+        from app.services.ingestion.parser import IngestionService
+        from app.services.data.reader import IngestionService_format
+
+        enc = encoding or IngestionValidator.detect_encoding(file_path)
+        delim = delimiter or ("\t" if fmt == "tsv" else IngestionService._detect_delimiter(file_path, IngestionService_format(fmt), enc))
+
+        df = pd.read_csv(file_path, delimiter=delim, encoding=enc, low_memory=False)
+        load_time = round(time.time() - start_time, 4)
+
+        raw_headers = [str(c).strip() for c in df.columns]
+        headers, hw = IngestionService._sanitize_headers(raw_headers)
+        df.columns = headers
+        warnings = list(parsing_warnings) + list(hw)
+
+        total_rows = len(df)
+        total_cols = len(df.columns)
+
+        # 1. Exact Duplicate Analysis
+        exact_dup_count = int(df.duplicated().sum())
+        dup_pct = round((exact_dup_count / max(1, total_rows)) * 100, 2)
+        dup_samples = []
+        if exact_dup_count > 0:
+            dup_df = df[df.duplicated(keep=False)].head(5)
+            dup_samples = [{"row": {col: str(v) if pd.notna(v) else "" for col, v in r.items()}, "occurrences": 2} for _, r in dup_df.iterrows()]
+
+        # 2. Missingness Analysis
+        missing_counts = df.isna().sum()
+        total_cells = total_rows * total_cols
+        total_missing = int(missing_counts.sum())
+        missing_pct = round((total_missing / max(1, total_cells)) * 100, 2)
+        per_col_missing = {col: round(float(missing_counts[col]) / max(1, total_rows) * 100, 2) for col in headers}
+        cols_with_missing = [c for c, m in per_col_missing.items() if m > 0]
+        missing_chart = [{"column": col, "missing_count": int(missing_counts[col]), "missing_percentage": per_col_missing[col]} for col in headers]
+
+        # 3. Column Profiles
+        col_profiles = []
+        quality_warnings = []
+        candidate_keys = []
+        numeric_measures = {}
+        categorical_series = {}
+
+        sample_size = min(total_rows, 25000)
+        sample_df = df.sample(n=sample_size, random_state=42) if total_rows > sample_size else df
+
+        for h in headers:
+            s_full = df[h]
+            s_samp = sample_df[h]
+            miss_count = int(missing_counts[h])
+            miss_pct = per_col_missing[h]
+            non_null = total_rows - miss_count
+            distinct_count = int(s_full.nunique(dropna=True))
+            is_unique = (distinct_count == total_rows and miss_count == 0)
+            if is_unique:
+                candidate_keys.append(h)
+
+            dtype_str = str(s_full.dtype)
+            is_num = pd.api.types.is_numeric_dtype(s_full) and not pd.api.types.is_bool_dtype(s_full)
+            is_id = cls._is_identifier_name(h)
+
+            numeric_sum = None
+            categorical_sum = None
+            date_sum = None
+            sample_vals = [str(x) if pd.notna(x) else "" for x in s_full.dropna().head(5).tolist()]
+
+            if is_num and not (is_id and distinct_count > 100):
+                role = SemanticRoleEnum.MEASURE.value
+                inferred = "integer" if "int" in dtype_str else "float"
+                s_clean = s_full.dropna()
+                if len(s_clean) > 0:
+                    q25, q50, q75 = s_clean.quantile([0.25, 0.5, 0.75])
+                    iqr = float(q75 - q25)
+                    numeric_sum = {
+                        "count": non_null,
+                        "mean": round(float(s_clean.mean()), 4),
+                        "std": round(float(s_clean.std()), 4) if len(s_clean) > 1 else 0.0,
+                        "min": float(s_clean.min()),
+                        "q25": float(q25),
+                        "median": float(q50),
+                        "q75": float(q75),
+                        "max": float(s_clean.max()),
+                        "iqr": iqr,
+                        "zeros_count": int((s_clean == 0).sum()),
+                        "zeros_percentage": round(float((s_clean == 0).sum()) / max(1, total_rows) * 100, 2),
+                        "infinite_count": int(np.isinf(s_clean).sum()) if hasattr(s_clean, "values") else 0,
+                        "nan_count": miss_count,
+                    }
+                    numeric_measures[h] = s_samp.dropna().astype(float).tolist()
+            elif is_id or is_unique:
+                role = SemanticRoleEnum.IDENTIFIER.value
+                inferred = "string"
+            elif distinct_count <= 2 and non_null > 0:
+                role = SemanticRoleEnum.BOOLEAN.value
+                inferred = "boolean"
+                vc = s_full.value_counts(dropna=True).head(5)
+                categorical_sum = {
+                    "unique_count": distinct_count,
+                    "top_values": [{"value": str(k), "count": int(v), "percentage": round(100.0 * v / max(1, non_null), 2)} for k, v in vc.items()],
+                    "is_high_cardinality": False,
+                }
+            elif distinct_count <= 50 or (distinct_count <= 500 and distinct_count / max(1, non_null) < 0.1):
+                role = SemanticRoleEnum.CATEGORY.value
+                inferred = "string"
+                vc = s_full.value_counts(dropna=True).head(10)
+                categorical_sum = {
+                    "unique_count": distinct_count,
+                    "most_frequent_value": str(vc.index[0]) if len(vc) > 0 else None,
+                    "most_frequent_count": int(vc.iloc[0]) if len(vc) > 0 else 0,
+                    "most_frequent_percentage": round(100.0 * float(vc.iloc[0]) / max(1, non_null), 2) if len(vc) > 0 else 0,
+                    "top_values": [{"value": str(k), "count": int(v), "percentage": round(100.0 * v / max(1, non_null), 2)} for k, v in vc.items()],
+                    "is_high_cardinality": distinct_count > 100,
+                }
+                categorical_series[h] = s_samp.dropna().astype(str).tolist()
+            else:
+                role = SemanticRoleEnum.TEXT.value
+                inferred = "string"
+
+            if miss_pct > 50:
+                quality_warnings.append({
+                    "column": h,
+                    "check_type": "high_missingness",
+                    "severity": SeverityEnum.HIGH.value if miss_pct > 80 else SeverityEnum.MEDIUM.value,
+                    "message": f"Column '{h}' has {miss_pct}% missing values.",
+                    "affected_count": miss_count,
+                })
+
+            col_profiles.append({
+                "name": h,
+                "storage_dtype": dtype_str,
+                "inferred_type": inferred,
+                "semantic_role": role,
+                "role_confidence": 0.95,
+                "role_uncertainty_reason": None,
+                "non_null_count": non_null,
+                "missing_count": miss_count,
+                "missing_percentage": miss_pct,
+                "distinct_count": distinct_count,
+                "is_unique": is_unique,
+                "numeric_summary": numeric_sum,
+                "categorical_summary": categorical_sum,
+                "date_summary": date_sum,
+                "sample_values": sample_vals,
+            })
+
+        # 4. Distributions
+        histograms = []
+        boxplots = []
+        for h, vals in list(numeric_measures.items())[:25]:
+            arr = np.array(vals)
+            if len(arr) > 0 and np.isfinite(arr).any():
+                clean_arr = arr[np.isfinite(arr)]
+                counts, bin_edges = np.histogram(clean_arr, bins=10)
+                bins = []
+                for i in range(len(counts)):
+                    bins.append({
+                        "bin_start": float(bin_edges[i]),
+                        "bin_end": float(bin_edges[i+1]),
+                        "count": int(counts[i]),
+                        "percentage": round(float(counts[i]) / max(1, len(clean_arr)) * 100, 2),
+                    })
+                histograms.append({"column": h, "bins": bins, "bin_count": len(bins)})
+
+                q25, q50, q75 = np.percentile(clean_arr, [25, 50, 75])
+                iqr = float(q75 - q25)
+                lower_fence = q25 - 1.5 * iqr
+                upper_fence = q75 + 1.5 * iqr
+                outliers_mask = (clean_arr < lower_fence) | (clean_arr > upper_fence)
+                outliers = int(outliers_mask.sum())
+                boxplots.append({
+                    "column": h,
+                    "min": round(float(clean_arr.min()), 4),
+                    "q25": round(float(q25), 4),
+                    "median": round(float(q50), 4),
+                    "q75": round(float(q75), 4),
+                    "max": round(float(clean_arr.max()), 4),
+                    "iqr": round(float(iqr), 4),
+                    "lower_fence": round(float(lower_fence), 4),
+                    "upper_fence": round(float(upper_fence), 4),
+                    "outlier_count": outliers,
+                    "outliers_sample": [round(float(x), 4) for x in clean_arr[outliers_mask][:10]],
+                })
+
+        cat_charts = []
+        for h, vals in list(categorical_series.items())[:25]:
+            vc = pd.Series(vals).value_counts().head(10)
+            items = [{"category": str(k), "count": int(v), "percentage": round(100.0 * v / max(1, len(vals)), 2)} for k, v in vc.items()]
+            cat_charts.append({"column": h, "frequencies": items, "distinct_categories_count": len(vc)})
+
+        distributions = {
+            "histograms": histograms,
+            "boxplots": boxplots,
+            "categorical_frequencies": cat_charts,
+            "date_distributions": [],
+            "time_distributions": [],
+        }
+
+        # 5. Relationships
+        num_cols = [h for h in headers if h in numeric_measures][:30]
+        matrix = {}
+        if len(num_cols) >= 2:
+            sub = sample_df[num_cols].apply(pd.to_numeric, errors="coerce")
+            corr = sub.corr(method="pearson").fillna(0).round(4)
+            for c1 in num_cols:
+                matrix[c1] = {}
+                for c2 in num_cols:
+                    matrix[c1][c2] = float(corr.loc[c1, c2])
+
+        relationships = {
+            "pearson": {"matrix": matrix, "columns": num_cols},
+            "spearman": None,
+            "categorical_associations": [],
+        }
+
+        # 6. Recommendations
+        missing_report = {
+            "total_cells": total_cells,
+            "missing_cells": total_missing,
+            "overall_missing_percentage": missing_pct,
+            "per_column": per_col_missing,
+            "columns_with_missing": cols_with_missing,
+            "missingness_chart_data": missing_chart,
+            "missingness_patterns": [],
+        }
+        suggested_analyses, suggested_questions = cls._generate_recommendations(
+            column_profiles=col_profiles,
+            distributions=distributions,
+            relationships=relationships,
+            missing_report=missing_report,
+        )
+
+        duplicates_report = {
+            "exact_duplicate_rows_count": exact_dup_count,
+            "exact_duplicate_percentage": dup_pct,
+            "candidate_duplicate_keys": candidate_keys,
+            "duplicate_rows_sample": dup_samples,
+        }
+
+        prof_duration = round(time.time() - start_time, 4)
+
+        return {
+            "overview": {
+                "dataset_name": dataset_name,
+                "total_rows": total_rows,
+                "total_columns": total_cols,
+                "file_size_bytes": file_size_bytes,
+                "memory_estimate_bytes": int(df.memory_usage(deep=False).sum()),
+                "selected_sheet": sheet_name if fmt == "xlsx" else None,
+                "load_time_seconds": load_time,
+                "profiling_duration_seconds": prof_duration,
+                "parsing_warnings": warnings,
+            },
+            "columns": col_profiles,
+            "missingness": missing_report,
+            "duplicates": duplicates_report,
+            "distributions": distributions,
+            "quality_warnings": quality_warnings,
+            "relationships": relationships,
+            "suggested_analyses": suggested_analyses,
+            "suggested_questions": suggested_questions,
+            "correlation_matrix": matrix if matrix else None,
+            "computed_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     @classmethod
     def profile_data(
