@@ -9,3 +9,4 @@
 **/Crash_dataset.csv filter=lfs diff=lfs merge=lfs -text
 /docs/descriptive_release_data_dictionary.md text eol=lf
 /data/exports/** text eol=lf
+/data/exports/models/candidate/*.csv -filter diff -merge text eol=lf

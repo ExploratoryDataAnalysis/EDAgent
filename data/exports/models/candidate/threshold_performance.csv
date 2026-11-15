@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c077fb535d670bef9af3381059c084a03dc2425d93230b109efa095a4f66cd75
-size 927
+model_id,model_name,threshold,evaluation_records,actual_positives,actual_negatives,true_negatives,false_positives,false_negatives,true_positives,sensitivity_recall,specificity,precision,f1_score,balanced_accuracy
+histgradientboosting_plus_collision,HistGradientBoosting + collision,0.5,27697,1231,26466,18322,8144,524,707,0.5743,0.6923,0.0799,0.1402,0.6333
+random_forest_plus_collision,Random Forest + collision,0.5,27697,1231,26466,21293,5173,670,561,0.4557,0.8045,0.0978,0.1611,0.6301
+logistic_regression_plus_collision,Logistic Regression + collision,0.5,27697,1231,26466,18382,8084,515,716,0.5816,0.6946,0.0814,0.1428,0.6381
+random_forest_without_collision,Random Forest without collision (Pre-crash only),0.5,27697,1231,26466,19001,7465,815,416,0.3379,0.7179,0.0528,0.0913,0.5279
+logistic_regression_temporally_calibrated,Logistic Regression (Temporally calibrated),0.5,27697,1231,26466,26466,0,1231,0,0.0,1.0,0.0,0.0,0.5

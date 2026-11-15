@@ -1,3 +1,3 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6e54b2d7ef371817a6d2d595c4fa6bd28866905a9844b269c5659a314007da66
-size 811
+model_id,model_name,calibration_state,calibration_method,fitting_interval,evaluation_interval,brier_score,brier_constant_baseline,beats_constant_baseline,notes
+logistic_regression_plus_collision,Logistic Regression + collision (Uncalibrated),uncalibrated,none,2016–2021 (full training set),2022–2024 (held-out test set),0.2132,0.0426,False,Uncalibrated balanced class weighting inflates probabilities toward 0.50.
+logistic_regression_temporally_calibrated,Logistic Regression (Temporally calibrated),chronologically_calibrated,sigmoid_platt_3_temporal_folds,2016–2021 temporal splits (2016-2018 fit / 2019 calib; 2016-2019 fit / 2020 calib; 2016-2020 fit / 2021 calib),2022–2024 (held-out test set),0.0416,0.0426,True,Sigmoid calibration across chronological folds aligns probabilities with base rates.

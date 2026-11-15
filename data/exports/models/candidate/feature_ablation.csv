@@ -1,3 +1,5 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:933df4ccf267f6274f334cacf112f8ab069e0f16cbf6e60daf2fc77b0ff8677a
-size 827
+feature_id,feature_name,timing_category,observation_timing,analysis_population,cramers_v,chi2_statistic,degrees_of_freedom,raw_p_value,fdr_bh_q_value,is_post_crash
+COLLISION_LABEL,Collision Type,POST_CRASH_INCIDENT,,"2016–2023 known-severity crashes (N = 77,476)",0.202,3159.84,10,0.0,0.0,True
+TIME_PERIOD,Time Period of Day,PRE_CRASH_TEMPORAL,,"2016–2023 known-severity crashes (N = 77,476)",0.0483,180.92,4,4.721204495834932e-38,9.442408991669865e-38,False
+ILLUMINATION_LABEL,Lighting / Illumination,PRE_CRASH_ENVIRONMENTAL,,"2016–2023 known-severity crashes (N = 77,476)",0.0371,106.76,6,9.718468301892355e-21,1.2957957735856473e-20,False
+INTERSECTION_LABEL,Intersection Geometry,PRE_CRASH_GEOMETRIC,,"2016–2023 known-severity crashes (N = 77,476)",0.0222,38.04,8,7.3945999778845325e-06,7.3945999778845325e-06,False
