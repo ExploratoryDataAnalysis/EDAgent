@@ -14,7 +14,8 @@ from tests.overview_fixture import FIXTURE_VERSION, write_decision, write_fixtur
 def main():
     with tempfile.TemporaryDirectory(prefix="edagent-overview-browser-") as directory:
         local = Path(directory).resolve()
-        release = write_fixture(local / "release")
+        release = write_fixture(local / "release", large_grid=os.getenv("OVERVIEW_FIXTURE_LARGE") == "1",
+                                partial=os.getenv("OVERVIEW_FIXTURE_PARTIAL") == "1")
         ledger = local / "test-approvals.json"
         fingerprint = digest(release / "manifest.json")
         write_decision(ledger, fingerprint)
@@ -32,7 +33,7 @@ def main():
             LLM_PROVIDER="mock",
             LLM_API_KEY="",
         )
-        uvicorn.run("app.main:app", host="127.0.0.1", port=8016)
+        uvicorn.run("app.main:app", host="127.0.0.1", port=int(os.getenv("OVERVIEW_FIXTURE_PORT", "8016")))
 
 
 if __name__ == "__main__":

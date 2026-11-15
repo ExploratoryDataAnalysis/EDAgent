@@ -158,7 +158,7 @@ try {
     const image = page.getByRole('img', { name: /^County boundary/ });
     await image.waitFor();
     await page.waitForFunction(() => document.querySelector('figure img')?.naturalWidth > 0);
-    assert.equal(await page.locator('.js-plotly-plot').count(), 3);
+    await page.waitForFunction(() => document.querySelectorAll('.js-plotly-plot').length === 3);
     const gridCsv = await page.request.get(new URL(await page.getByRole('link', { name: 'Download grid cell counts (CSV)' }).getAttribute('href'), fixture).href);
     assert.equal(gridCsv.status(), 200);
     assert.match(gridCsv.headers()['x-artifact-sha256'], /^[0-9a-f]{64}$/);
@@ -219,7 +219,7 @@ try {
     await page.goto(fixture);
     await page.getByRole('heading', { name: 'What can Allegheny County’s crash reports tell us?' }).waitFor();
     await page.getByRole('heading', { name: 'Annual crash reports in Allegheny County' }).waitFor();
-    assert.equal(await page.locator('.js-plotly-plot').count(), 1);
+    await page.waitForFunction(() => document.querySelectorAll('.js-plotly-plot').length === 1);
     await page.getByRole('link', { name: 'Open the complete road-safety crash record' }).waitFor();
     await screenshot(page, `fixture-root-ready-${size}`);
 

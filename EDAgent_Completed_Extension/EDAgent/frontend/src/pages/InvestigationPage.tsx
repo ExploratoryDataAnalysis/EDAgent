@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ReleaseStatus, useReleaseRequest } from '../components/layout/ReleaseStatus';
-import { loadOverview } from '../services/roadSafetyService';
+import { confirmOverview, loadOverview } from '../services/roadSafetyService';
 import { AnnualCrashFigure } from '../components/road-safety/AnnualCrashFigure';
 
 export function InvestigationPage() {
-  const { state, retry } = useReleaseRequest(loadOverview);
+  const { state, retry } = useReleaseRequest(loadOverview, confirmOverview);
   return (
     <article className="public-document">
       <header className="public-hero public-measure">

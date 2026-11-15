@@ -188,9 +188,11 @@ def metric(table_id: str, column: str, request: Request, release: Release = Depe
     })
 
 
-def artifact(release, name, media_type):
-    payload = release.payload(name)
+def artifact(release, name, media_type, manifest_sha256):
     bundle = release.bundle(name)
+    if manifest_sha256 is not None and manifest_sha256 != bundle["manifest_sha256"]:
+        raise unavailable()
+    payload = release.payload(name)
     return Response(payload, media_type=media_type, headers={
         "Cache-Control": "no-store",
         "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
@@ -202,16 +204,16 @@ def artifact(release, name, media_type):
 
 
 @router.get("/downloads/{table_id}")
-def download(table_id: str, release: Release = Depends(reviewed_release)):
+def download(table_id: str, manifest_sha256: str | None = None, release: Release = Depends(reviewed_release)):
     if table_id not in TABLES:
         raise unavailable()
-    response = artifact(release, f"{table_id}.csv", "text/csv")
+    response = artifact(release, f"{table_id}.csv", "text/csv", manifest_sha256)
     response.headers["Content-Disposition"] = f'attachment; filename="{table_id}.csv"'
     return response
 
 
 @router.get("/assets/{name}")
-def asset(name: str, release: Release = Depends(reviewed_release)):
+def asset(name: str, manifest_sha256: str | None = None, release: Release = Depends(reviewed_release)):
     if name not in ASSETS:
         raise unavailable()
-    return artifact(release, name, ASSETS[name])
+    return artifact(release, name, ASSETS[name], manifest_sha256)

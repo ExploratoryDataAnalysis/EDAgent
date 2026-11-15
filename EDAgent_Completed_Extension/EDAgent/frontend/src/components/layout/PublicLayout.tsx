@@ -7,6 +7,8 @@ const titles: Record<string, string> = {
   '/': 'Allegheny County crash investigation',
   '/methods': 'Methods',
   '/road-safety': 'Road Safety Overview',
+  '/road-safety/map': 'County crash grid',
+  '/road-safety/evidence': 'Severity and measurement',
   '/illustrative-scenario': 'What-if calculator',
 };
 
@@ -38,7 +40,7 @@ export function PublicLayout() {
       <div className="public-container">
         <Link to="/" className="public-brand">EDAgent</Link>
         <nav aria-label="Main navigation" className="public-nav">
-          <Link to="/" aria-current={route === '/' || route === '/road-safety' ? 'page' : undefined}>Investigation</Link>
+          <Link to="/" aria-current={route === '/' || route.startsWith('/road-safety') ? 'page' : undefined}>Investigation</Link>
           <NavLink to="/methods">Methods</NavLink>
           <NavLink to="/illustrative-scenario">What-if calculator</NavLink>
           <NavLink to="/analyser">Dataset analyser</NavLink>

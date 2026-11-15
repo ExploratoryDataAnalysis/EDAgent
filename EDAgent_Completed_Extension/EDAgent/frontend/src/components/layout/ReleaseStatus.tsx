@@ -4,22 +4,44 @@ import type { RoadSafetyError } from '../../services/roadSafetyService';
 
 type RequestState<T> = { kind: 'loading' | 'unavailable' | 'error' } | { kind: 'ready'; data: T };
 
-export function useReleaseRequest<T>(load: (signal: AbortSignal) => Promise<T>) {
+export function useReleaseRequest<T>(
+  load: (signal: AbortSignal) => Promise<T>,
+  confirm?: (data: T, signal: AbortSignal) => Promise<void>,
+) {
   const [state, setState] = useState<RequestState<T>>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const request = new AbortController();
-    load(request.signal).then(data => {
-      if (!request.signal.aborted) setState({ kind: 'ready', data });
-    }).catch((error: RoadSafetyError) => {
+    let stopWatching = () => {};
+    const invalidate = (error: RoadSafetyError) => {
       // A superseded request cannot restore figures after retry or navigation.
       if (request.signal.aborted) return;
       setState({ kind: error.status === 503 && error.code === 'OVERVIEW_UNAVAILABLE' ? 'unavailable' : 'error' });
       request.abort();
-    });
-    return () => request.abort();
-  }, [load, attempt]);
+    };
+    load(request.signal).then(data => {
+      if (request.signal.aborted) return;
+      setState({ kind: 'ready', data });
+      if (!confirm) return;
+      let checking = false;
+      const check = () => {
+        if (checking || request.signal.aborted || document.hidden) return;
+        checking = true;
+        confirm(data, request.signal).catch(invalidate).finally(() => { checking = false; });
+      };
+      // The gate is checked again on return and while readers keep the page open.
+      const timer = window.setInterval(check, 15000);
+      window.addEventListener('focus', check);
+      document.addEventListener('visibilitychange', check);
+      stopWatching = () => {
+        window.clearInterval(timer);
+        window.removeEventListener('focus', check);
+        document.removeEventListener('visibilitychange', check);
+      };
+    }).catch(invalidate);
+    return () => { request.abort(); stopWatching(); };
+  }, [load, confirm, attempt]);
 
   function retry() {
     if (state.kind === 'loading') return;

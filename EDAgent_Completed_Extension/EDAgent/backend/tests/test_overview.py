@@ -69,6 +69,25 @@ def test_metric_ratios_and_nulls(anon_client, release):
     assert data["annotations"]["3"]["nulls"]["severity_code"]["value_state"] == "UNKNOWN"
     data = anon_client.get(f"{BASE}/tables/severity_associations").json()["data"]
     assert (data["period_start"], data["period_end"]) == (2016, 2023)
+    assert data["rows"][1]["fdr_bh_q"] is None
+    assert data["annotations"]["1"]["nulls"]["fdr_bh_q"]["reason_code"] == "FLOATING_POINT_UNDERFLOW"
+
+
+def test_phase8_pinned_artifacts_fail_closed_on_changed_or_withdrawn_release(anon_client, release):
+    path, ledger, fingerprint = release
+    for route, name in (("/assets/county_boundary.geojson", "county_boundary.geojson"),
+                        ("/assets/county_grid.svg", "county_grid.svg"),
+                        ("/downloads/historical_grid", "historical_grid.csv"),
+                        ("/downloads/severity_associations", "severity_associations.csv")):
+        approved = anon_client.get(f"{BASE}{route}", params={"manifest_sha256": fingerprint})
+        assert approved.headers["x-manifest-sha256"] == fingerprint
+        assert approved.content == (path / name).read_bytes()
+        mismatch = anon_client.get(f"{BASE}{route}", params={"manifest_sha256": "0" * 64})
+        assert mismatch.status_code == 503
+        assert mismatch.json()["detail"] == overview.UNAVAILABLE
+    write_decision(ledger, fingerprint, "WITHDRAWN")
+    for route in ("/provenance", "/assets/county_grid.svg", "/downloads/historical_grid", "/downloads/severity_associations"):
+        assert anon_client.get(f"{BASE}{route}", params={"manifest_sha256": fingerprint}).status_code == 503
 
 
 @pytest.mark.parametrize("failure", ["unconfigured_ledger", "missing_ledger", "pending", "wrong_approval_hash", "altered_manifest",

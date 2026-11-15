@@ -20,6 +20,8 @@ import { HistoryPage } from './pages/HistoryPage';
 import { ReportBuilderPage } from './pages/ReportBuilderPage';
 import { ExportCentrePage } from './pages/ExportCentrePage';
 import { RoadSafetyPage } from './pages/RoadSafetyPage';
+import { CountyGridPage } from './pages/CountyGridPage';
+import { SeverityEvidencePage } from './pages/SeverityEvidencePage';
 import { InterventionPage } from './pages/InterventionPage';
 
 function WorkspaceEntry({ login = false }: { login?: boolean }) {
@@ -39,6 +41,8 @@ function AppRoutes() {
           <Route index element={<InvestigationPage />} />
           <Route path="/methods" element={<MethodsPage />} />
           <Route path="/road-safety" element={<RoadSafetyPage />} />
+          <Route path="/road-safety/map" element={<CountyGridPage />} />
+          <Route path="/road-safety/evidence" element={<SeverityEvidencePage />} />
           <Route path="/illustrative-scenario" element={<InterventionPage />} />
         </Route>
         <Route element={<WorkspaceEntry />}>

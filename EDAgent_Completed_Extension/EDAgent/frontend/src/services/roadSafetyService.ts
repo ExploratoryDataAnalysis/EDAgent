@@ -35,6 +35,9 @@ export type Coordinates = Period & {
   reported_crashes: number;
   usable_decimal_crashes: number;
   unusable_decimal_crashes: number;
+  missing_decimal_pair_crashes: number;
+  invalid_decimal_pair_crashes: number;
+  placeholder_decimal_pair_crashes: number;
   outside_county_crashes: number;
   mapped_crashes: number;
   mapped_percent_of_reported: number | null;
@@ -65,7 +68,10 @@ export type Provenance = {
   scope: { county: string; period_start: number; period_end: number; geoid?: string };
   run_id: string;
   bundle: Bundle;
-  grid: { side_degrees: number; occupied_cells: number; mapped_crashes: number; reported_crashes: number };
+  grid: {
+    crs: string; side_degrees: number; occupied_cells: number; mapped_crashes: number; reported_crashes: number;
+    county_bbox_wsen: [number, number, number, number];
+  };
   sources: Record<string, string>;
   outputs: Record<string, string>;
   tables?: Record<string, { rows: number }>;
@@ -94,50 +100,55 @@ export async function loadProvenance(signal: AbortSignal) {
   return provenance;
 }
 
-export function makeStableRowKey(row: any, keyFields: string[]): string {
-  return keyFields.map(k => String(row[k] ?? '')).join(':');
+export function makeStableRowKey<T extends object>(row: T, keyFields: string[]): string {
+  return keyFields.map(k => String(row[k as keyof T] ?? '')).join(':');
 }
 
-export async function loadOverview(signal: AbortSignal): Promise<OverviewData> {
-  const provenance = await loadProvenance(signal);
-  const allCaveatCaptions: Record<string, string> = {};
+function sameRelease(current: { bundle: Bundle; run_id: string }, expected: Provenance) {
+  const a = current.bundle;
+  const b = expected.bundle;
+  return a && a.kind === b.kind && a.version === b.version && a.manifest_sha256 === b.manifest_sha256
+    && a.approval_state === b.approval_state && current.run_id === expected.run_id;
+}
 
-  const table = async <T>(id: string) => {
+export async function confirmRelease(provenance: Provenance, signal: AbortSignal) {
+  if (!sameRelease(await loadProvenance(signal), provenance)) {
+    throw Object.assign(new Error('The release has changed.'), { status: 503, code: 'OVERVIEW_UNAVAILABLE' });
+  }
+}
+
+export function releaseTables(provenance: Provenance, signal: AbortSignal) {
+  const caveats: Record<string, string> = {};
+  const table = async <T extends object>(id: string) => {
     const result = await getData<{
       rows: T[];
       row_key: string[];
       annotations?: Record<string, RowAnnotation>;
       caveats?: Record<string, string>;
+      table_id: string;
       run_id: string;
       bundle: Bundle;
     }>(`${overviewPath}/tables/${id}`, signal, overviewTimeout);
     const expected = provenance.outputs[`${id}.json`];
-    const bundle = result?.bundle;
     // A release can change between reads. Only show rows from the verified manifest.
-    if (!expected || !bundle || bundle.kind !== provenance.bundle.kind
-      || bundle.version !== provenance.bundle.version || bundle.manifest_sha256 !== provenance.bundle.manifest_sha256
-      || bundle.approval_state !== provenance.bundle.approval_state || bundle.output_sha256 !== expected
-      || result.run_id !== provenance.run_id || !Array.isArray(result.rows)) {
+    if (!expected || !result || !sameRelease(result, provenance) || result.bundle.output_sha256 !== expected
+      || !Array.isArray(result.rows) || !result.row_key?.length || result.table_id !== id) {
       throw new Error('Could not verify a consistent release.');
     }
-    const keyFields = result.row_key || [];
     // Associate annotations with stable row keys before sorting or filtering.
-    // Index keys in the backend annotation map are original bundle row indices.
-    const rowsWithAnnotations: RowWithAnnotation<T>[] = result.rows.map((row: any, index: number) => {
-      const stableKey = makeStableRowKey(row, keyFields);
-      const annotation = result.annotations?.[String(index)] || { nulls: {}, caveat_codes: [] };
-      return {
-        ...row,
-        _stableKey: stableKey,
-        _annotation: annotation,
-      };
-    });
-    if (result.caveats) {
-      Object.assign(allCaveatCaptions, result.caveats);
-    }
-    return rowsWithAnnotations;
+    Object.assign(caveats, result.caveats);
+    return result.rows.map((row, index): RowWithAnnotation<T> => ({
+      ...row,
+      _stableKey: makeStableRowKey(row, result.row_key),
+      _annotation: result.annotations?.[index] ?? {},
+    }));
   };
+  return { table, caveats };
+}
 
+export async function loadOverview(signal: AbortSignal): Promise<OverviewData> {
+  const provenance = await loadProvenance(signal);
+  const { table, caveats } = releaseTables(provenance, signal);
   const [county, severity, coordinates, fields] = await Promise.all([
     table<CountyPeriod>('county_periods'),
     table<Severity>('severity_composition'),
@@ -147,7 +158,15 @@ export async function loadOverview(signal: AbortSignal): Promise<OverviewData> {
   const totals = county.find(row => row.period_grain === 'county');
   const mapped = coordinates.find(row => row.period_grain === 'county');
   if (!totals || !mapped || !provenance.grid) throw new Error('The record is incomplete.');
-  return { provenance, county, severity, coordinates, fields, totals, mapped, caveatCaptions: allCaveatCaptions };
+  await confirmRelease(provenance, signal);
+  return { provenance, county, severity, coordinates, fields, totals, mapped, caveatCaptions: caveats };
 }
 
+export const confirmOverview = ({ provenance }: OverviewData, signal: AbortSignal) => confirmRelease(provenance, signal);
+
 export const overviewUrl = (path: string) => apiClient.getUri({ url: `${overviewPath}${path}` });
+
+export const pinnedArtifactPath = (path: string, provenance: Provenance) =>
+  `${path}?manifest_sha256=${provenance.bundle.manifest_sha256}`;
+
+export const pinnedArtifactUrl = (path: string, provenance: Provenance) => overviewUrl(pinnedArtifactPath(path, provenance));

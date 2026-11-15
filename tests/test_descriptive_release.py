@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path("scripts").resolve()))
 from build_descriptive_release import GUIDE, KIND, PHASE3, coordinate_summary, findings, severity_group, severity_summary
 from road_safety_command import ROOT, digest
 from app.api.v1.endpoints.frequency import router
+from app.api.v1.endpoints.overview import MANIFEST_SHA256
 from app.road_safety_release import ReleaseUnavailable, publish_release
 
 
@@ -102,6 +103,7 @@ def test_data_dictionary_provenance(candidate):
 
 def test_built_candidate(candidate):
     path, manifest = candidate
+    assert digest(path / "manifest.json") == MANIFEST_SHA256
     assert manifest["status"] == "REVIEW_CANDIDATE" and manifest["approval"] is None
     assert set(manifest["outputs"]) == {file.name for file in path.iterdir()} - {"manifest.json"}
     for name, sha in manifest["outputs"].items():
@@ -134,6 +136,16 @@ def test_built_candidate(candidate):
                    if row["period_grain"] == "county" and row["severity_code"] is not None}
     assert (composition[8]["crashes"], composition[9]["crashes"]) == (32946, 10320)
     assert all(composition[code]["percent_of_denominator"] is None for code in (2, 3, 4))
+    for era in (row for row in tables["county_periods"] if row["period_grain"] == "era"):
+        groups = [row for row in tables["severity_composition"]
+                  if row["period_grain"] == "era" and row["period_start"] == era["period_start"]]
+        for population, denominator, subtotal in (
+            ("known severity", era["known_severity_crashes"], era["known_severity_crashes"]),
+            ("all reports", era["reported_crashes"], era["unknown_severity_crashes"]),
+        ):
+            selected = [row for row in groups if row["denominator_population"] == population]
+            assert sum(row["crashes"] for row in selected) == subtotal
+            assert all(row["denominator_crashes"] == denominator for row in selected)
     coverage = tables["coordinate_coverage"][0]
     assert coverage["unusable_decimal_crashes"] == 10254 and coverage["outside_county_crashes"] == 275
     assert (coverage["missing_decimal_pair_crashes"], coverage["invalid_decimal_pair_crashes"],
@@ -145,6 +157,13 @@ def test_built_candidate(candidate):
     assert fields["valid_hour"]["covered_crashes"] == 387
     assert fields["nonmissing_illumination"]["covered_crashes"] == 0
     assert fields["nonmissing_illumination"]["reported_crashes"] == 10228
+    assert fields["valid_hour"]["reported_crashes"] == 10228
+    for row in tables["severity_associations"]:
+        assert (row["period_start"], row["period_end"]) == (2016, 2023)
+        assert row["tested_crashes"] == row["known_severity_crashes_in_period"] == 77476
+        assert row["reported_crashes_in_period"] == 93662
+        assert row["min_expected_cell"] >= 5
+        assert (row["fdr_bh_q"] is None) == row["fdr_bh_q_underflow"] == (row["feature"] == "COLLISION_LABEL")
     assert [row["finding_id"] for row in tables["findings"]] == list(range(1, 9))
     assert [(row["finding"], (row["period_start"], row["period_end"], row["population"]))
             for row in tables["findings"]] == list(FINDING_POPULATIONS.items())
@@ -157,6 +176,32 @@ def test_built_candidate(candidate):
         assert caption in map_text
     assert all(not any(term in name for term in ("crosswalk", "375", "conflict", "junction"))
                for name in manifest["outputs"])
+
+
+def test_phase8_exact_candidate_grid_geometry(candidate):
+    from shapely.geometry import box, shape
+
+    path, manifest = candidate
+    boundary = json.loads((path / "county_boundary.geojson").read_bytes())
+    assert boundary["properties"] == {"geoid": "42003", "vintage": 2024}
+    county = shape(boundary["geometry"])
+    scope = manifest["grid"]
+    assert scope["crs"] == "EPSG:4326" and scope["side_degrees"] == 0.001
+    assert list(county.bounds) == scope["county_bbox_wsen"]
+    rows = json.loads((path / "historical_grid.json").read_bytes())
+    keys = {(f"{row['lon_bin']:.3f}", f"{row['lat_bin']:.3f}") for row in rows}
+    assert len(keys) == scope["occupied_cells"] == len(rows)
+    half = scope["side_degrees"] / 2
+    clipped_cells = 0
+    for row in rows:
+        lon, lat = row["lon_bin"], row["lat_bin"]
+        assert (lon, lat) == (round(lon, 3), round(lat, 3))
+        cell = box(lon - half, lat - half, lon + half, lat + half)
+        if not county.covers(cell):
+            clipped = cell.intersection(county)
+            assert 0 < clipped.area < cell.area
+            clipped_cells += 1
+    assert clipped_cells > 0
 
 
 def test_d7_publication_checks_exact_approval_and_artifact_bytes(candidate, tmp_path, monkeypatch):

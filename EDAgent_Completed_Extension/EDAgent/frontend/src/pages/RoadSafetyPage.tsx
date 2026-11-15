@@ -2,8 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PlotlyChart } from '../components/charts/PlotlyChart';
 import { ReleaseStatus, useReleaseRequest } from '../components/layout/ReleaseStatus';
-import { loadOverview, overviewUrl, type Period, type OverviewData } from '../services/roadSafetyService';
+import { confirmOverview, loadOverview, pinnedArtifactUrl, type Period, type OverviewData } from '../services/roadSafetyService';
 import { AnnualCrashFigure } from '../components/road-safety/AnnualCrashFigure';
+import { DataTable } from '../components/road-safety/EvidenceFigure';
 
 const formatCount = new Intl.NumberFormat('en-US');
 const count = (n: number | null) => n === null ? 'Unavailable' : formatCount.format(n);
@@ -13,19 +14,6 @@ const period = (row: Pick<Period, 'period_start' | 'period_end'>) => row.period_
 const fieldLabels: Record<string, string> = { valid_hour: 'Valid hour', nonmissing_illumination: 'Populated illumination' };
 
 const card = 'min-w-0 border border-stone-300 bg-[#fffcf4] p-4 sm:p-6';
-
-function DataTable({ label, columns, rows }: { label: string; columns: string[]; rows: ReactNode[][] }) {
-  return <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={label}>
-    <table className="w-full text-left text-sm">
-      <caption className="sr-only">{label}</caption>
-      <thead><tr>{columns.map(column => <th key={column} scope="col" className="border-b p-2">{column}</th>)}</tr></thead>
-      <tbody>{rows.map(([heading, ...values]) => <tr key={String(heading)} className="border-b border-slate-200">
-        <th scope="row" className="p-2 font-medium">{heading}</th>
-        {values.map((value, index) => <td key={columns[index + 1]} className="p-2 tabular-nums">{value}</td>)}
-      </tr>)}</tbody>
-    </table>
-  </div>;
-}
 
 function Chart({ years, series, yLabel }: { years: number[]; series: { name: string; values: (number | null)[] }[]; yLabel: string }) {
   return <div aria-hidden="true" className="min-w-0">
@@ -41,12 +29,16 @@ function Caption({ children }: { children: ReactNode }) {
 }
 
 export function RoadSafetyPage() {
-  const { state, retry } = useReleaseRequest(loadOverview);
+  const { state, retry } = useReleaseRequest(loadOverview, confirmOverview);
   return <article className="public-document">
     <header className="public-hero public-measure">
       <p className="public-kicker">Allegheny County, Pennsylvania · 2004–2024</p>
       <h1>Road Safety Overview</h1>
       <p className="public-lede">The historical record of police-reported crashes by year, with coverage for recorded severity, time and location.</p>
+      <div className="public-actions">
+        <Link to="/road-safety/map">County crash grid</Link>
+        <Link to="/road-safety/evidence">Severity and measurement</Link>
+      </div>
     </header>
     {state.kind === 'ready' ? <VerifiedRecord data={state.data} /> : <div className="public-measure">
       <ReleaseStatus kind={state.kind} retry={retry} />
@@ -57,6 +49,7 @@ export function RoadSafetyPage() {
 function VerifiedRecord({ data }: { data: OverviewData }) {
   const [mapError, setMapError] = useState(false);
   const { scope, bundle, grid } = data.provenance;
+  const artifactUrl = (path: string) => pinnedArtifactUrl(path, data.provenance);
   const synthetic = bundle.version.startsWith('fixture-');
   const source = synthetic ? 'Synthetic fixture' : 'WPRDC frozen v6 extract';
   const context = `${scope.county} · ${period(scope)} · ${source}`;
@@ -120,20 +113,20 @@ function VerifiedRecord({ data }: { data: OverviewData }) {
     <section className={`${card} space-y-3`} aria-labelledby="grid">
       <h2 id="grid" className="text-lg font-bold">Historical concentration of reported crashes</h2>
       <figure className="space-y-2">
-        {mapError ? <p role="status">County grid image unavailable.</p> : <img className="h-auto w-full bg-white" src={overviewUrl('/assets/county_grid.svg')}
+        {mapError ? <p role="status">County grid image unavailable.</p> : <img className="h-auto w-full bg-white" src={artifactUrl('/assets/county_grid.svg')}
           alt="County boundary and occupied grid cells shaded by counts of mapped reported crashes. Map coverage and a CSV data alternative follow." onError={() => setMapError(true)} />}
         <figcaption className="text-sm">{context} {grid.side_degrees}° × {grid.side_degrees}° cells clipped to the 2024 Census county boundary, approximately 111 m × 85 m before clipping.
           {' '}{count(grid.mapped_crashes)} of {count(grid.reported_crashes)} reported crashes map to {count(grid.occupied_cells)} occupied cells. Cell units are crashes. Travel exposure is unmeasured. Empty cells carry no inferred count.</figcaption>
       </figure>
-      <a href={overviewUrl('/downloads/historical_grid')}>Download grid cell counts (CSV)</a>
+      <a href={artifactUrl('/downloads/historical_grid')}>Download grid cell counts (CSV)</a>
     </section>
     <section className={`${card} space-y-3`} aria-labelledby="provenance">
       <h2 id="provenance" className="text-lg font-bold">Methodology and downloads</h2>
-      <p><a href={overviewUrl('/assets/descriptive_release_data_dictionary.md')} download>Data dictionary (Markdown)</a></p>
+      <p><a href={artifactUrl('/assets/descriptive_release_data_dictionary.md')} download>Data dictionary (Markdown)</a></p>
       <p className="break-all text-sm">Bundle {data.provenance.bundle.version} · Run {data.provenance.run_id} · Manifest SHA-256 {data.provenance.bundle.manifest_sha256}</p>
       <details><summary className="cursor-pointer font-semibold">Source checksums and aggregate CSVs</summary>
         <ul className="break-all text-sm">{Object.entries(data.provenance.sources).map(([name, hash]) => <li key={name}>{name} · {hash}</li>)}</ul>
-        <ul className="mt-3 space-y-1">{['county_periods', 'severity_composition', 'coordinate_coverage', 'field_coverage_by_year'].map(id => <li key={id}><a href={overviewUrl(`/downloads/${id}`)}>{id.replace(/_/g, ' ')} (CSV)</a></li>)}</ul>
+        <ul className="mt-3 space-y-1">{['county_periods', 'severity_composition', 'coordinate_coverage', 'field_coverage_by_year'].map(id => <li key={id}><a href={artifactUrl(`/downloads/${id}`)}>{id.replace(/_/g, ' ')} (CSV)</a></li>)}</ul>
       </details>
     </section>
     <Link to="/illustrative-scenario">Open the illustrative scenario workspace</Link>

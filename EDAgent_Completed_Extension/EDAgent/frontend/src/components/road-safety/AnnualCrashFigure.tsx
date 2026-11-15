@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { PlotlyChart } from '../charts/PlotlyChart';
 import {
   type OverviewData,
-  overviewUrl,
+  pinnedArtifactUrl,
   type Period,
   type CountyPeriod,
   type Coordinates,
@@ -359,14 +359,14 @@ export const AnnualCrashFigure: React.FC<AnnualCrashFigureProps> = ({ data, show
         </p>
         <div className="flex flex-wrap items-center gap-4 pt-1 text-sm">
           <a
-            href={overviewUrl('/downloads/county_periods')}
+            href={pinnedArtifactUrl('/downloads/county_periods', data.provenance)}
             download="county_periods.csv"
             className="text-[#0E6059] font-medium underline hover:text-[#0b4d47]"
           >
             Download complete annual series (county_periods.csv)
           </a>
           <a
-            href={overviewUrl('/downloads/coordinate_coverage')}
+            href={pinnedArtifactUrl('/downloads/coordinate_coverage', data.provenance)}
             download="coordinate_coverage.csv"
             className="text-[#0E6059] font-medium underline hover:text-[#0b4d47]"
           >

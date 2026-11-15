@@ -1,9 +1,8 @@
 import React from 'react';
-import Plotly from 'plotly.js-dist-min';
+import type * as Plotly from 'plotly.js';
 import createPlotlyComponent from 'react-plotly.js/factory';
 
-// Create pure React-Plotly component instance from lightweight distribution bundle
-const Plot = createPlotlyComponent(Plotly);
+let chartComponent: ReturnType<typeof createPlotlyComponent> | undefined;
 
 export interface PlotlyChartProps {
   data: any[];
@@ -20,6 +19,21 @@ export const PlotlyChart: React.FC<PlotlyChartProps> = ({
   className = 'w-full h-full min-h-[350px]',
   style = { width: '100%', height: '100%' },
 }) => {
+  const [Plot, setPlot] = React.useState(() => chartComponent);
+  const [unavailable, setUnavailable] = React.useState(false);
+  React.useEffect(() => {
+    if (Plot) return;
+    let active = true;
+    // Routes with native charts or tables skip the Plotly payload.
+    import('plotly.js-dist-min').then(({ default: plotly }) => {
+      chartComponent ??= createPlotlyComponent(plotly);
+      if (active) setPlot(() => chartComponent);
+    }).catch(() => {
+      if (active) setUnavailable(true);
+    });
+    return () => { active = false; };
+  }, [Plot]);
+
   const mergedConfig: Partial<Plotly.Config> = {
     responsive: true,
     displayModeBar: true,
@@ -52,13 +66,13 @@ export const PlotlyChart: React.FC<PlotlyChartProps> = ({
 
   return (
     <div className={className}>
-      <Plot
+      {Plot ? <Plot
         data={data}
         layout={mergedLayout}
         config={mergedConfig}
         style={style}
         useResizeHandler
-      />
+      /> : <p role="status">{unavailable ? 'Chart unavailable.' : 'Loading chart…'}</p>}
     </div>
   );
 };

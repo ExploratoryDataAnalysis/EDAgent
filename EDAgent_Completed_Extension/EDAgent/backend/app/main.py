@@ -101,7 +101,7 @@ def create_application() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["Content-Disposition", "Retry-After"],
+        expose_headers=["Content-Disposition", "Retry-After", "X-Bundle-Version", "X-Manifest-SHA256", "X-Artifact-SHA256"],
     )
 
     application.include_router(api_router, prefix=settings.API_V1_STR)
