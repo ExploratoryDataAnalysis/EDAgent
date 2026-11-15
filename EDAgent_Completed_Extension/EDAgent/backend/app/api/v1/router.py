@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     health,
     interventions,
     jobs,
+    models,
     overview,
     profiling,
     reports,
@@ -35,4 +36,5 @@ api_router.include_router(exports.router, prefix="/exports", tags=["Exports"])
 api_router.include_router(jobs.router, prefix="/jobs", tags=["Background Jobs"])
 api_router.include_router(frequency.router, prefix="/frequency", tags=["Crash Frequency & Concentration"])
 api_router.include_router(overview.router, prefix="/road-safety/overview", tags=["Road Safety Overview"])
+api_router.include_router(models.router, prefix="/road-safety/models", tags=["Road Safety Retrospective Models"])
 api_router.include_router(interventions.router, prefix="/interventions", tags=["Illustrative Interventions"])

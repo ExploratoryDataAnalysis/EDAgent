@@ -38,6 +38,7 @@ export function RoadSafetyPage() {
       <div className="public-actions">
         <Link to="/road-safety/map">County crash grid</Link>
         <Link to="/road-safety/evidence">Severity and measurement</Link>
+        <Link to="/road-safety/models">Retrospective models</Link>
       </div>
     </header>
     {state.kind === 'ready' ? <VerifiedRecord data={state.data} /> : <div className="public-measure">

@@ -9,6 +9,7 @@ const titles: Record<string, string> = {
   '/road-safety': 'Road Safety Overview',
   '/road-safety/map': 'County crash grid',
   '/road-safety/evidence': 'Severity and measurement',
+  '/road-safety/models': 'Retrospective model diagnostics',
   '/illustrative-scenario': 'What-if calculator',
 };
 
