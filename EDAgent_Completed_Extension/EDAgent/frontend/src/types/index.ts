@@ -555,7 +555,7 @@ export interface ChatResponse {
   analysis_plan?: StructuredAnalysisPlan | null;
   analysis_result?: AnalysisResult | null;
   suggested_questions: string[];
-  explanation_source?: 'llm' | 'template' | null;
+  explanation_source?: 'llm' | 'guided' | 'fallback' | 'template' | null;
   ai_configured: boolean;
   created_at?: string | null;
 }
@@ -565,7 +565,7 @@ export interface ChatTurn {
   user_query: string;
   kind: ChatKind;
   assistant_message?: string | null;
-  explanation_source?: 'llm' | 'template' | null;
+  explanation_source?: 'llm' | 'guided' | 'fallback' | 'template' | null;
   plan?: StructuredAnalysisPlan | null;
   result?: AnalysisResult | null;
   status: string;

@@ -46,8 +46,8 @@ class ChatResponse(BaseSchema):
     analysis_plan: Optional[StructuredAnalysisPlan] = None
     analysis_result: Optional[AnalysisResultResponse] = None
     suggested_questions: List[str] = Field(default_factory=list)
-    # "llm" = prose written by the model from computed results; "template" = deterministic
-    # fallback text built by the backend (used when the model call failed or is unavailable).
+    # "guided" = model selected emphasis only; "fallback" = default after explanation failure.
+    # "llm" is retained for legacy turns containing model-written prose.
     explanation_source: Optional[str] = None
     ai_configured: bool = True
     created_at: Optional[datetime] = None

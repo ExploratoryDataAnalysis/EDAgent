@@ -62,7 +62,8 @@ export const analysisService = {
 
 export const chatService = {
   status: async () => unwrap<AIStatus>(await apiClient.get('/chat/status')),
-  send: async (session_id: UUID, message: string) => unwrap<ChatResponse>(await apiClient.post('/chat/message', { session_id, message })),
+  send: async (session_id: UUID, message: string, signal: AbortSignal) =>
+    unwrap<ChatResponse>(await apiClient.post('/chat/message', { session_id, message }, { signal, timeout: 55000 })),
 };
 
 export const sessionService = {

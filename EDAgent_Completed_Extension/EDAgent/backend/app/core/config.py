@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = ""
     LLM_MAX_TOKENS: int = 2048
     LLM_TEMPERATURE: float = 0.1
-    LLM_TIMEOUT_SECONDS: int = 45
+    LLM_TIMEOUT_SECONDS: int = 10
     # Hard cap on characters of dataset metadata placed in one prompt.
     LLM_MAX_CONTEXT_CHARS: int = 12000
 

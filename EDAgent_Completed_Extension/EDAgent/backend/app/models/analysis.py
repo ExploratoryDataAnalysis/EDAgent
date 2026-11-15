@@ -22,7 +22,7 @@ class AnalysisRequest(TimestampedUUIDModel):
     # analysis | clarification | cannot_answer | ai_unavailable | error
     kind = Column(String(32), default="analysis", nullable=False)
     assistant_message = Column(Text, nullable=True)  # what the user saw as the reply
-    explanation_source = Column(String(16), nullable=True)  # "llm" or "template"
+    explanation_source = Column(String(16), nullable=True)  # "guided", "fallback", "template", or legacy "llm"
     error_message = Column(Text, nullable=True)
 
     session = relationship("AnalysisSession", back_populates="requests")

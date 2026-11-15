@@ -3,6 +3,8 @@ Conversational analysis endpoint: natural-language question in, computed + expla
 The conversation history is looked up server-side from the session, never taken from the client.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,7 @@ from app.services.ai import orchestrator
 from app.services.ai.llm import ai_status
 
 router = APIRouter()
+logger = logging.getLogger("edagent.chat")
 
 
 @router.get("/status", summary="AI Configuration Status")
@@ -33,5 +36,11 @@ async def process_chat_message(payload: ChatRequest, user: User = Depends(accoun
     dataset = await DatasetRepository(db).get_by_id(session.dataset_id, user.id)
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found.")
-    response = await orchestrator.handle_chat(db, session, dataset, payload.message.strip())
+    try:
+        response = await orchestrator.handle_chat(db, session, dataset, payload.message.strip())
+    except Exception as e:
+        # Let the database dependency roll back and omit exception text that might contain
+        # inputs or credentials. Only the application's auth dependency should return a 401.
+        logger.warning("chat stage=request outcome=%s", type(e).__name__)
+        raise HTTPException(status_code=503, detail="Chat could not finish. Your dataset is still available in the Analysis Workspace.") from None
     return APIResponse(success=True, message="Chat response generated.", data=response)

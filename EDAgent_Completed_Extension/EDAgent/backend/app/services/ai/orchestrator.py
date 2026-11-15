@@ -1,23 +1,11 @@
-"""
-AI chat orchestration.
+"""Plan with the provider, compute locally, and explain only from the result."""
 
-    question -> dataset context -> LLM plan (JSON data) -> parse + validate (one repair retry)
-             -> clarify / cannot answer / run approved backend tool -> validate result
-             -> LLM explanation (numbers checked against the result) or deterministic text
-
-Safety properties (each covered by tests):
-* The model returns a *plan*; it never returns code and nothing it says is executed.
-* Every column in the plan is validated against the real schema before running.
-* Numbers in the prose must be traceable to the computed result, otherwise the deterministic
-  explanation is shown instead.
-* If the model is missing, slow, rate-limited or broken, the user gets a clear message and the
-  rest of the app keeps working.
-"""
-
+import asyncio
 import json
 import logging
-import re
-from typing import Any, Dict, List, Optional
+from contextlib import asynccontextmanager
+from time import perf_counter
+from typing import Any, Dict, List
 
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,15 +20,19 @@ from app.schemas.chat import ChatKind, ChatResponse
 from app.services import analysis_service, dataset_service
 from app.services.ai import grounding, prompts
 from app.services.ai.context import DatasetContext, build_context
-from app.services.ai.llm import LLMClient, LLMError, ai_status, get_llm_client
+from app.services.ai.llm import LLMError, ai_status, get_llm_client
 from app.services.analysis import catalogue, engine
 from app.services.analysis.common import AnalysisError, PlanValidationError
 
 logger = logging.getLogger("edagent.chat")
 
 HISTORY_TURNS = 4
+# A repair and time spent waiting for a compute slot both count against this deadline.
+CHAT_WORK_SECONDS = 45
+CHAT_COMPUTE_SECONDS = 30
+# The endpoint gives persistence a small margin after the last possible provider call.
+CHAT_RESPONSE_SECONDS = 50
 _PLAN_FIELDS = set(StructuredAnalysisPlan.model_fields)
-_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.I)
 
 
 # ---------------------------------------------------------------------------
@@ -48,12 +40,8 @@ _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.I)
 # ---------------------------------------------------------------------------
 
 def extract_json(text: str) -> Dict[str, Any]:
-    """Pulls the JSON object out of a model reply (tolerates fences and stray prose)."""
-    cleaned = _FENCE.sub("", text.strip())
-    start, end = cleaned.find("{"), cleaned.rfind("}")
-    if start < 0 or end <= start:
-        raise ValueError("no JSON object found")
-    obj = json.loads(cleaned[start : end + 1])
+    """Require one JSON object, with no surrounding prose."""
+    obj = json.loads(text)
     if not isinstance(obj, dict):
         raise ValueError("top-level JSON is not an object")
     return obj
@@ -72,7 +60,10 @@ def _map_names(plan: Dict[str, Any], name_map: Dict[str, str]) -> Dict[str, Any]
             return g
         out = dict(g)
         conds = []
-        for c in g.get("conditions") or []:
+        conditions = g.get("conditions", [])
+        if not isinstance(conditions, list):
+            return g  # Leave invalid shapes for the schema to reject.
+        for c in conditions:
             if isinstance(c, dict) and "conditions" in c:
                 conds.append(mfilter(c))
             elif isinstance(c, dict):
@@ -88,7 +79,7 @@ def _map_names(plan: Dict[str, Any], name_map: Dict[str, str]) -> Dict[str, Any]
             p[key] = m(p[key])
     for key in ("target_columns", "group_by"):
         if key in p:
-            p[key] = mlist(p[key]) or []
+            p[key] = mlist(p[key])
     if p.get("filters"):
         p["filters"] = mfilter(p["filters"])
     if isinstance(p.get("parameters"), dict):
@@ -137,19 +128,44 @@ _LLM_MESSAGES = {
     "timeout": "The AI provider took too long to respond, so I could not interpret your question. Please try again in a moment.",
     "rate_limit": "The AI provider is rate-limiting requests right now. Please wait a little and try again.",
     "auth": "The AI provider rejected the server's API key. An administrator needs to check the AI configuration.",
-    "token_limit": "This dataset's description is too large for the AI model's limits, even after shortening. Try a dataset with fewer columns.",
+    "token_limit": "The question or dataset description exceeded the model's limits. Try a narrower question.",
+    "configuration": "The AI provider rejected the server's settings. An administrator needs to check the provider and model.",
     "unavailable": "The AI provider is temporarily unavailable. Please try again shortly.",
     "bad_response": "The AI provider returned something I could not understand. Please try again.",
 }
-_MANUAL_HINT = " You can still run any analysis directly from the Workspace, and profiling, charts and reports do not need AI."
+_MANUAL_HINT = " You can run the analysis in the Analysis Workspace."
 
 
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
-async def _call_planner(client: LLMClient, system: str, user: str) -> str:
-    return await client.complete(system, user, max_tokens=settings.LLM_MAX_TOKENS)
+@asynccontextmanager
+async def _stage(name: str, deadline: float, limit: float):
+    started = perf_counter()
+    outcome = "ok"
+    try:
+        now = asyncio.get_running_loop().time()
+        if now >= deadline:
+            raise TimeoutError
+        async with asyncio.timeout_at(min(deadline, now + limit)):
+            yield
+    except TimeoutError:
+        outcome = "timeout"
+        raise
+    except LLMError as e:
+        outcome = e.kind
+        raise
+    except asyncio.CancelledError:
+        outcome = "cancelled"
+        raise
+    except Exception as e:
+        # Exception text can include column names, HTTP destinations or SQL values.
+        outcome = type(e).__name__
+        raise
+    finally:
+        logger.log(logging.INFO if outcome == "ok" else logging.WARNING,
+                   "chat stage=%s outcome=%s elapsed_ms=%.1f", name, outcome, (perf_counter() - started) * 1000)
 
 
 async def handle_chat(
@@ -158,112 +174,119 @@ async def handle_chat(
     dataset: Dataset,
     message: str,
 ) -> ChatResponse:
-    repo = SessionRepository(db)
-    turns = await repo.turns(session.id)
-    configured = ai_status()["configured"]
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + CHAT_WORK_SECONDS
+    client = get_llm_client()
 
     async def finish(kind: ChatKind, reply: str, *, plan=None, result=None, source=None, suggestions=None, err=None, clarify=None, cannot=None) -> ChatResponse:
-        req = await analysis_service.persist_turn(
-            db, session, question=message, kind=kind.value, assistant_message=reply, plan=plan, result=result,
-            explanation_source=source, error_message=err,
-        )
+        async with _stage("save", deadline + CHAT_RESPONSE_SECONDS - CHAT_WORK_SECONDS, CHAT_RESPONSE_SECONDS):
+            req = await analysis_service.persist_turn(
+                db, session, question=message, kind=kind.value, assistant_message=reply, plan=plan, result=result,
+                explanation_source=source, error_message=err,
+            )
         return ChatResponse(
             session_id=session.id, request_id=req.id, kind=kind, reply_text=reply,
             is_clarification_needed=kind == ChatKind.CLARIFICATION, clarifying_question=clarify, cannot_answer_reason=cannot,
             analysis_plan=plan, analysis_result=result, suggested_questions=suggestions or [], explanation_source=source,
-            ai_configured=configured, created_at=req.created_at,
+            ai_configured=client is not None, created_at=req.created_at,
         )
 
-    client = get_llm_client()
     if client is None:
-        return await finish(ChatKind.AI_UNAVAILABLE, ai_status()["message"] + _MANUAL_HINT)
+        logger.info("chat stage=planner outcome=disabled elapsed_ms=0")
+        return await finish(ChatKind.AI_UNAVAILABLE, ai_status()["message"] + _MANUAL_HINT, err="disabled")
 
-    loaded = await dataset_service.load_for_analysis(db, dataset)
-    profile = await dataset_service.get_or_compute_profile(db, dataset)
-    history = _history_text(turns)
-    system = prompts.PLANNER_SYSTEM.replace("{catalogue}", catalogue.catalogue_for_prompt())
+    async with _stage("prepare", deadline, CHAT_WORK_SECONDS):
+        turns = await SessionRepository(db).turns(session.id)
+        loaded = await dataset_service.load_for_analysis(db, dataset)
+        profile = await dataset_service.get_or_compute_profile(db, dataset)
+        ctx = build_context(dataset.name, profile, settings.LLM_MAX_CONTEXT_CHARS)
+        system = prompts.PLANNER_SYSTEM.replace("{catalogue}", catalogue.catalogue_for_prompt())
+        prompt = prompts.PLANNER_USER.format(
+            context=ctx.text, history=_history_text(turns), question=sanitize_prompt_data(message, 2000),
+        )
 
-    def user_prompt(ctx: DatasetContext) -> str:
-        return prompts.PLANNER_USER.format(context=ctx.text, history=history, question=sanitize_prompt_data(message, 2000))
-
-    # --- 1. plan (shrinks the context once if the provider says it is too large) ---
-    ctx = build_context(dataset.name, profile, settings.LLM_MAX_CONTEXT_CHARS)
-    try:
-        try:
-            raw = await _call_planner(client, system, user_prompt(ctx))
-        except LLMError as e:
-            if e.kind != "token_limit":
-                raise
-            ctx = build_context(dataset.name, profile, settings.LLM_MAX_CONTEXT_CHARS // 3)
-            raw = await _call_planner(client, system, user_prompt(ctx))
-    except LLMError as e:
-        logger.warning("planner call failed: %s", e.kind)
-        return await finish(ChatKind.AI_UNAVAILABLE, _LLM_MESSAGES.get(e.kind, _LLM_MESSAGES["unavailable"]) + _MANUAL_HINT, err=e.message)
-
-    # --- 2. interpret + validate, with one repair attempt ---
-    plan: Optional[StructuredAnalysisPlan] = None
     problems: List[str] = []
-    for attempt in range(2):
-        problems = []
+    for stage in ("planner", "repair"):
         try:
-            obj = extract_json(raw)
-            kind = obj.get("type")
-            if kind == "clarify":
-                question = str(obj.get("question") or "Could you clarify what you would like to analyse?")[:500]
-                options = [str(o)[:120] for o in (obj.get("options") or [])][:4]
-                text = question + ("\n" + "\n".join(f"- {o}" for o in options) if options else "")
-                return await finish(ChatKind.CLARIFICATION, text, suggestions=options, clarify=question)
-            if kind == "cannot_answer":
-                reason = str(obj.get("reason") or "The dataset does not contain what is needed to answer this.")[:600]
-                return await finish(ChatKind.CANNOT_ANSWER, reason, cannot=reason, suggestions=[])
-            if kind != "plan" or not isinstance(obj.get("plan"), dict):
-                raise ValueError("response 'type' must be plan, clarify or cannot_answer")
-            candidate = parse_plan(obj["plan"], ctx)
-            problems = catalogue.validate_plan(engine.effective_plan(candidate, loaded), loaded)
-            if not problems:
-                plan = candidate
-                break
+            async with _stage(stage, deadline, settings.LLM_TIMEOUT_SECONDS):
+                raw = await client.complete(system, prompt)
+        except (TimeoutError, LLMError) as e:
+            category = e.kind if isinstance(e, LLMError) else "timeout"
+            return await finish(ChatKind.AI_UNAVAILABLE, _LLM_MESSAGES.get(category, _LLM_MESSAGES["unavailable"]) + _MANUAL_HINT, err=category)
+
+        try:
+            async with _stage("validate", deadline, CHAT_WORK_SECONDS):
+                obj = extract_json(raw)
+                kind = obj.get("type")
+                if kind == "clarify":
+                    question = obj.get("question")
+                    options = obj.get("options", [])
+                    if not isinstance(question, str) or not question.strip() or not isinstance(options, list) or not all(isinstance(o, str) for o in options):
+                        raise ValueError("The clarification was malformed.")
+                    question, options = question[:500], [o[:120] for o in options[:4]]
+                elif kind == "cannot_answer":
+                    reason = obj.get("reason")
+                    if not isinstance(reason, str) or not reason.strip():
+                        raise ValueError("The refusal was malformed.")
+                    reason = reason[:600]
+                elif kind == "plan" and isinstance(obj.get("plan"), dict):
+                    plan = parse_plan(obj["plan"], ctx)
+                    problems = catalogue.validate_plan(engine.effective_plan(plan, loaded), loaded)
+                    if problems:
+                        raise PlanValidationError(problems)
+                else:
+                    raise ValueError("The response did not contain a supported plan or question.")
         except ValidationError as e:
             problems = _problems_from_validation(e)
-        except (ValueError, json.JSONDecodeError) as e:
-            problems = [f"Invalid response: {e}"]
-        if attempt == 0:
-            try:
-                raw = await _call_planner(client, system, user_prompt(ctx) + "\n\n" + prompts.REPAIR_USER.format(problems="\n".join(f"- {p}" for p in problems), previous=raw[:1500]))
-            except LLMError as e:
-                return await finish(ChatKind.AI_UNAVAILABLE, _LLM_MESSAGES.get(e.kind, _LLM_MESSAGES["unavailable"]) + _MANUAL_HINT, err=e.message)
+        except PlanValidationError as e:
+            problems = e.errors
+        except (ValueError, RecursionError):
+            problems = ["The provider response did not match the required format."]
+        else:
+            if kind == "clarify":
+                return await finish(ChatKind.CLARIFICATION, question, suggestions=options, clarify=question)
+            if kind == "cannot_answer":
+                return await finish(ChatKind.CANNOT_ANSWER, reason + _MANUAL_HINT, cannot=reason)
+            break
 
-    if plan is None:
-        # Validation messages are already written for people ("column X not found, did you mean Y?").
+        # Repair only a received, unusable answer. Never replay a failed provider POST.
+        prompt += "\n\n" + prompts.REPAIR_USER.format(
+            problems="\n".join(f"- {p}" for p in problems[:8]), previous=raw[:1500],
+        )
+    else:
         reason = "I could not turn that into a valid analysis: " + " ".join(problems[:3])
-        return await finish(ChatKind.CANNOT_ANSWER, reason, cannot=reason, err="; ".join(problems[:5]))
+        return await finish(ChatKind.CANNOT_ANSWER, reason + _MANUAL_HINT, cannot=reason, err="invalid_plan")
 
-    # --- 3. run the approved backend tool ---
     try:
-        result = await analysis_service.run_plan(db, dataset, plan)
-    except (AnalysisError, PlanValidationError) as e:
-        msg = str(e)
-        return await finish(ChatKind.ERROR, msg, plan=plan, err=msg)
-    await analysis_service.add_multiple_test_warning(db, session.id, result)
+        async with _stage("compute", deadline, CHAT_COMPUTE_SECONDS):
+            result = await analysis_service.run_plan(db, dataset, plan)
+            await analysis_service.add_multiple_test_warning(db, session.id, result)
+    except (TimeoutError, AnalysisError, PlanValidationError) as e:
+        msg = str(e) or "The analysis took too long. Try selecting fewer columns or filtering the dataset."
+        return await finish(ChatKind.ERROR, msg + _MANUAL_HINT, plan=plan, err="compute_failed")
 
-    # --- 4. explanation: model prose if every number is grounded, else deterministic text ---
-    source = "llm"
+    # Computation has finished. Even a slow or rejected explanation must preserve this result.
+    source = "fallback"
+    scope_first = False
     try:
-        prose = (await client.complete(
-            prompts.EXPLAINER_SYSTEM,
-            prompts.EXPLAINER_USER.format(question=sanitize_prompt_data(message, 2000), facts=grounding.result_facts(result)),
-            max_tokens=700,
-        )).strip()
-        if not prose:
-            raise LLMError("bad_response", "empty explanation")
-        bad = grounding.ungrounded_numbers(prose, result)
-        if bad:
-            logger.warning("explanation rejected: ungrounded numbers %s", bad[:5])
-            raise LLMError("bad_response", "ungrounded numbers")
-    except LLMError:
-        prose = grounding.template_explanation(result)
-        source = "template"
+        async with _stage("explain", deadline, settings.LLM_TIMEOUT_SECONDS):
+            raw = await client.complete(
+                prompts.EXPLAINER_SYSTEM,
+                prompts.EXPLAINER_USER.format(question=sanitize_prompt_data(message, 2000), facts=grounding.result_facts(result)),
+                max_tokens=160,
+            )
+            selection = extract_json(raw)
+            # Accept only an exact result reference and a fixed display choice. No provider prose
+            # enters the explanation: even a real value can be attached to the wrong metric or unit.
+            if (selection.keys() != {"result_id", "focus"} or selection["result_id"] != str(result.id)
+                    or selection["focus"] not in ("summary", "scope")):
+                raise LLMError("unsupported_explanation", "The provider did not select a supported explanation.")
+            scope_first = selection["focus"] == "scope"
+            source = "guided"
+    except (TimeoutError, LLMError, ValueError, RecursionError):
+        pass
 
     return await finish(
-        ChatKind.ANALYSIS, prose, plan=plan, result=result, source=source, suggestions=grounding.suggested_followups(result),
+        ChatKind.ANALYSIS, grounding.template_explanation(result, scope_first=scope_first),
+        plan=plan, result=result, source=source, suggestions=grounding.suggested_followups(result),
     )

@@ -9,23 +9,18 @@ When no provider/key is configured `get_llm_client()` returns None and the chat 
 so honestly; there is deliberately no "mock" model that pretends to answer.
 """
 
-import asyncio
-import logging
 from typing import Optional, Protocol
 
 import httpx
 
 from app.core.config import settings
 
-logger = logging.getLogger("edagent.llm")
-
-
 class LLMError(Exception):
     """A failed model call. `kind` lets callers choose a sensible user message."""
 
     def __init__(self, kind: str, message: str):
         super().__init__(message)
-        self.kind = kind  # timeout | rate_limit | auth | token_limit | unavailable | bad_response
+        self.kind = kind
         self.message = message
 
 
@@ -43,39 +38,34 @@ def _classify_http_error(status: int, body: str) -> LLMError:
         return LLMError("token_limit", "The request was too large for the model's context window.")
     if status >= 500:
         return LLMError("unavailable", "The AI provider is temporarily unavailable.")
+    if status in (400, 404):
+        return LLMError("configuration", "The provider rejected the configured model, destination or request settings.")
     return LLMError("bad_response", f"The AI provider returned HTTP {status}.")
 
 
 class _HttpLLM:
-    """Shared retry/timeout logic for HTTP providers."""
+    """One HTTP attempt per completion."""
 
     def __init__(self, transport: Optional[httpx.AsyncBaseTransport] = None):
         self._transport = transport
 
     async def _post(self, url: str, headers: dict, payload: dict) -> dict:
-        timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=10.0)
-        last: Optional[LLMError] = None
-        for attempt in range(2):  # one retry, only for transient failures
-            try:
-                async with httpx.AsyncClient(timeout=timeout, transport=self._transport) as client:
-                    resp = await client.post(url, headers=headers, json=payload)
-            except httpx.TimeoutException:
-                last = LLMError("timeout", f"The AI provider did not answer within {settings.LLM_TIMEOUT_SECONDS} seconds.")
-                break  # a timeout already cost the full wait; do not double it
-            except httpx.HTTPError as e:
-                last = LLMError("unavailable", f"Could not reach the AI provider ({type(e).__name__}).")
-            else:
-                if resp.status_code == 200:
-                    try:
-                        return resp.json()
-                    except ValueError:
-                        raise LLMError("bad_response", "The AI provider returned a non-JSON response.")
-                last = _classify_http_error(resp.status_code, resp.text[:500])
-                if last.kind not in ("rate_limit", "unavailable"):
-                    break
-            if attempt == 0:
-                await asyncio.sleep(1.0)
-        raise last or LLMError("unavailable", "AI call failed.")
+        # A failed POST can already have run (and been billed). Never replay it.
+        try:
+            async with httpx.AsyncClient(timeout=settings.LLM_TIMEOUT_SECONDS, transport=self._transport) as client:
+                resp = await client.post(url, headers=headers, json=payload)
+        except httpx.TimeoutException:
+            raise LLMError("timeout", "The provider request timed out.") from None
+        except (httpx.InvalidURL, httpx.UnsupportedProtocol, ValueError):
+            raise LLMError("configuration", "The provider URL or request settings are invalid.") from None
+        except httpx.RequestError:
+            raise LLMError("unavailable", "Could not reach the AI provider.") from None
+        if resp.status_code != 200:
+            raise _classify_http_error(resp.status_code, resp.text[:500])
+        try:
+            return resp.json()
+        except ValueError:
+            raise LLMError("bad_response", "The AI provider returned a non-JSON response.") from None
 
 
 class OpenAICompatibleClient(_HttpLLM):
@@ -98,7 +88,9 @@ class OpenAICompatibleClient(_HttpLLM):
             raise LLMError("bad_response", "The AI provider's response had an unexpected shape.")
         if choice.get("finish_reason") == "length":
             raise LLMError("token_limit", "The model ran out of output tokens before finishing.")
-        return text or ""
+        if not isinstance(text, str) or not text.strip():
+            raise LLMError("bad_response", "The AI provider did not return text.")
+        return text
 
 
 class AnthropicClient(_HttpLLM):
@@ -117,10 +109,12 @@ class AnthropicClient(_HttpLLM):
         )
         try:
             text = "".join(block.get("text", "") for block in data["content"] if block.get("type") == "text")
-        except (KeyError, TypeError):
+        except (AttributeError, KeyError, TypeError):
             raise LLMError("bad_response", "The AI provider's response had an unexpected shape.")
         if data.get("stop_reason") == "max_tokens":
             raise LLMError("token_limit", "The model ran out of output tokens before finishing.")
+        if not text.strip():
+            raise LLMError("bad_response", "The AI provider did not return text.")
         return text
 
 
@@ -150,6 +144,5 @@ def ai_status() -> dict:
         "provider": settings.LLM_PROVIDER if on else None,
         "message": None
         if on
-        else "AI chat is not configured. Set LLM_PROVIDER (openai or anthropic) and LLM_API_KEY in the backend environment. "
-        "All other features (profiling, analyses, charts, reports) work without it.",
+        else "AI chat is disabled. An administrator can check the server's provider configuration.",
     }

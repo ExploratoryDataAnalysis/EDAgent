@@ -265,7 +265,12 @@ def validate_plan(plan: StructuredAnalysisPlan, loaded: LoadedDataset) -> List[s
     if spec.uses_aggregation:
         if plan.aggregation not in AGG_ALL:
             errors.append(f"Aggregation '{plan.aggregation}' is not supported. Use one of: {', '.join(sorted(AGG_ALL))}.")
-        aggs = plan.parameters.get("aggregations") or [plan.aggregation]
+        aggs = plan.parameters.get("aggregations", [plan.aggregation])
+        # Parameters can come from model JSON or the manual API, so validate their shape
+        # before checking membership in the set of supported aggregations.
+        if not isinstance(aggs, list) or not aggs or not all(isinstance(a, str) for a in aggs):
+            errors.append("Parameter 'aggregations' must be a nonempty list of names.")
+            aggs = []
         for a in aggs:
             if a not in AGG_ALL:
                 errors.append(f"Aggregation '{a}' is not supported.")

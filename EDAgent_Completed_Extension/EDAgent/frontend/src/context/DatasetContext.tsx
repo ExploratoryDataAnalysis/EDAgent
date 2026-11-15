@@ -60,6 +60,7 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [error, setError] = useState<string | null>(null);
   const sessionRef = useRef<SessionSummary | null>(null);
   sessionRef.current = session;
+  const selectionVersion = useRef(0);
 
   const message = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback);
 
@@ -83,6 +84,7 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const selectDataset = useCallback(async (id: UUID) => {
+    const version = ++selectionVersion.current;
     setIsLoading(true);
     setError(null);
     try {
@@ -91,24 +93,26 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
         profilingService.getProfile(id).catch(() => null),
         datasetService.getPreview(id).catch(() => null),
       ]);
+      // Resume the most recent session for this dataset (restored via /history or the chat page).
+      const saved = storage.getItem(SESSION_KEY);
+      const sessions = await sessionService.list(id).catch(() => [] as SessionSummary[]);
+      if (version !== selectionVersion.current) return;
+      const resume = sessions.find((s) => s.id === saved) || sessions[0] || null;
+      // Publish the dataset and its session together so actions cannot use a mixed pair.
       setActiveDataset(ds);
       setProfile(prof);
       setPreview(prev);
       remember(DATASET_KEY, id);
-
-      // Resume the most recent session for this dataset (restored via /history or the chat page).
-      const saved = storage.getItem(SESSION_KEY);
-      const sessions = await sessionService.list(id).catch(() => [] as SessionSummary[]);
-      const resume = sessions.find((s) => s.id === saved) || sessions[0] || null;
       setSession(resume);
       if (resume) remember(SESSION_KEY, resume.id);
       else remember(SESSION_KEY, null);
     } catch (e) {
+      if (version !== selectionVersion.current) return;
       setError(message(e, 'Failed to load dataset'));
       remember(DATASET_KEY, null);
       reset();
     } finally {
-      setIsLoading(false);
+      if (version === selectionVersion.current) setIsLoading(false);
     }
   }, [remember, storage]);
 
@@ -175,17 +179,19 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [activeDataset]);
 
   const newSession = useCallback(async (title?: string) => {
-    if (!activeDataset) throw new Error('Select a dataset first.');
+    if (!activeDataset || isLoading) throw new Error('Wait for the dataset to finish loading.');
+    const version = selectionVersion.current;
     const s = await sessionService.create(activeDataset.id, title);
+    if (version !== selectionVersion.current) throw new Error('The dataset selection changed.');
     setSession(s);
     remember(SESSION_KEY, s.id);
     return s;
-  }, [activeDataset, remember]);
+  }, [activeDataset, isLoading, remember]);
 
   const ensureSession = useCallback(async (): Promise<UUID> => {
-    if (sessionRef.current) return sessionRef.current.id;
+    if (sessionRef.current?.dataset_id === activeDataset?.id && sessionRef.current) return sessionRef.current.id;
     return (await newSession()).id;
-  }, [newSession]);
+  }, [activeDataset?.id, newSession]);
 
   const openSession = useCallback(async (id: UUID) => {
     const detail = await sessionService.get(id);

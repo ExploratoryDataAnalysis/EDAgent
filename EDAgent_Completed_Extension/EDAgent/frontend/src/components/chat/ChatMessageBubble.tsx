@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Sparkles, User, CheckCircle2, AlertCircle, HelpCircle, Ban, Bot } from 'lucide-react';
-import { AnalysisResult, ChatKind, StructuredAnalysisPlan } from '../../types';
+import { AnalysisResult, ChatKind, ChatResponse, StructuredAnalysisPlan } from '../../types';
 import { ResultView } from '../results/ResultView';
 
 export interface UiMessage {
@@ -10,8 +11,7 @@ export interface UiMessage {
   kind?: ChatKind;
   plan?: StructuredAnalysisPlan | null;
   result?: AnalysisResult | null;
-  /** 'llm' = wording written by the language model; 'template' = deterministic fallback text. */
-  source?: 'llm' | 'template' | null;
+  source?: ChatResponse['explanation_source'];
   suggestions?: string[];
 }
 
@@ -24,7 +24,7 @@ const KIND_META: Record<ChatKind, { label: string; icon: React.ReactNode; tone: 
   analysis: { label: 'Verified analysis', icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />, tone: 'text-emerald-700 dark:text-emerald-300' },
   clarification: { label: 'Needs clarification', icon: <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />, tone: 'text-indigo-700 dark:text-indigo-300' },
   cannot_answer: { label: 'Not supported', icon: <Ban className="w-3.5 h-3.5 text-amber-500" />, tone: 'text-amber-700 dark:text-amber-300' },
-  ai_unavailable: { label: 'AI not configured', icon: <Bot className="w-3.5 h-3.5 text-amber-500" />, tone: 'text-amber-700 dark:text-amber-300' },
+  ai_unavailable: { label: 'AI unavailable', icon: <Bot className="w-3.5 h-3.5 text-amber-500" />, tone: 'text-amber-700 dark:text-amber-300' },
   error: { label: 'Could not complete', icon: <AlertCircle className="w-3.5 h-3.5 text-red-500" />, tone: 'text-red-700 dark:text-red-300' },
 };
 
@@ -56,8 +56,8 @@ export const ChatMessageBubble: React.FC<Props> = ({ message, onSelectSuggestion
               {meta.icon}
               <span>{meta.label}</span>
               {message.kind === 'analysis' && message.source && (
-                <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-normal" title={message.source === 'llm' ? 'The wording was written by the AI model; every number was checked against the computed result.' : 'Generated from the computed result without the AI model.'}>
-                  {message.source === 'llm' ? 'AI-written explanation' : 'Computed summary'}
+                <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-normal">
+                  {message.source === 'llm' ? 'Earlier AI-written explanation' : message.source === 'fallback' ? 'Computed summary (AI explanation unavailable)' : 'Computed summary'}
                 </span>
               )}
             </div>
@@ -65,6 +65,12 @@ export const ChatMessageBubble: React.FC<Props> = ({ message, onSelectSuggestion
 
           {/* Rendered as text, never HTML: model output is untrusted. */}
           <p className="whitespace-pre-wrap break-words">{message.text}</p>
+
+          {(message.kind === 'ai_unavailable' || message.kind === 'error' || message.kind === 'cannot_answer') && (
+            <Link to="/workspace" className="mt-2 inline-block font-semibold text-indigo-700 underline dark:text-indigo-300">
+              Run manually in Analysis Workspace
+            </Link>
+          )}
 
           {message.plan && (
             <details className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 px-3 py-2">
@@ -80,7 +86,7 @@ export const ChatMessageBubble: React.FC<Props> = ({ message, onSelectSuggestion
           )}
         </div>
 
-        {isAgent && message.suggestions && message.suggestions.length > 0 && (
+        {isAgent && onSelectSuggestion && message.suggestions && message.suggestions.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {message.suggestions.map((s) => (
               <button
