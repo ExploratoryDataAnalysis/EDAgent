@@ -22,6 +22,7 @@ from app.schemas.common import APIResponse
 from app.schemas.session import SessionCreate, SessionDetail, SessionRename, SessionSummary
 from app.services import analysis_service
 from app.services.export_storage import remove_export_file
+from app.services import guest_sessions
 
 router = APIRouter()
 
@@ -99,6 +100,8 @@ async def rename_session(session_id: uuid.UUID, payload: SessionRename, user: Us
 
 @router.delete("/{session_id}", response_model=APIResponse[bool], summary="Delete Session")
 async def delete_session(session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.is_guest:
+        await guest_sessions.lock_active(db, user.id)
     session = await _get_owned(db, session_id, user)
     uris = await SessionRepository(db).delete(session)
     await db.commit()

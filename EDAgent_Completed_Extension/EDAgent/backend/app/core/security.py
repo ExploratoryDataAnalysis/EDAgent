@@ -38,24 +38,30 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> Tuple[str, int]:
+def create_access_token(subject: str, expires_minutes: Optional[int] = None, *, guest: bool = False) -> Tuple[str, int]:
     """Returns (jwt, expires_in_seconds). `sub` is the user id; nothing else sensitive is embedded."""
     minutes = expires_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES
     expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-    token = jwt.encode({"sub": subject, "exp": expire, "session_version": 2}, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
+    claims = {"sub": subject, "exp": expire, "session_version": 2}
+    if guest:
+        claims["guest"] = True
+    token = jwt.encode(claims, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
     return token, minutes * 60
+
+
+def token_claims(token: str, *, allow_expired: bool = False) -> dict:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[JWT_ALGORITHM],
+                             options={"verify_exp": not allow_expired, "require_exp": True, "require_sub": True})
+    except JWTError:
+        return {}
+    # Old tokens could be issued by guest login for any stored account.
+    return payload if payload.get("session_version") == 2 else {}
 
 
 def decode_access_token(token: str) -> Optional[str]:
     """Returns the user id (`sub`) for a valid, unexpired token; otherwise None."""
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[JWT_ALGORITHM])
-    except JWTError:
-        return None
-    # Old tokens could be issued by guest login for any stored account.
-    if payload.get("session_version") != 2:
-        return None
-    sub = payload.get("sub")
+    sub = token_claims(token).get("sub")
     return str(sub) if sub else None
 
 

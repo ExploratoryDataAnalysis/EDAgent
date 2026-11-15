@@ -176,14 +176,17 @@ def load_dataset(
     checksum: str,
     parse_options: Optional[Dict[str, Any]],
     profile_columns: List[Dict[str, Any]],
+    *,
+    use_cache: bool = True,
 ) -> LoadedDataset:
     """Loads (or returns the cached) typed DataFrame for a dataset."""
     fp = dataset_fingerprint(checksum, parse_options)
     key = _cache_key(dataset_id, fp)
-    with _cache_lock:
-        if key in _cache:
-            _cache.move_to_end(key)
-            return _cache[key]
+    if use_cache:
+        with _cache_lock:
+            if key in _cache:
+                _cache.move_to_end(key)
+                return _cache[key]
 
     opts = parse_options or {}
     headers, rows, warnings = read_table_as_strings(
@@ -192,8 +195,9 @@ def load_dataset(
     df, infos = build_typed_frame(headers, rows, profile_columns)
     loaded = LoadedDataset(df=df, columns=infos, fingerprint=fp, warnings=warnings)
 
-    with _cache_lock:
-        _cache[key] = loaded
-        while len(_cache) > max(1, settings.DATAFRAME_CACHE_ENTRIES):
-            _cache.popitem(last=False)
+    if use_cache:
+        with _cache_lock:
+            _cache[key] = loaded
+            while len(_cache) > max(1, settings.DATAFRAME_CACHE_ENTRIES):
+                _cache.popitem(last=False)
     return loaded

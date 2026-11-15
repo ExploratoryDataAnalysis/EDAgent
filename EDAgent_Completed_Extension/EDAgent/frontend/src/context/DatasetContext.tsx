@@ -6,6 +6,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Dataset, DatasetListItem, DatasetPreview, ProfilerResult, SampleDataset, SessionSummary, UUID } from '../types';
 import { datasetService, profilingService, sampleApi, sessionService } from '../services/api';
+import { tokenStore } from '../services/apiClient';
 import { useAuth } from './AuthContext';
 
 const DATASET_KEY = 'edagent_active_dataset_id';
@@ -33,6 +34,7 @@ interface DatasetContextType {
   ensureSession: () => Promise<UUID>;
   newSession: (title?: string) => Promise<SessionSummary>;
   openSession: (id: UUID) => Promise<void>;
+  deleteSession: (id: UUID) => Promise<void>;
   clearError: () => void;
 }
 
@@ -40,6 +42,14 @@ const DatasetContext = createContext<DatasetContextType | undefined>(undefined);
 
 export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const storage = user?.guest ? sessionStorage : localStorage;
+  const ownerToken = useRef(tokenStore.get());
+  // Responses from a revoked or replaced owner cannot write selection into the new session.
+  const remember = useCallback((key: string, value: string | null) => {
+    if (tokenStore.get() !== ownerToken.current) return;
+    if (value === null) storage.removeItem(key);
+    else storage.setItem(key, value);
+  }, [storage]);
   const [activeDataset, setActiveDataset] = useState<Dataset | null>(null);
   const [profile, setProfile] = useState<ProfilerResult | null>(null);
   const [preview, setPreview] = useState<DatasetPreview | null>(null);
@@ -84,23 +94,23 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setActiveDataset(ds);
       setProfile(prof);
       setPreview(prev);
-      localStorage.setItem(DATASET_KEY, id);
+      remember(DATASET_KEY, id);
 
       // Resume the most recent session for this dataset (restored via /history or the chat page).
-      const saved = localStorage.getItem(SESSION_KEY);
+      const saved = storage.getItem(SESSION_KEY);
       const sessions = await sessionService.list(id).catch(() => [] as SessionSummary[]);
       const resume = sessions.find((s) => s.id === saved) || sessions[0] || null;
       setSession(resume);
-      if (resume) localStorage.setItem(SESSION_KEY, resume.id);
-      else localStorage.removeItem(SESSION_KEY);
+      if (resume) remember(SESSION_KEY, resume.id);
+      else remember(SESSION_KEY, null);
     } catch (e) {
       setError(message(e, 'Failed to load dataset'));
-      localStorage.removeItem(DATASET_KEY);
+      remember(DATASET_KEY, null);
       reset();
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [remember, storage]);
 
   // Load everything for the user; auto-select active dataset; clear on sign-out.
   useEffect(() => {
@@ -109,16 +119,16 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setDatasets([]);
       return;
     }
-    sampleApi().then(setSamples).catch(() => setSamples([]));
+    if (!user.guest) sampleApi().then(setSamples).catch(() => setSamples([]));
     refreshDatasets().then((items) => {
-      const saved = localStorage.getItem(DATASET_KEY);
+      const saved = storage.getItem(DATASET_KEY);
       if (saved && items.some((d) => d.id === saved)) {
         selectDataset(saved);
       } else if (items.length > 0) {
         selectDataset(items[0].id);
       }
     });
-  }, [user, refreshDatasets, selectDataset]);
+  }, [user, refreshDatasets, selectDataset, storage]);
 
   const setUploadedDataset = useCallback(async (datasetId: UUID) => {
     await selectDataset(datasetId);
@@ -144,12 +154,12 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteDataset = useCallback(async (id: UUID) => {
     await datasetService.deleteDataset(id);
     if (activeDataset?.id === id) {
-      localStorage.removeItem(DATASET_KEY);
-      localStorage.removeItem(SESSION_KEY);
+      remember(DATASET_KEY, null);
+      remember(SESSION_KEY, null);
       reset();
     }
     await refreshDatasets();
-  }, [activeDataset, refreshDatasets]);
+  }, [activeDataset, refreshDatasets, remember]);
 
   const triggerProfiling = useCallback(async () => {
     if (!activeDataset) return;
@@ -168,9 +178,9 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!activeDataset) throw new Error('Select a dataset first.');
     const s = await sessionService.create(activeDataset.id, title);
     setSession(s);
-    localStorage.setItem(SESSION_KEY, s.id);
+    remember(SESSION_KEY, s.id);
     return s;
-  }, [activeDataset]);
+  }, [activeDataset, remember]);
 
   const ensureSession = useCallback(async (): Promise<UUID> => {
     if (sessionRef.current) return sessionRef.current.id;
@@ -181,15 +191,24 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const detail = await sessionService.get(id);
     if (!activeDataset || activeDataset.id !== detail.dataset_id) await selectDataset(detail.dataset_id);
     setSession(detail);
-    localStorage.setItem(SESSION_KEY, id);
-  }, [activeDataset, selectDataset]);
+    remember(SESSION_KEY, id);
+  }, [activeDataset, remember, selectDataset]);
+
+  const deleteSession = useCallback(async (id: UUID) => {
+    await sessionService.remove(id);
+    if (sessionRef.current?.id === id) {
+      sessionRef.current = null;
+      setSession(null);
+      remember(SESSION_KEY, null);
+    }
+  }, [remember]);
 
   return (
     <DatasetContext.Provider
       value={{
         activeDataset, profile, profilerResult: profile, preview, previewData: preview, datasets, samples, session,
         isLoading, error, refreshDatasets, selectDataset, setUploadedDataset, loadSample, deleteDataset,
-        triggerProfiling, ensureSession, newSession, openSession, clearError: () => setError(null),
+        triggerProfiling, ensureSession, newSession, openSession, deleteSession, clearError: () => setError(null),
       }}
     >
       {children}

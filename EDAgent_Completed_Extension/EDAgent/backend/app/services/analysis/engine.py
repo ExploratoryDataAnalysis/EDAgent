@@ -7,8 +7,8 @@ Deterministic analysis engine.
                 -> assemble one consistent, structured result object
 
 It never evaluates strings as code, never mutates the loaded dataset and never silently
-changes a parameter. Identical (dataset fingerprint, plan) pairs are served from a small LRU
-cache; the cache key includes the fingerprint so re-parsing a file invalidates old results.
+changes a parameter. A small LRU cache reuses results for the same dataset instance, parse
+fingerprint and plan.
 """
 
 import json
@@ -42,13 +42,9 @@ def _versions() -> Dict[str, str]:
     return {"python": platform.python_version(), "pandas": pd.__version__, "numpy": np.__version__, "scipy": scipy.__version__, "scikit-learn": sklearn.__version__}
 
 
-def _plan_key(fingerprint: str, plan: StructuredAnalysisPlan, row_cap: int) -> str:
-    return f"{fingerprint}|{row_cap}|" + json.dumps(plan.model_dump(mode="json"), sort_keys=True, default=str)
-
-
-def clear_cache_for(fingerprint_prefix: str = "") -> None:
+def clear_cache_for(dataset_id: uuid.UUID) -> None:
     with _cache_lock:
-        for k in [k for k in _cache if k.startswith(fingerprint_prefix)]:
+        for k in [k for k in _cache if k.startswith(f"{dataset_id}|")]:
             _cache.pop(k, None)
 
 
@@ -84,7 +80,9 @@ def run_analysis(
 ) -> AnalysisResultResponse:
     cap = row_cap or settings.MAX_RESULT_ROWS
     started = time.perf_counter()
-    key = _plan_key(loaded.fingerprint, plan, cap)
+    # A result carries its dataset ID, even when another owner uploaded identical bytes.
+    plan_json = json.dumps(plan.model_dump(mode="json"), sort_keys=True, default=str)
+    key = f"{dataset_id}|{loaded.fingerprint}|{cap}|{plan_json}"
     if use_cache:
         with _cache_lock:
             hit = _cache.get(key)

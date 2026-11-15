@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import charge_guest, get_current_user
 from app.core.security import safe_filename
 from app.models.user import User
 from app.repositories.dataset_repository import DatasetRepository
@@ -49,7 +49,7 @@ async def _result(db: AsyncSession, result_id: uuid.UUID, user: User) -> Analysi
 
 
 @router.get("/results/{result_id}/charts/{chart_id}", summary="Export A Chart")
-async def export_chart(result_id: uuid.UUID, chart_id: str, format: str = Query("png", pattern="^(png|svg|html|json)$"), user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_chart(result_id: uuid.UUID, chart_id: str, format: str = Query("png", pattern="^(png|svg|html|json)$"), user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     res = await _result(db, result_id, user)
     chart = files.find_chart(res, chart_id)
     if chart is None:
@@ -69,7 +69,7 @@ async def export_table(
     index: int,
     format: str = Query("csv", pattern="^(csv|xlsx)$"),
     full: bool = Query(True, description="Re-run truncated tables so the file holds every row (up to the export cap)."),
-    user: User = Depends(get_current_user),
+    user: User = Depends(charge_guest),
     db: AsyncSession = Depends(get_db),
 ):
     res = await _result(db, result_id, user)
@@ -84,7 +84,7 @@ async def export_table(
         dataset = await DatasetRepository(db).get_by_id(res.dataset_id, user.id)
         if dataset is None:
             raise HTTPException(status_code=404, detail="Dataset not found.")
-        loaded = await dataset_service.load_for_analysis(db, dataset)
+        loaded = await dataset_service.load_for_analysis(db, dataset, guest=user.is_guest)
         try:
             fresh = await asyncio.to_thread(engine.run_analysis, loaded, res.plan, dataset.id, row_cap=settings.MAX_EXPORT_ROWS, use_cache=False)
         except AnalysisError as e:
@@ -111,14 +111,14 @@ async def export_code(result_id: uuid.UUID, format: str = Query("py", pattern="^
 
 
 @router.get("/results/{result_id}/bundle", summary="Download Everything For One Result (ZIP)")
-async def export_result_bundle(result_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_result_bundle(result_id: uuid.UUID, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     res = await _result(db, result_id, user)
     data = await asyncio.to_thread(files.result_bundle, res, res.operation)
     return _download(data, f"{res.operation}_bundle.zip", "application/zip")
 
 
 @router.get("/sessions/{session_id}/bundle", summary="Download All Results Of A Session (ZIP)")
-async def export_session_bundle(session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_session_bundle(session_id: uuid.UUID, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     repo = SessionRepository(db)
     session = await repo.get(session_id, user.id)
     if not session:
@@ -142,7 +142,7 @@ async def export_session_bundle(session_id: uuid.UUID, user: User = Depends(get_
 
 
 @router.get("/datasets/{dataset_id}/profile", summary="Export Dataset Profile")
-async def export_profile(dataset_id: uuid.UUID, format: str = Query("xlsx", pattern="^(xlsx|json)$"), user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def export_profile(dataset_id: uuid.UUID, format: str = Query("xlsx", pattern="^(xlsx|json)$"), user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     dataset = await DatasetRepository(db).get_by_id(dataset_id, user.id)
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found.")

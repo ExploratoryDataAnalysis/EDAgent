@@ -19,6 +19,12 @@ export interface User {
   email: string;
   full_name?: string | null;
   is_active?: boolean;
+  guest?: {
+    expires_at: number;
+    max_upload_bytes: number;
+    max_datasets: number;
+    max_actions: number;
+  } | null;
 }
 
 export interface AuthToken {

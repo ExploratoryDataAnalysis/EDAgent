@@ -99,7 +99,10 @@ export const LoginPage: React.FC = () => {
           Your datasets stay private to your account. If an AI provider is configured, dataset structure and a few
           sanitised sample values are sent to it to plan analyses and explain results; all numbers are computed locally.
         </p>
-        <Link to="/" className="text-sm text-indigo-700 underline dark:text-indigo-300">Back to the investigation</Link>
+        <nav className="flex flex-wrap gap-4 text-sm text-indigo-700 dark:text-indigo-300">
+          <Link to="/analyser" className="underline">Dataset analyser</Link>
+          <Link to="/" className="underline">Back to the investigation</Link>
+        </nav>
       </div>
     </main>
   );

@@ -46,7 +46,7 @@ export const Sidebar: React.FC = () => {
     { to: '/reports', label: 'Report Builder', icon: FileSpreadsheet },
     { to: '/exports', label: 'Export Centre', icon: Download },
   ];
-  const visibleItems = navigationItems;
+  const visibleItems = user?.guest ? navigationItems.filter((item) => item.to !== '/chat') : navigationItems;
 
   return (
     <aside
@@ -145,7 +145,7 @@ export const Sidebar: React.FC = () => {
             </>
           )}
         </button>
-        {user && (
+        {user && !user.guest && (
           <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60">
             {!collapsed && (
               <span className="text-[11px] text-slate-600 dark:text-slate-300 truncate mr-2" title={user.email}>

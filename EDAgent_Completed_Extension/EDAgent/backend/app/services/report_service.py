@@ -24,7 +24,7 @@ from app.services.analysis import engine
 from app.services.data import loader
 from app.services.dataset_service import absolute_path
 from app.services.export import report as report_builder
-from app.services.export_storage import export_path
+from app.services.export_storage import export_path, remove_export_file
 from app.services.jobs.runner import JobContext
 
 logger = logging.getLogger("edagent.reports")
@@ -34,7 +34,7 @@ def report_rel_path(user_id: uuid.UUID, report_id: uuid.UUID, fmt: str) -> str:
     return f"reports/{user_id}/{report_id}.{fmt}"
 
 
-def generate_report_job(report_id: uuid.UUID):
+def generate_report_job(report_id: uuid.UUID, *, guest: bool = False):
     """Returns the job function that builds report `report_id` and stores the file."""
 
     def run(ctx: JobContext) -> Dict[str, Any]:
@@ -88,12 +88,25 @@ def generate_report_job(report_id: uuid.UUID):
         data = report_builder.render_pdf(inp, sections) if fmt == "pdf" else report_builder.render_html(inp, sections)
         rel = report_rel_path(user_id, report_id, fmt)
         path = export_path(rel)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "wb") as f:
-            f.write(data)
-        with sync_session() as s:
-            report = s.get(GeneratedReport, report_id)
-            report.storage_uri, report.status = rel, "SUCCESS"
+        wrote_file = False
+        try:
+            with sync_session() as s:
+                if guest:
+                    ctx.guard_guest_write(s, user_id)
+                report = s.get(GeneratedReport, report_id)
+                if report is None:
+                    raise RuntimeError("Report record not found")
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                wrote_file = True
+                with open(path, "wb") as f:
+                    f.write(data)
+                if guest:
+                    ctx.guard_guest_write(s, user_id)
+                report.storage_uri, report.status = rel, "SUCCESS"
+        except Exception:
+            if wrote_file:
+                remove_export_file(rel)
+            raise
         return {"report_id": str(report_id), "size_bytes": len(data)}
 
     def on_error(message: str) -> None:
@@ -106,21 +119,26 @@ def generate_report_job(report_id: uuid.UUID):
     return run
 
 
-def analysis_job(session_id: uuid.UUID, plan: StructuredAnalysisPlan, label: str):
+def analysis_job(session_id: uuid.UUID, plan: StructuredAnalysisPlan, label: str, *, guest: bool = False):
     """Job body for long-running analyses started via /analysis/execute-async."""
 
     def run(ctx: JobContext) -> Dict[str, Any]:
         ctx.progress(10, "Loading data")
         with sync_session() as s:
             session = s.get(AnalysisSession, session_id)
+            if session is None:
+                raise RuntimeError("Analysis session ended")
+            user_id = session.user_id
             dataset = s.execute(select(Dataset).options(selectinload(Dataset.metadata_entry)).where(Dataset.id == session.dataset_id)).scalar_one()
             meta = dataset.metadata_entry
             profile_cols = (meta.summary_statistics or {}).get("columns", [])
             path, fmt, checksum, opts, dataset_id = absolute_path(dataset.storage_uri), dataset.file_format, dataset.checksum_sha256, meta.parse_options, dataset.id
-        loaded = loader.load_dataset(str(dataset_id), path, fmt, checksum, opts, profile_cols)
+        loaded = loader.load_dataset(str(dataset_id), path, fmt, checksum, opts, profile_cols, use_cache=not guest)
         ctx.progress(40, "Computing")
-        result = engine.run_analysis(loaded, plan, dataset_id)
+        result = engine.run_analysis(loaded, plan, dataset_id, use_cache=not guest)
         with sync_session() as s:
+            if guest:
+                ctx.guard_guest_write(s, user_id)
             req, row = analysis_service.build_turn_rows(session_id, question=label, kind="analysis", assistant_message=result.summary_text, plan=plan, result=result, explanation_source="template")
             s.add(req)
             s.flush()

@@ -76,10 +76,11 @@ def remove_dataset_files(rel_path: str) -> None:
     shutil.rmtree(folder, ignore_errors=True)
 
 
-async def save_upload(file: UploadFile, abs_dest: str) -> Tuple[int, str]:
+async def save_upload(file: UploadFile, abs_dest: str, *, max_bytes: int | None = None) -> Tuple[int, str]:
     """Streams an upload to disk, enforcing the size limit while reading. Returns (size, sha256)."""
     os.makedirs(os.path.dirname(abs_dest), exist_ok=True)
-    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    server_limit = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    max_bytes = min(max_bytes, server_limit) if max_bytes is not None else server_limit
     hasher = hashlib.sha256()
     size = 0
     with open(abs_dest, "wb") as out:
@@ -90,7 +91,7 @@ async def save_upload(file: UploadFile, abs_dest: str) -> Tuple[int, str]:
             size += len(chunk)
             if size > max_bytes:
                 raise IngestionValidationError(
-                    f"File size exceeds maximum upload limit of {settings.MAX_UPLOAD_SIZE_MB} MB.", error_code="FILE_TOO_LARGE"
+                    f"File size exceeds the upload limit of {max_bytes:,} bytes.", error_code="FILE_TOO_LARGE"
                 )
             hasher.update(chunk)
             out.write(chunk)
@@ -177,9 +178,12 @@ def _parse_and_profile(
     sheet_name: Optional[str],
     delimiter: Optional[str],
     encoding: Optional[str],
+    guest: bool = False,
 ) -> Tuple[ParsedDatasetResult, Dict[str, Any], Dict[str, Any]]:
     """Blocking: parse for the preview, then profile with the *resolved* options."""
     parsed = IngestionService.parse_dataset(abs_path, fmt, sheet_name=sheet_name, override_delimiter=delimiter, override_encoding=encoding)
+    if guest and (parsed.row_count > 10_000 or len(parsed.headers) > 16):
+        raise IngestionValidationError("Guest datasets can contain up to 10,000 rows and 16 columns.", error_code="QUOTA_EXCEEDED")
     options: Dict[str, Any] = {
         "delimiter": parsed.delimiter,
         "encoding": parsed.encoding,
@@ -195,7 +199,11 @@ def _parse_and_profile(
             parsing_warnings=parsed.parsing_warnings,
         )
     except Exception:  # profile failure must not lose the upload; it is recomputed on demand
-        logger.exception("Profiling failed during ingestion")
+        if guest:
+            logger.warning("Guest profiling failed during ingestion")
+            raise IngestionValidationError("The guest dataset could not be profiled.", error_code="INVALID_FORMAT") from None
+        else:
+            logger.exception("Profiling failed during ingestion")
         profile = {}
     return parsed, profile, options
 
@@ -224,10 +232,10 @@ def _apply_parse_result(dataset: Dataset, meta: DatasetMetadata, parsed: ParsedD
     meta.parse_options = options
 
 
-def invalidate_caches(dataset_id: uuid.UUID, fingerprint: Optional[str] = None) -> None:
+def invalidate_caches(dataset_id: uuid.UUID) -> None:
     """Drops cached frames and cached results after a re-parse or delete."""
     loader.invalidate_dataset(str(dataset_id))
-    analysis_engine.clear_cache_for(fingerprint or "")
+    analysis_engine.clear_cache_for(dataset_id)
 
 
 async def create_dataset_from_file(
@@ -242,6 +250,7 @@ async def create_dataset_from_file(
     size: int,
     checksum: str,
     sheet_name: Optional[str],
+    guest: bool = False,
 ) -> Tuple[Dataset, Optional[ParsedDatasetResult], Optional[List[str]], bool, str]:
     """
     Validates, parses, profiles and stores a file that is already on disk.
@@ -269,7 +278,7 @@ async def create_dataset_from_file(
             target = sheet_name or sheets[0]
             parsed, profile, options = await asyncio.to_thread(_parse_and_profile, abs_path, fmt, target, None, None)
     else:
-        parsed, profile, options = await asyncio.to_thread(_parse_and_profile, abs_path, fmt, None, None, None)
+        parsed, profile, options = await asyncio.to_thread(_parse_and_profile, abs_path, fmt, None, None, None, guest)
     if parsed:
         decision = parsed.parsing_decisions
 
@@ -309,6 +318,7 @@ async def reparse_dataset(
     sheet_name: Optional[str] = None,
     delimiter: Optional[str] = None,
     encoding: Optional[str] = None,
+    guest: bool = False,
 ) -> ParsedDatasetResult:
     """Re-parses with new options (select-sheet / confirm) and stores the new preview, profile and options."""
     fmt = FileFormatEnum(dataset.file_format)
@@ -323,11 +333,11 @@ async def reparse_dataset(
         sheet_name or previous.get("sheet"),
         delimiter,
         encoding,
+        guest,
     )
-    old_fp = loader.dataset_fingerprint(dataset.checksum_sha256, previous or None)
     _apply_parse_result(dataset, meta, parsed, profile, options)
     await DatasetRepository(db).update(dataset)
-    invalidate_caches(dataset.id, old_fp)
+    invalidate_caches(dataset.id)
     return parsed
 
 
@@ -360,7 +370,7 @@ async def get_or_compute_profile(db, dataset: Dataset, force: bool = False) -> D
     return profile
 
 
-async def load_for_analysis(db, dataset: Dataset) -> "loader.LoadedDataset":
+async def load_for_analysis(db, dataset: Dataset, *, guest: bool = False) -> "loader.LoadedDataset":
     """Typed DataFrame for a dataset (cached). Computes the profile first if it is missing."""
     profile = await get_or_compute_profile(db, dataset)
     meta = dataset.metadata_entry
@@ -373,6 +383,7 @@ async def load_for_analysis(db, dataset: Dataset) -> "loader.LoadedDataset":
         dataset.checksum_sha256,
         meta.parse_options,
         profile.get("columns", []),
+        use_cache=not guest,
     )
 
 

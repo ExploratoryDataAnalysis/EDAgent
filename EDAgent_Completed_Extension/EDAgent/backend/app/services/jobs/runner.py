@@ -22,12 +22,14 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.core.config import settings
 from app.core.sync_db import sync_session
 from app.models.job import BackgroundJob
+from app.services import guest_sessions
 
 logger = logging.getLogger("edagent.jobs")
 
@@ -52,6 +54,14 @@ class JobContext:
             if job and job.status == "PROCESSING":
                 job.progress_percentage = float(min(max(pct, 0), 99))
                 job.status_message = message[:250]
+
+    def guard_guest_write(self, db, user_id):
+        if not guest_sessions.lock_worker(db, user_id):
+            raise RuntimeError("Guest lease ended")
+        # Clear and expiry invalidate work before it writes results or report files.
+        job = db.get(BackgroundJob, self.job_id)
+        if job is None or job.user_id != user_id or job.status != "PROCESSING" or job.session_id is None:
+            raise RuntimeError("Guest job ended")
 
 
 def _finish(job_id: uuid.UUID, *, ok: bool, message: str, result_ref: Optional[Dict[str, Any]] = None, error: Optional[str] = None) -> None:
@@ -82,19 +92,23 @@ def active_jobs(s: Session, user_id: uuid.UUID) -> int:
 
 
 def create_job(
-    *, user_id: uuid.UUID, job_type: str, dataset_id: Optional[uuid.UUID] = None, session_id: Optional[uuid.UUID] = None, message: str = "Queued"
+    *, user_id: uuid.UUID, job_type: str, dataset_id: Optional[uuid.UUID] = None, session_id: Optional[uuid.UUID] = None,
+    message: str = "Queued", guest: bool = False,
 ) -> uuid.UUID:
     """Creates the PENDING row, enforcing the per-user concurrency cap."""
     with sync_session() as s:
-        if active_jobs(s, user_id) >= settings.MAX_CONCURRENT_JOBS_PER_USER:
-            raise JobLimitError(f"You already have {settings.MAX_CONCURRENT_JOBS_PER_USER} jobs running. Wait for one to finish.")
+        if guest and not guest_sessions.lock_worker(s, user_id):
+            raise HTTPException(401, detail=guest_sessions.EXPIRED)
+        limit = 1 if guest else settings.MAX_CONCURRENT_JOBS_PER_USER
+        if active_jobs(s, user_id) >= limit:
+            raise JobLimitError(f"You already have {limit} job(s) running. Wait for one to finish.")
         job = BackgroundJob(user_id=user_id, dataset_id=dataset_id, session_id=session_id, job_type=job_type, status="PENDING", status_message=message)
         s.add(job)
         s.flush()
         return job.id
 
 
-def submit(job_id: uuid.UUID, fn: Callable[[JobContext], Dict[str, Any]]) -> None:
+def submit(job_id: uuid.UUID, fn: Callable[[JobContext], Dict[str, Any]], *, guest: bool = False) -> None:
     """Runs `fn(ctx)` on the pool. `fn` returns the result reference (e.g. {"report_id": ...})."""
 
     def work() -> None:
@@ -102,8 +116,13 @@ def submit(job_id: uuid.UUID, fn: Callable[[JobContext], Dict[str, Any]]) -> Non
             job = s.get(BackgroundJob, job_id)
             if job is None or job.status != "PENDING":
                 return  # cancelled before it started
-            job.status = "PROCESSING"
-            job.status_message = "Running"
+            if guest and not guest_sessions.lock_worker(s, job.user_id):
+                return
+            claimed = s.execute(update(BackgroundJob).where(
+                BackgroundJob.id == job_id, BackgroundJob.status == "PENDING",
+            ).values(status="PROCESSING", status_message="Running")).rowcount
+            if claimed != 1:
+                return
         timer = threading.Timer(settings.JOB_TIMEOUT_SECONDS, _timeout, args=(job_id,))
         timer.daemon = True
         timer.start()
@@ -111,14 +130,22 @@ def submit(job_id: uuid.UUID, fn: Callable[[JobContext], Dict[str, Any]]) -> Non
             ref = fn(JobContext(job_id))
             _finish(job_id, ok=True, message="Completed", result_ref=ref)
         except Exception as e:  # noqa: BLE001 - any failure becomes a FAILURE row
-            logger.error("job %s failed: %s", job_id, traceback.format_exc())
-            _finish(job_id, ok=False, message="Failed", error=f"{type(e).__name__}: {e}"[:1000])
+            if guest:
+                logger.info("Guest job ended without a result")
+                error = "The guest job did not complete."
+            else:
+                logger.error("job %s failed: %s", job_id, traceback.format_exc())
+                error = f"{type(e).__name__}: {e}"[:1000]
+            _finish(job_id, ok=False, message="Failed", error=error)
             hook = getattr(fn, "on_error", None)
             if hook:
                 try:
-                    hook(f"{type(e).__name__}: {e}")
+                    hook(error)
                 except Exception:  # noqa: BLE001
-                    logger.exception("on_error hook failed")
+                    if guest:
+                        logger.warning("Guest job failure status could not be saved")
+                    else:
+                        logger.exception("on_error hook failed")
         finally:
             timer.cancel()
 

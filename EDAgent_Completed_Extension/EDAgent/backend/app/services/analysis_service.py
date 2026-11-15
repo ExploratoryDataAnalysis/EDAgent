@@ -44,17 +44,17 @@ def _semaphore() -> asyncio.Semaphore:
     return sem
 
 
-async def run_plan(db: AsyncSession, dataset: Dataset, plan: StructuredAnalysisPlan) -> AnalysisResultResponse:
+async def run_plan(db: AsyncSession, dataset: Dataset, plan: StructuredAnalysisPlan, *, guest: bool = False) -> AnalysisResultResponse:
     """
     Executes a plan with concurrency and time limits. Raises PlanValidationError / AnalysisError
     (both carry readable messages). A timed-out computation keeps running in its worker thread
     until it finishes, but the request is released and the user is told to narrow the question.
     """
-    loaded = await dataset_service.load_for_analysis(db, dataset)
+    loaded = await dataset_service.load_for_analysis(db, dataset, guest=guest)
     async with _semaphore():
         try:
             return await asyncio.wait_for(
-                asyncio.to_thread(engine.run_analysis, loaded, plan, dataset.id, row_cap=settings.MAX_RESULT_ROWS),
+                asyncio.to_thread(engine.run_analysis, loaded, plan, dataset.id, row_cap=settings.MAX_RESULT_ROWS, use_cache=not guest),
                 timeout=settings.ANALYSIS_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:

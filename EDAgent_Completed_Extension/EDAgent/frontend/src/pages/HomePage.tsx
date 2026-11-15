@@ -1,24 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  UploadCloud,
-  LayoutDashboard,
-  Cpu,
-  Sparkles,
-  ShieldCheck,
-  Zap,
-  BarChart3,
-  FileSpreadsheet,
-  ArrowRight,
-  Database,
-  CheckCircle2,
-  Compass,
-} from 'lucide-react';
+import { ArrowRight, Database } from 'lucide-react';
 import { useDataset } from '../context/DatasetContext';
+import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/ui/Modal';
+import { CountySampleLink } from './SamplePage';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { datasets, samples, selectDataset, loadSample, deleteDataset, activeDataset } = useDataset();
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -39,125 +29,20 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-12">
-      {/* Hero Section */}
-      <div className="relative rounded-3xl bg-gradient-to-b from-indigo-900/10 via-slate-50 to-white dark:from-indigo-950/30 dark:via-slate-900/50 dark:to-slate-900 p-8 sm:p-12 border border-indigo-100/60 dark:border-indigo-900/40 shadow-sm overflow-hidden">
-        <div className="max-w-3xl space-y-5">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
-            <span>Autonomous Exploratory Data Analysis & Verification</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-            Upload your data. Discover insights. <span className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">Verify every result.</span>
-          </h1>
-
-          <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-            EDAgent delivers deterministic statistical profiling, automated anomaly checks, interactive Plotly visualization, and guardrailed conversational analysis with <strong>zero AI hallucination</strong> in underlying computations.
-          </p>
-
-          <div className="pt-2 flex flex-wrap gap-3">
-            <Link
-              to="/"
-              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 shadow-lg shadow-indigo-600/25 transition-all"
-            >
-              <Compass className="w-4 h-4 text-cyan-200" />
-              <span>Read the Allegheny County investigation</span>
-            </Link>
-
-            <Link
-              to="/upload"
-              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-lg shadow-indigo-600/25 transition-all"
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span>Upload Tabular Dataset</span>
-            </Link>
-
-            <button
-              onClick={() => samples[0] && handleSelectSample(samples[0].id)}
-              disabled={samples.length === 0}
-              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 shadow-sm transition-all"
-            >
-              <Database className="w-4 h-4 text-indigo-500" />
-              <span>Explore a Sample Dataset</span>
-            </button>
-
-            <Link
-              to="/workspace"
-              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 shadow-sm transition-all"
-            >
-              <Cpu className="w-4 h-4 text-cyan-500" />
-              <span>Open Workspace</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Core Architectural Pillars */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              Commercial-Grade EDA Capabilities
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Strictly engineered following the EDAgent specification blueprint.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Zap className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Deterministic Profiler
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Computes descriptive stats, missingness, duplicates, and role inference with pure Python/Scipy. Zero LLM reliance for ground truth.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Plotly Visual Canvas
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Auto-binned histograms, boxplots with 1.5x IQR Tukey fences, Cramér's V associations, and correlation heatmaps.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Guardrailed AI Chat
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Translates conversational queries into machine-validated execution plans. Explains findings strictly from computed numbers.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-              <FileSpreadsheet className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              One-Click Executive Reports
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Compiles publication-grade PDF and HTML reports with SHA-256 reproducibility hashes and execution audit logs.
-            </p>
-          </div>
-        </div>
-      </div>
+      <header className="space-y-4">
+        <h1 className="text-3xl font-bold">Dataset analyser</h1>
+        <p>Choose a dataset, run a manual analysis and export the results.</p>
+        <nav className="flex flex-wrap gap-4 text-sm font-medium text-indigo-700 dark:text-indigo-300">
+          <Link className="underline" to="/upload">Upload tabular dataset</Link>
+          <Link className="underline" to="/workspace">Open analysis workspace</Link>
+          <Link className="underline" to="/analyser/sample/teaching">Open the invented teaching dataset</Link>
+          <CountySampleLink />
+          <Link className="underline" to="/">Back to the investigation</Link>
+        </nav>
+      </header>
 
       {/* Sample datasets (served by the backend) */}
-      <div>
+      {!user?.guest && <div>
         <div className="mb-4">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Sample datasets</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -188,7 +73,7 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Available Datasets Table (Real API Data) */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">

@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     overview,
     profiling,
     reports,
+    samples,
     sessions,
 )
 
@@ -26,6 +27,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(datasets.router, prefix="/datasets", tags=["Datasets"])
 api_router.include_router(profiling.router, prefix="/profiling", tags=["Profiling"])
 api_router.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
+api_router.include_router(samples.router, prefix="/analyser/samples", tags=["Analyser exercises"])
 api_router.include_router(chat.router, prefix="/chat", tags=["Conversational Analysis"])
 api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])

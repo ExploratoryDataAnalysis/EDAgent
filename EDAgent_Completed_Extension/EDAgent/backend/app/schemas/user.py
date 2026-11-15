@@ -29,11 +29,19 @@ class UserLogin(BaseSchema):
     password: str = Field(min_length=1, max_length=72)
 
 
+class GuestPolicy(BaseSchema):
+    expires_at: int
+    max_upload_bytes: int
+    max_datasets: int
+    max_actions: int
+
+
 class UserResponse(UserBase):
     id: uuid.UUID
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    guest: Optional[GuestPolicy] = None
 
 
 class Token(BaseSchema):

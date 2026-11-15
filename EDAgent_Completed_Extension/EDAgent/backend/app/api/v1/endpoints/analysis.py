@@ -14,13 +14,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import charge_guest, get_current_user
 from app.models.user import User
 from app.repositories.dataset_repository import DatasetRepository
 from app.repositories.session_repository import SessionRepository
 from app.schemas.analysis import AnalysisExecuteRequest, AnalysisResultResponse
 from app.schemas.common import APIResponse
-from app.services import analysis_service, dataset_service
+from app.services import analysis_service, dataset_service, guest_sessions
 from app.services import report_service
 from app.services.analysis import catalogue, engine
 from app.services.jobs import runner
@@ -45,7 +45,7 @@ async def get_suggestions(dataset_id: uuid.UUID, user: User = Depends(get_curren
 
 
 @router.post("/execute", response_model=APIResponse[AnalysisResultResponse], summary="Execute An Analysis Plan")
-async def execute_analysis_plan(payload: AnalysisExecuteRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def execute_analysis_plan(payload: AnalysisExecuteRequest, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     """Runs an explicit plan inside one of the user's sessions and stores it in the session history."""
     session = await SessionRepository(db).get(payload.session_id, user.id)
     if not session:
@@ -54,11 +54,13 @@ async def execute_analysis_plan(payload: AnalysisExecuteRequest, user: User = De
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found.")
     try:
-        result = await analysis_service.run_plan(db, dataset, payload.plan)
+        result = await analysis_service.run_plan(db, dataset, payload.plan, guest=user.is_guest)
     except PlanValidationError as e:
         raise HTTPException(status_code=422, detail={"message": "The analysis plan is not valid for this dataset.", "problems": e.errors})
     except AnalysisError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    if user.is_guest:
+        await guest_sessions.lock_active(db, user.id)
     await analysis_service.add_multiple_test_warning(db, session.id, result)
     label = payload.label or f"Run {payload.plan.operation.value.replace('_', ' ')}"
     req = await analysis_service.persist_turn(
@@ -70,7 +72,7 @@ async def execute_analysis_plan(payload: AnalysisExecuteRequest, user: User = De
 
 
 @router.post("/execute-async", status_code=202, summary="Execute An Analysis As A Background Job")
-async def execute_analysis_async(payload: AnalysisExecuteRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def execute_analysis_async(payload: AnalysisExecuteRequest, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     """For heavy operations (modelling on large data): returns a job id to poll at /jobs/{id}."""
     session = await SessionRepository(db).get(payload.session_id, user.id)
     if not session:
@@ -79,19 +81,20 @@ async def execute_analysis_async(payload: AnalysisExecuteRequest, user: User = D
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found.")
     # Validate now so obvious mistakes fail fast instead of inside a job.
-    loaded = await dataset_service.load_for_analysis(db, dataset)
+    loaded = await dataset_service.load_for_analysis(db, dataset, guest=user.is_guest)
     errors = catalogue.validate_plan(engine.effective_plan(payload.plan, loaded), loaded)
     if errors:
         raise HTTPException(status_code=422, detail={"message": "The analysis plan is not valid for this dataset.", "problems": errors})
     await db.commit()  # release any write lock (e.g. a freshly stored profile) before the job thread touches the database
     try:
         job_id = await asyncio.to_thread(
-            runner.create_job, user_id=user.id, job_type="analysis", dataset_id=dataset.id, session_id=session.id, message="Analysis queued"
+            runner.create_job, user_id=user.id, job_type="analysis", dataset_id=dataset.id, session_id=session.id,
+            message="Analysis queued", guest=user.is_guest,
         )
     except runner.JobLimitError as e:
         raise HTTPException(status_code=429, detail=str(e))
     label = payload.label or f"Run {payload.plan.operation.value.replace('_', ' ')}"
-    runner.submit(job_id, report_service.analysis_job(session.id, payload.plan, label))
+    runner.submit(job_id, report_service.analysis_job(session.id, payload.plan, label, guest=user.is_guest), guest=user.is_guest)
     return APIResponse(success=True, message="Analysis started.", data={"job_id": str(job_id)})
 
 

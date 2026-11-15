@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import account_only, charge_guest, get_current_user
 from app.models.dataset import Dataset
 from app.models.user import User
 from app.repositories.dataset_repository import DatasetRepository
@@ -36,6 +36,7 @@ from app.schemas.dataset import (
     SheetInspectionResponse,
 )
 from app.services import dataset_service as svc
+from app.services import guest_sessions
 from app.services.export_storage import remove_export_file
 from app.services.ingestion.parser import IngestionService
 from app.services.ingestion.validator import IngestionValidationError, IngestionValidator
@@ -69,8 +70,13 @@ async def _ingest_saved(
     try:
         dataset, parsed, sheets, needs_sheet, decision = await svc.create_dataset_from_file(
             db, user_id=user.id, dataset_id=dataset_id, rel_path=rel_path, original_filename=original_filename,
-            display_name=display_name, fmt=fmt, size=size, checksum=checksum, sheet_name=sheet_name,
+            display_name=display_name, fmt=fmt, size=size, checksum=checksum, sheet_name=sheet_name, guest=user.is_guest,
         )
+        if user.is_guest:
+            # Upload held the lease while writing to disk. Recheck expiry before
+            # publishing it and clean the new folder if storage or commit failed.
+            await guest_sessions.lock_active(db, user.id)
+            await db.commit()
     except Exception:
         if remove_on_failure:
             svc.remove_dataset_files(rel_path)
@@ -96,9 +102,10 @@ async def _ingest_saved(
 
 
 async def _check_quota(db: AsyncSession, user: User) -> None:
-    if await DatasetRepository(db).count_for_user(user.id) >= settings.MAX_DATASETS_PER_USER:
+    limit = settings.GUEST_MAX_DATASETS if user.is_guest else settings.MAX_DATASETS_PER_USER
+    if await DatasetRepository(db).count_for_user(user.id) >= limit:
         raise IngestionValidationError(
-            f"You have reached the limit of {settings.MAX_DATASETS_PER_USER} datasets. Delete one to upload another.",
+            f"You have reached the limit of {limit} datasets. Delete one to upload another.",
             error_code="QUOTA_EXCEEDED",
         )
 
@@ -148,19 +155,27 @@ def _find_recovery_file(
 async def upload_dataset(
     file: UploadFile = File(...),
     sheet_name: Optional[str] = Form(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(charge_guest),
     db: AsyncSession = Depends(get_db),
 ):
     """Accepts CSV, TSV or XLSX. Validates, stores in per-user storage, parses and profiles it."""
     if not file.filename:
         raise IngestionValidationError("Uploaded file has no filename.", error_code="MISSING_FILENAME")
     fmt = IngestionValidator.validate_extension(file.filename)
+    if user.is_guest:
+        if fmt not in (FileFormatEnum.CSV, FileFormatEnum.TSV):
+            raise IngestionValidationError("Private guests can upload CSV and TSV files.", error_code="INVALID_FORMAT")
+        # Holding the lease here serializes the storage quota and keeps clear
+        # from deleting an owner folder before this upload is done writing.
+        await guest_sessions.lock_active(db, user.id)
     await _check_quota(db, user)
     name = svc.clean_name(file.filename)
     dataset_id = uuid.uuid4()
     rel = svc.storage_subpath(user.id, dataset_id, name)
     try:
-        size, checksum = await svc.save_upload(file, svc.absolute_path(rel))
+        size, checksum = await svc.save_upload(
+            file, svc.absolute_path(rel), max_bytes=settings.GUEST_MAX_UPLOAD_BYTES if user.is_guest else None,
+        )
     except Exception:
         svc.remove_dataset_files(rel)
         raise
@@ -171,7 +186,7 @@ async def upload_dataset(
 
 
 @router.post("/import-url", response_model=APIResponse[DatasetUploadResponse], summary="Import Dataset From URL")
-async def import_from_url(payload: DatasetURLImportRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def import_from_url(payload: DatasetURLImportRequest, user: User = Depends(account_only), db: AsyncSession = Depends(get_db)):
     """Downloads a public CSV/TSV/XLSX. Internal addresses are refused (SSRF protection)."""
     await _check_quota(db, user)
     dataset_id = uuid.uuid4()
@@ -195,12 +210,12 @@ async def import_from_url(payload: DatasetURLImportRequest, user: User = Depends
 
 
 @router.get("/samples", summary="List Sample Datasets")
-async def list_sample_datasets(user: User = Depends(get_current_user)):
+async def list_sample_datasets(user: User = Depends(account_only)):
     return APIResponse(success=True, message="Sample datasets.", data=svc.list_samples())
 
 
 @router.post("/samples/{sample_id}", response_model=APIResponse[DatasetUploadResponse], summary="Load Sample Dataset")
-async def load_sample_dataset(sample_id: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def load_sample_dataset(sample_id: str, user: User = Depends(account_only), db: AsyncSession = Depends(get_db)):
     """Copies a bundled sample into the user's own storage so it behaves like any other dataset."""
     await _check_quota(db, user)
     src = svc.sample_path(sample_id)
@@ -222,7 +237,7 @@ async def load_sample_dataset(sample_id: str, user: User = Depends(get_current_u
 
 
 @router.get("/recoverable", response_model=APIResponse[list[DatasetRecoveryCandidate]], summary="List Stored Uploads Not Registered")
-async def list_recoverable_uploads(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_recoverable_uploads(user: User = Depends(account_only), db: AsyncSession = Depends(get_db)):
     """Lists supported files in the signed-in user's storage that are missing from the database."""
     owner_root = Path(svc.absolute_path(str(user.id)))
     if owner_root.is_symlink() or not owner_root.is_dir():
@@ -255,7 +270,7 @@ async def list_recoverable_uploads(user: User = Depends(get_current_user), db: A
 
 
 @router.post("/{dataset_id}/recover", response_model=APIResponse[DatasetUploadResponse], summary="Restore Stored Upload")
-async def recover_stored_upload(dataset_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def recover_stored_upload(dataset_id: uuid.UUID, user: User = Depends(account_only), db: AsyncSession = Depends(get_db)):
     """Registers and profiles an orphaned file from this user's storage without moving or deleting it."""
     if await db.get(Dataset, dataset_id):
         raise IngestionValidationError("Stored upload not found.", error_code="FILE_NOT_FOUND")
@@ -313,7 +328,7 @@ def _preview_from_parsed(dataset_id: uuid.UUID, parsed) -> DatasetPreview:
 
 
 @router.post("/{dataset_id}/select-sheet", response_model=APIResponse[DatasetPreview], summary="Select Excel Sheet")
-async def select_excel_sheet(dataset_id: uuid.UUID, payload: SelectSheetRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def select_excel_sheet(dataset_id: uuid.UUID, payload: SelectSheetRequest, user: User = Depends(account_only), db: AsyncSession = Depends(get_db)):
     dataset = await _owned(db, dataset_id, user)
     if dataset.file_format != "xlsx":
         raise IngestionValidationError("Sheet selection only applies to Excel XLSX files.", error_code="INVALID_OPERATION")
@@ -322,10 +337,10 @@ async def select_excel_sheet(dataset_id: uuid.UUID, payload: SelectSheetRequest,
 
 
 @router.post("/{dataset_id}/confirm", response_model=APIResponse[DatasetPreview], summary="Confirm Ingestion Options")
-async def confirm_ingestion(dataset_id: uuid.UUID, payload: ConfirmIngestionRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def confirm_ingestion(dataset_id: uuid.UUID, payload: ConfirmIngestionRequest, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     """Re-parses the original file with a user-confirmed delimiter / encoding / sheet."""
     dataset = await _owned(db, dataset_id, user)
-    parsed = await svc.reparse_dataset(db, dataset, sheet_name=payload.sheet_name, delimiter=payload.delimiter, encoding=payload.encoding)
+    parsed = await svc.reparse_dataset(db, dataset, sheet_name=payload.sheet_name, delimiter=payload.delimiter, encoding=payload.encoding, guest=user.is_guest)
     return APIResponse(success=True, message="Dataset ingestion parameters confirmed and applied.", data=_preview_from_parsed(dataset.id, parsed))
 
 
@@ -412,17 +427,14 @@ async def list_datasets(
 @router.delete("/{dataset_id}", response_model=APIResponse[bool], summary="Delete Dataset")
 async def delete_dataset(dataset_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Permanently deletes the dataset, its sessions/results/reports, the stored file and cached data."""
+    if user.is_guest:
+        await guest_sessions.lock_active(db, user.id)
     dataset = await _owned(db, dataset_id, user)
     rel = dataset.storage_uri
-    fingerprint = None
-    if dataset.metadata_entry:
-        from app.services.data.loader import dataset_fingerprint
-
-        fingerprint = dataset_fingerprint(dataset.checksum_sha256, dataset.metadata_entry.parse_options)
     report_files = await DatasetRepository(db).purge(dataset)
     await db.commit()  # the rows are gone; only now touch the disk
     for uri in report_files:
         remove_export_file(uri)
     svc.remove_dataset_files(rel)
-    svc.invalidate_caches(dataset_id, fingerprint)
+    svc.invalidate_caches(dataset_id)
     return APIResponse(success=True, message="Dataset deleted along with its sessions, results, reports and files.", data=True)

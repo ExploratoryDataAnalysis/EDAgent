@@ -89,6 +89,13 @@ class Settings(BaseSettings):
     DATAFRAME_CACHE_ENTRIES: int = 4
     MAX_DATASETS_PER_USER: int = 50
 
+    # Local guest policy. Creation is opt-in and cleanup remains enabled during rollback.
+    ALLOW_GUEST_SESSIONS: bool = False
+    GUEST_SESSION_MINUTES: int = 60
+    GUEST_MAX_UPLOAD_BYTES: int = 2 * 1024 * 1024
+    GUEST_MAX_DATASETS: int = 3
+    GUEST_MAX_ACTIONS: int = 30
+
     # --- Rate limiting (per process, per user or IP) ----------------------
     RATE_LIMIT_PER_MINUTE: int = 240
     AUTH_RATE_LIMIT_PER_MINUTE: int = 20

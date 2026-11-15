@@ -16,12 +16,14 @@ import {
 import { datasetService } from '../services/api';
 import { DatasetUploadResult, DatasetPreview, SheetInfo } from '../types';
 import { useDataset } from '../context/DatasetContext';
+import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/ui/Modal';
 import { Tabs } from '../components/ui/Tabs';
 
 export const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { setUploadedDataset, loadSample, samples } = useDataset();
+  const guest = useAuth().user?.guest;
   const [importUrl, setImportUrl] = useState('');
 
   const [isDragging, setIsDragging] = useState(false);
@@ -176,14 +178,14 @@ export const UploadPage: React.FC = () => {
             Ingest Dataset
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Accepts CSV, TSV, or multi-sheet Excel (.xlsx). Your files are private to your account and fingerprinted with SHA-256.
+            {guest ? 'Upload a CSV or TSV file to this private guest session.' : 'Accepts CSV, TSV, or multi-sheet Excel (.xlsx). Your files are private to your account and fingerprinted with SHA-256.'}
           </p>
         </div>
 
       </div>
 
       {/* Sample datasets (served by the backend, copied into your account) and URL import */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {!guest && <div className="grid md:grid-cols-2 gap-4">
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
           <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-1.5"><Database className="w-3.5 h-3.5 text-indigo-500" /><span>Try a sample dataset</span></h3>
           {samples.length === 0 && <p className="text-xs text-slate-400">No samples available on this server.</p>}
@@ -206,11 +208,11 @@ export const UploadPage: React.FC = () => {
             <button onClick={handleImportUrl} disabled={isUploading || !importUrl.trim()} className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">Import</button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Error Banner */}
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start space-x-3 text-rose-700 dark:text-rose-300 text-xs">
+        <div role="alert" className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start space-x-3 text-rose-700 dark:text-rose-300 text-xs">
           <AlertTriangle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
           <div>
             <strong className="font-bold">Ingestion Warning / Error:</strong>
@@ -224,8 +226,7 @@ export const UploadPage: React.FC = () => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`relative rounded-3xl border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
+        className={`relative rounded-3xl border-2 border-dashed p-6 sm:p-10 text-center transition-all ${
           isDragging
             ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 scale-[1.01]'
             : 'border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm'
@@ -234,7 +235,7 @@ export const UploadPage: React.FC = () => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.tsv,.xlsx"
+          accept={guest ? '.csv,.tsv' : '.csv,.tsv,.xlsx'}
           onChange={handleFileChange}
           className="hidden"
         />
@@ -246,29 +247,18 @@ export const UploadPage: React.FC = () => {
 
           <div>
             <p className="text-base font-bold text-slate-800 dark:text-slate-100">
-              Drag & drop your dataset file here, or <span className="text-indigo-600 dark:text-indigo-400 underline">browse</span>
+              Drag and drop your dataset here
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Supports CSV, TSV and XLSX
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2">
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              CSV (Comma / Tab)
-            </span>
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              Excel (.XLSX)
-            </span>
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              TSV
-            </span>
+            <button type="button" disabled={isUploading} onClick={() => fileInputRef.current?.click()}
+              className="mt-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+              Browse for a dataset
+            </button>
           </div>
         </div>
 
         {/* Upload Progress Bar */}
         {isUploading && (
-          <div className="mt-6 max-w-sm mx-auto space-y-2">
+          <div role="status" className="mt-6 max-w-sm mx-auto space-y-2">
             <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
               <span>Uploading and validating…</span>
               <span>{uploadProgress}%</span>

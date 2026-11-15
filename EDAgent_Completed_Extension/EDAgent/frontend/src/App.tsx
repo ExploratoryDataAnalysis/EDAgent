@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DatasetProvider } from './context/DatasetContext';
 import { LoginPage } from './pages/LoginPage';
+import { AnalyserStart, SamplePage } from './pages/SamplePage';
 import { AppLayout } from './components/layout/AppLayout';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { InvestigationPage } from './pages/InvestigationPage';
@@ -24,11 +25,16 @@ import { CountyGridPage } from './pages/CountyGridPage';
 import { SeverityEvidencePage } from './pages/SeverityEvidencePage';
 import { InterventionPage } from './pages/InterventionPage';
 
-function WorkspaceEntry({ login = false }: { login?: boolean }) {
-  const { user, initialising } = useAuth();
+function WorkspaceEntry({ login = false, onboarding = false }: { login?: boolean; onboarding?: boolean }) {
+  const { user, initialising, guestNotice } = useAuth();
+  const { pathname } = useLocation();
   if (initialising) return <p role="status" className="p-6">Restoring your session…</p>;
-  if (!user) return <LoginPage />;
-  if (login) return <Navigate to="/analyser" replace />;
+  if (!user) {
+    if (onboarding) return <AnalyserStart />;
+    if (guestNotice && !login) return <Navigate to="/analyser" replace />;
+    return <LoginPage />;
+  }
+  if (login || (user.guest && pathname === '/chat')) return <Navigate to="/analyser" replace />;
   return <AppLayout><Outlet /></AppLayout>;
 }
 
@@ -45,8 +51,12 @@ function AppRoutes() {
           <Route path="/road-safety/evidence" element={<SeverityEvidencePage />} />
           <Route path="/illustrative-scenario" element={<InterventionPage />} />
         </Route>
-        <Route element={<WorkspaceEntry />}>
+        <Route element={<WorkspaceEntry onboarding />}>
           <Route path="/analyser" element={<HomePage />} />
+        </Route>
+        <Route path="/analyser/sample/teaching" element={<SamplePage key="teaching" sample="teaching" />} />
+        <Route path="/analyser/sample/county" element={<SamplePage key="county" sample="county" />} />
+        <Route element={<WorkspaceEntry />}>
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="/inventory" element={<InventoryPage />} />

@@ -14,6 +14,9 @@ export const authService = {
     unwrap<AuthToken>(await apiClient.post('/auth/register', { email, password, full_name })),
   login: async (email: string, password: string) => unwrap<AuthToken>(await apiClient.post('/auth/login', { email, password })),
   me: async () => unwrap<User>(await apiClient.get('/auth/me')),
+  guestAvailability: async () => unwrap<{ available: boolean }>(await apiClient.get('/auth/guest-session')),
+  startGuest: async () => unwrap<AuthToken>(await apiClient.post('/auth/guest-session')),
+  clearGuest: async () => { await apiClient.delete('/auth/guest-session'); },
 };
 
 export const datasetService = {

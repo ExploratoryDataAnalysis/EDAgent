@@ -2,8 +2,9 @@
 EDAgent FastAPI application entrypoint.
 """
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -13,9 +14,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import AsyncSessionLocal, Base, engine
 from app.core.ratelimit import RateLimitMiddleware
-from app.core.security import assert_production_secret
+from app.core.security import assert_production_secret, token_claims
+from app.services import guest_sessions
 from app.services.export_storage import purge_old_exports
 from app.services.ingestion.validator import IngestionValidationError
 
@@ -55,7 +57,14 @@ async def lifespan(app: FastAPI):
             logger.info("Removed %d expired generated files", removed)
     except OSError:
         logger.warning("Could not clean old exports", exc_info=True)
-    yield
+    await guest_sessions.recover_after_restart()
+    expiry_task = asyncio.create_task(guest_sessions.sweep_periodically())
+    try:
+        yield
+    finally:
+        expiry_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await expiry_task
 
 
 def create_application() -> FastAPI:
@@ -93,6 +102,39 @@ def create_application() -> FastAPI:
         # Log the details server-side; never leak internals (paths, SQL, stack traces) to the client.
         logger.exception("Unhandled error on %s %s", request.method, request.url.path)
         return JSONResponse(status_code=500, content=_error_body("Something went wrong on the server. Please try again.", code="INTERNAL_ERROR"))
+
+    @application.middleware("http")
+    async def guest_delivery(request: Request, call_next):
+        path = request.url.path.rstrip("/")
+        if request.method == "POST" and path == f"{settings.API_V1_STR}/datasets/upload":
+            scheme, _, credential = request.headers.get("authorization", "").partition(" ")
+            if scheme.lower() == "bearer" and token_claims(credential, allow_expired=True).get("guest") is True:
+                # Reject oversized multipart bodies before the parser spools them.
+                length = request.headers.get("content-length", "")
+                if not length.isdecimal() or int(length) > settings.GUEST_MAX_UPLOAD_BYTES + 64 * 1024:
+                    return JSONResponse(
+                        status_code=413, content=_error_body("Guest upload exceeds the request limit."),
+                        headers={"Cache-Control": "no-store"},
+                    )
+        try:
+            response = await call_next(request)
+        except Exception:
+            if not getattr(request.state, "guest_id", None):
+                raise
+            logger.error("Unhandled guest request error")
+            response = JSONResponse(status_code=500, content=_error_body("The guest request failed. Please try again."))
+        guest_id = getattr(request.state, "guest_id", None)
+        if guest_id:
+            response.headers["Cache-Control"] = "no-store"
+            if response.status_code < 400:
+                # A request can finish computing after clear or the lease deadline.
+                async with AsyncSessionLocal() as db:
+                    if await guest_sessions.active(db, guest_id) is None:
+                        return JSONResponse(
+                            status_code=401, content=_error_body(guest_sessions.EXPIRED),
+                            headers={"Cache-Control": "no-store", "WWW-Authenticate": "Bearer"},
+                        )
+        return response
 
     application.add_middleware(RateLimitMiddleware)
     application.add_middleware(

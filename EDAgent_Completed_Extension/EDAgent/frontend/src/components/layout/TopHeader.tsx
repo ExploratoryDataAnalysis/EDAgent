@@ -9,6 +9,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useDataset } from '../../context/DatasetContext';
+import { useAuth } from '../../context/AuthContext';
 import { chatService } from '../../services/api';
 import { AIStatus } from '../../types';
 
@@ -16,12 +17,13 @@ export const TopHeader: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { activeDataset, datasets, samples, selectDataset, loadSample } = useDataset();
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [ai, setAi] = useState<AIStatus | null>(null);
 
   useEffect(() => {
-    chatService.status().then(setAi).catch(() => setAi(null));
-  }, []);
+    if (!user?.guest) chatService.status().then(setAi).catch(() => setAi(null));
+  }, [user]);
 
   // Page title mapping based on current pathname
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -120,7 +122,7 @@ export const TopHeader: React.FC = () => {
         </div>
 
         {/* AI status: honest about whether a language model is configured */}
-        {ai && (
+        {ai && !user?.guest && (
           <div
             className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
               ai.configured

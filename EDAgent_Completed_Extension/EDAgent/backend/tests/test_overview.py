@@ -135,14 +135,14 @@ def test_d7_cannot_serve_internal_or_legacy_site_artifacts(anon_client, release)
 
 def test_release_change_between_verification_and_response(anon_client, release, monkeypatch):
     path, _, _ = release
-    verify = overview.verify_release
+    verify = overview.verify_release_decision
 
     def replace_after_verification(*args, **kwargs):
-        manifest = verify(*args, **kwargs)
+        verified = verify(*args, **kwargs)
         (path / "county_periods.json").write_text("[]", encoding="utf-8")
-        return manifest
+        return verified
 
-    monkeypatch.setattr(overview, "verify_release", replace_after_verification)
+    monkeypatch.setattr(overview, "verify_release_decision", replace_after_verification)
     response = anon_client.get(f"{BASE}/tables/county_periods")
     assert response.status_code == 503
     assert response.json()["detail"] == overview.UNAVAILABLE

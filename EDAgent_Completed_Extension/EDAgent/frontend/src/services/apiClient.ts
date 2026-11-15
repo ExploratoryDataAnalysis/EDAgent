@@ -7,11 +7,17 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const TOKEN_KEY = 'edagent_token';
+const GUEST_TOKEN_KEY = 'edagent_guest_token';
 
 export const tokenStore = {
-  get: (): string | null => localStorage.getItem(TOKEN_KEY),
+  get: (): string | null => sessionStorage.getItem(GUEST_TOKEN_KEY) ?? localStorage.getItem(TOKEN_KEY),
+  isGuest: () => sessionStorage.getItem(GUEST_TOKEN_KEY) !== null,
   set: (t: string) => localStorage.setItem(TOKEN_KEY, t),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
+  setGuest: (token: string) => sessionStorage.setItem(GUEST_TOKEN_KEY, token),
+  clear: () => {
+    if (sessionStorage.getItem(GUEST_TOKEN_KEY)) sessionStorage.removeItem(GUEST_TOKEN_KEY);
+    else localStorage.removeItem(TOKEN_KEY);
+  },
 };
 
 type UnauthorizedHandler = () => void;
@@ -55,8 +61,8 @@ apiClient.interceptors.response.use(
     // A request from a previous session can finish after a different user signs in.
     if (error.response?.status === 401 && token && error.config?.headers.Authorization === `Bearer ${token}`
       && !url.includes('/auth/login') && !url.includes('/auth/register')) {
-      tokenStore.clear();
-      onUnauthorized?.();
+      if (onUnauthorized) onUnauthorized();
+      else tokenStore.clear();
     }
     const body = error.response?.data as {
       detail?: { code?: string } | ValidationProblem[];
@@ -74,7 +80,9 @@ apiClient.interceptors.response.use(
 
 /** Downloads a protected file (the browser cannot attach the bearer header to a plain link). */
 export async function downloadFile(path: string, fallbackName: string, params?: Record<string, unknown>): Promise<void> {
+  const token = tokenStore.get();
   const res = await apiClient.get(path, { params, responseType: 'blob' });
+  if (tokenStore.get() !== token) return;
   const disposition = (res.headers['content-disposition'] as string | undefined) || '';
   const match = /filename="?([^";]+)"?/i.exec(disposition);
   const name = match ? match[1] : fallbackName;

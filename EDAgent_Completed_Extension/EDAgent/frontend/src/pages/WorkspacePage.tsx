@@ -22,19 +22,25 @@ export const WorkspacePage: React.FC = () => {
     setSuggestions([]);
     setSuggestError(null);
     if (!activeDataset) return;
-    analysisService.suggestions(activeDataset.id).then(setSuggestions).catch((e) => setSuggestError(e instanceof Error ? e.message : 'Could not load suggestions'));
+    let current = true;
+    analysisService.suggestions(activeDataset.id)
+      .then((items) => { if (current) setSuggestions(items); })
+      .catch((e) => { if (current) setSuggestError(e instanceof Error ? e.message : 'Could not load suggestions'); });
+    return () => { current = false; };
   }, [activeDataset?.id]);
 
   if (!activeDataset || !profile) {
     return (
       <div className="max-w-3xl mx-auto p-10">
-        <EmptyState icon={<Database className="w-8 h-8" />} title="No dataset selected" description="Upload a dataset or load a sample to run analyses." actionText="Go to upload" onAction={() => navigate('/upload')} />
+        <EmptyState icon={<Database className="w-8 h-8" />} title="No dataset selected" description="Upload a dataset or open a sample to run an analysis." actionText="Choose a dataset" onAction={() => navigate('/analyser')} />
       </div>
     );
   }
 
+  const activeResult = result?.dataset_id === activeDataset.id ? result : null;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[22rem_1fr] gap-6">
+      <h1 className="text-2xl font-bold lg:col-span-2">Analysis workspace</h1>
       <div className="space-y-6">
         <section className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
           <h2 className="flex items-center space-x-2 text-sm font-bold text-slate-900 dark:text-white"><Lightbulb className="w-4 h-4 text-amber-500" /><span>Suggested analyses</span></h2>
@@ -62,13 +68,13 @@ export const WorkspacePage: React.FC = () => {
 
       <section className="min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 min-h-[24rem]">
         {running && (
-          <div className="flex items-center space-x-2 text-xs text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /><span>{progress || 'Running analysis…'}</span></div>
+          <div role="status" className="flex items-center space-x-2 text-xs text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /><span>{progress || 'Running analysis…'}</span></div>
         )}
         {error && <div role="alert" className="mb-4 text-xs rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 px-3 py-2">{error}</div>}
-        {!running && !result && !error && (
+        {!running && !activeResult && !error && (
           <p className="text-sm text-slate-400 text-center mt-20">Run a suggested analysis or build your own. Results appear here with their charts, tables, methodology and exports.</p>
         )}
-        {result && !running && <ResultView result={result} />}
+        {activeResult && !running && <ResultView result={activeResult} />}
       </section>
     </div>
   );

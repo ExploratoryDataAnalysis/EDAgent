@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.road_safety_release import ReleaseUnavailable, approved_bytes, verify_release
+from app.road_safety_release import ReleaseUnavailable, approved_bytes, verify_release_decision
 from app.schemas.common import APIResponse
 from app.services.overview_metadata import CAVEATS, RATIOS, TABLES, caveats, counts, state, units
 
@@ -41,6 +41,7 @@ def unavailable():
 class Release:
     path: Path
     manifest: dict
+    approval_date: str
 
     def payload(self, name):
         try:
@@ -100,7 +101,7 @@ def reviewed_release(response: Response):
         if not approvals:
             raise ReleaseUnavailable("Approval ledger is absent")
         path = root / KIND
-        manifest = verify_release(path, approvals, KIND, expected_manifest_sha256=MANIFEST_SHA256)
+        manifest, decision = verify_release_decision(path, approvals, KIND, expected_manifest_sha256=MANIFEST_SHA256)
         scope = manifest["scope"]
         if (
             manifest["version"] != VERSION or type(manifest["schema_version"]) is not int
@@ -115,7 +116,7 @@ def reviewed_release(response: Response):
         logger.info("Overview unavailable: %s", exc)
         raise unavailable() from exc
     response.headers["Cache-Control"] = "no-store"
-    return Release(path, manifest)
+    return Release(path, manifest, decision["date"])
 
 
 def table_metadata(table, release):

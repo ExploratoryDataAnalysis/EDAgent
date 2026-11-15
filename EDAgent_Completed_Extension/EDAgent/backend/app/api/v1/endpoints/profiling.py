@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import charge_guest, get_current_user
 from app.models.user import User
 from app.repositories.dataset_repository import DatasetRepository
 from app.schemas.common import APIResponse
@@ -28,7 +28,7 @@ async def _owned(db: AsyncSession, dataset_id: uuid.UUID, user: User):
 
 
 @router.post("/{dataset_id}", response_model=APIResponse[ProfilerResultResponse], summary="Re-run Automatic Profiling")
-async def trigger_profiling(dataset_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def trigger_profiling(dataset_id: uuid.UUID, user: User = Depends(charge_guest), db: AsyncSession = Depends(get_db)):
     """Forces a fresh profile (e.g. after the user changed parsing options)."""
     dataset = await _owned(db, dataset_id, user)
     profile = await svc.get_or_compute_profile(db, dataset, force=True)

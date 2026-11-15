@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
+import { GuestSessionStatus } from './GuestSessionStatus';
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -15,6 +16,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
         {/* Scrollable Viewport */}
         <main className="flex-1 overflow-y-auto">
+          <GuestSessionStatus />
           {children}
         </main>
       </div>

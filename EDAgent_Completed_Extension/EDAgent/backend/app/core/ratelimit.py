@@ -39,7 +39,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or not request.url.path.startswith(settings.API_V1_STR):
             return await call_next(request)
 
-        klass, limit = _route_class(request.url.path)
+        guest_endpoint = request.url.path.rstrip("/") == f"{settings.API_V1_STR}/auth/guest-session"
+        creating_guest = guest_endpoint and request.method == "POST"
+        if guest_endpoint and not creating_guest:
+            klass, limit = "general", settings.RATE_LIMIT_PER_MINUTE
+        else:
+            klass, limit = _route_class(request.url.path)
         if limit <= 0:  # 0 disables limiting (used by the test-suite)
             return await call_next(request)
 
@@ -48,7 +53,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         auth = request.headers.get("authorization", "")
         if auth.lower().startswith("bearer "):
             sub = decode_access_token(auth[7:])
-            if sub:
+            if sub and not creating_guest:
                 key = f"user:{sub}"
 
         now = time.monotonic()

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Download, Eye, MessageSquare, Pencil, Search, Trash2 } from 'lucide-react';
 import { useDataset } from '../context/DatasetContext';
+import { useAuth } from '../context/AuthContext';
 import { exportService, sessionService } from '../services/api';
 import { AnalysisResult, SessionDetail, SessionSummary } from '../types';
 import { Badge } from '../components/ui/Badge';
@@ -15,7 +16,8 @@ const when = (iso: string) => new Date(iso).toLocaleString();
 /** Sessions and the analyses inside them: the audit trail of what was asked and computed. */
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openSession, session: activeSession, activeDataset } = useDataset();
+  const { openSession, deleteSession, session: activeSession, activeDataset } = useDataset();
+  const guest = useAuth().user?.guest;
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -54,8 +56,7 @@ export const HistoryPage: React.FC = () => {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     try {
-      await sessionService.remove(pendingDelete.id);
-      if (activeSession?.id === pendingDelete.id) localStorage.removeItem('edagent_active_session_id');
+      await deleteSession(pendingDelete.id);
       setPendingDelete(null);
       await load();
     } catch (e) {
@@ -99,7 +100,7 @@ export const HistoryPage: React.FC = () => {
       {error && <div role="alert" className="text-xs rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 px-3 py-2">{error}</div>}
       {sessions === null && !error && <LoadingSpinner text="Loading history…" />}
       {sessions !== null && shown.length === 0 && (
-        <EmptyState icon={<MessageSquare className="w-8 h-8" />} title="No sessions yet" description="Ask a question in the chat or run an analysis in the workspace and it will appear here." actionText="Open workspace" onAction={() => navigate('/workspace')} />
+        <EmptyState icon={<MessageSquare className="w-8 h-8" />} title="No sessions yet" description="Run an analysis in the workspace to start your history." actionText="Open workspace" onAction={() => navigate('/workspace')} />
       )}
 
       <ul className="space-y-3">
@@ -116,7 +117,7 @@ export const HistoryPage: React.FC = () => {
                   <p className="text-[11px] text-slate-500">{s.dataset_name ?? 'dataset'} · {s.turn_count} {s.turn_count === 1 ? 'step' : 'steps'} · updated {when(s.updated_at)}</p>
                 </div>
                 {activeSession?.id === s.id && <Badge variant="primary" size="sm">Active</Badge>}
-                <button onClick={async () => { await openSession(s.id); navigate('/chat'); }} className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700">Open</button>
+                <button onClick={async () => { await openSession(s.id); navigate(guest ? '/workspace' : '/chat'); }} className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700">Open</button>
                 <button onClick={() => setRenaming({ id: s.id, title: s.title })} aria-label="Rename" className="p-1.5 text-slate-400 hover:text-indigo-600"><Pencil className="w-3.5 h-3.5" /></button>
                 <button onClick={() => exportService.sessionBundle(s.id).catch((e) => setError(e.message))} aria-label="Download all results" title="Download all results (.zip)" className="p-1.5 text-slate-400 hover:text-indigo-600"><Download className="w-3.5 h-3.5" /></button>
                 <button onClick={() => setPendingDelete(s)} aria-label="Delete session" className="p-1.5 text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>

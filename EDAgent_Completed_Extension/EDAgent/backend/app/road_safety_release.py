@@ -27,6 +27,11 @@ def _checksums(values):
 
 
 def verify_release(directory, approval_file, kind, *, expected_manifest_sha256=None):
+    manifest, _ = verify_release_decision(directory, approval_file, kind, expected_manifest_sha256=expected_manifest_sha256)
+    return manifest
+
+
+def verify_release_decision(directory, approval_file, kind, *, expected_manifest_sha256=None):
     """The approval ledger lives in deployment configuration, outside the bundle."""
     directory = Path(directory).resolve()
     try:
@@ -56,7 +61,7 @@ def verify_release(directory, approval_file, kind, *, expected_manifest_sha256=N
             path = directory / name
             if path.is_symlink() or digest(path) != checksum:
                 raise ValueError(f"Artifact checksum mismatch: {name}")
-        return manifest
+        return manifest, decision
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
         raise ReleaseUnavailable(f"{kind} release blocked: {exc}") from exc
 
