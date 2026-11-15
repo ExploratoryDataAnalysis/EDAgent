@@ -1,0 +1,19 @@
+{
+  "builder_version": "1.0.0",
+  "derivative_version": "v3-d5-1",
+  "exclusions_confirmed": {
+    "no_case_level_scores": true,
+    "no_site_risk_scores": true,
+    "zero_primary_site_matches": true
+  },
+  "manifest_sha256": "443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46",
+  "output_files_count": 10,
+  "reconciliation": {
+    "test_cohort_records": 27697,
+    "test_severe_positives": 1231,
+    "training_cohort_records": 58660,
+    "training_severe_positives": 2384
+  },
+  "status": "SUCCESS",
+  "tables_generated": 4
+}

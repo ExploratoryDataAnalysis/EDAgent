@@ -137,12 +137,14 @@ def find_models_bundle_path() -> Path:
         if (p / "manifest.json").exists():
             return p
 
-    # Standard repo relative paths
+    # Standard repo relative paths searching from CWD and parents of __file__
     search_paths = [
         Path("data/exports/models/candidate"),
         Path("../data/exports/models/candidate"),
         Path("../../data/exports/models/candidate"),
         Path("../../../data/exports/models/candidate"),
+        *(p / "data" / "exports" / "models" / "candidate" for p in Path(__file__).resolve().parents),
+        *(p / "data" / "exports" / "models" / "candidate" for p in Path.cwd().parents),
     ]
     for sp in search_paths:
         if (sp / "manifest.json").exists():

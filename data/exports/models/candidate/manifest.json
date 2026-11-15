@@ -1,0 +1,68 @@
+{
+  "builder_version": "1.0.0",
+  "inputs": {
+    "analysis/outputs/eda_summary/association_tests.csv": "f4e4022025ddf787fa939887893263a84f5c14103f9b1f32f4c52bc85d34424c",
+    "analysis/outputs/model_metrics/severity_ap_temporal_intervals.csv": "04d6446571a3d9282d77d125c1b5b421642f0695a5c83fafd1ef25f4de5ec8f7",
+    "analysis/outputs/model_metrics/severity_model_comparison.csv": "de54733c03599971cf6cdae07e79c41969a0ea66516b1e006e12f133799d4cbc",
+    "analysis/outputs/run_manifest.json": "f1a61f6fb031cd3ebb875ec0dfa6b5391b62e68941d6794faf5f4a306039e077"
+  },
+  "kind": "models",
+  "outputs": {
+    "calibration_diagnostics.csv": "bf852b99f24b47347812c7f168d794e7a37c92ed426cc8d5b88dd854625ac5fe",
+    "calibration_diagnostics.json": "99cd4ff47301aa135ad24f52d86f1b8c2b5c8b71a292f5ace7c6229b19844188",
+    "feature_ablation.csv": "c6437f7d2c82d0e814b47afeb6622313cf1b99cddda180871968895c2d729186",
+    "feature_ablation.json": "22fff2e167fe8afcc7aa2ba4d79b41bbff4e3ca7356e12ec3cf6c6ad25709fcb",
+    "model_comparisons.csv": "e8dc3b3a6b0a17d8853d3c91949c81f06ce76aa965c866e5dd29ff140652e1f5",
+    "model_comparisons.json": "de1d771fdfa67ba82420c9b31f28c59bf9b2faf0e8b30fd2a91592f51416e0a8",
+    "models_data_dictionary.md": "c471fcb9ecc934a58c729738c85302eff05a1323d6c0e2520ec2003ae4119a41",
+    "threshold_performance.csv": "5c26d01e9a2da95e71c9999ae5d0baf0d4b8eefa93dea1b83366c26984d52905",
+    "threshold_performance.json": "7da1921bc3a970ca392bebefeeac976f1c9b4b5dd35f092ce42b5d1b9ea5ff85"
+  },
+  "run_id": "v6-repro-phase12a-20261115",
+  "schema_version": 1,
+  "scope": {
+    "CASES_SCORED_PERMITTED": false,
+    "LIVE_INFERENCE_PERMITTED": false,
+    "PRIMARY_SITE_ASSIGNMENTS_ACCEPTED": 0,
+    "SITE_PREDICTIONS_PERMITTED": false,
+    "claim_class": "RETROSPECTIVE_SEVERITY_MODEL_DIAGNOSTICS",
+    "county_name": "Allegheny County",
+    "geoid": "42003",
+    "test_period": [
+      2022,
+      2024
+    ],
+    "training_period": [
+      2016,
+      2021
+    ]
+  },
+  "status": "REVIEW_CANDIDATE",
+  "tables": [
+    {
+      "description": "Retrospective severity model metrics evaluated on 2022\u20132024 holdout.",
+      "rows": 5,
+      "table_id": "model_comparisons",
+      "title": "Model Comparison & Metrics"
+    },
+    {
+      "description": "Cram\u00e9r's V associations and collision-type timing comparison.",
+      "rows": 4,
+      "table_id": "feature_ablation",
+      "title": "Feature Associations & Timing Ablation"
+    },
+    {
+      "description": "Confusion matrix counts and balanced accuracy at 0.50 threshold.",
+      "rows": 5,
+      "table_id": "threshold_performance",
+      "title": "Threshold Performance (0.50)"
+    },
+    {
+      "description": "Calibrated vs uncalibrated Brier scores against base rate reference.",
+      "rows": 2,
+      "table_id": "calibration_diagnostics",
+      "title": "Probability Calibration Diagnostics"
+    }
+  ],
+  "version": "v3-d5-1"
+}

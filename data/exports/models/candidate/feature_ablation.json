@@ -1,0 +1,54 @@
+[
+  {
+    "analysis_population": "2016\u20132023 known-severity crashes (N = 77,476)",
+    "chi2_statistic": 3159.84,
+    "cramers_v": 0.202,
+    "degrees_of_freedom": 10,
+    "fdr_bh_q_value": 0.0,
+    "feature_id": "COLLISION_LABEL",
+    "feature_name": "Collision Type",
+    "is_post_crash": true,
+    "observation_timing": "",
+    "raw_p_value": 0.0,
+    "timing_category": "POST_CRASH_INCIDENT"
+  },
+  {
+    "analysis_population": "2016\u20132023 known-severity crashes (N = 77,476)",
+    "chi2_statistic": 180.92,
+    "cramers_v": 0.0483,
+    "degrees_of_freedom": 4,
+    "fdr_bh_q_value": 9.442408991669865e-38,
+    "feature_id": "TIME_PERIOD",
+    "feature_name": "Time Period of Day",
+    "is_post_crash": false,
+    "observation_timing": "",
+    "raw_p_value": 4.721204495834932e-38,
+    "timing_category": "PRE_CRASH_TEMPORAL"
+  },
+  {
+    "analysis_population": "2016\u20132023 known-severity crashes (N = 77,476)",
+    "chi2_statistic": 106.76,
+    "cramers_v": 0.0371,
+    "degrees_of_freedom": 6,
+    "fdr_bh_q_value": 1.2957957735856473e-20,
+    "feature_id": "ILLUMINATION_LABEL",
+    "feature_name": "Lighting / Illumination",
+    "is_post_crash": false,
+    "observation_timing": "",
+    "raw_p_value": 9.718468301892355e-21,
+    "timing_category": "PRE_CRASH_ENVIRONMENTAL"
+  },
+  {
+    "analysis_population": "2016\u20132023 known-severity crashes (N = 77,476)",
+    "chi2_statistic": 38.04,
+    "cramers_v": 0.0222,
+    "degrees_of_freedom": 8,
+    "fdr_bh_q_value": 7.3945999778845325e-06,
+    "feature_id": "INTERSECTION_LABEL",
+    "feature_name": "Intersection Geometry",
+    "is_post_crash": false,
+    "observation_timing": "",
+    "raw_p_value": 7.3945999778845325e-06,
+    "timing_category": "PRE_CRASH_GEOMETRIC"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "beats_constant_baseline": false,
+    "brier_constant_baseline": 0.0426,
+    "brier_score": 0.2132,
+    "calibration_method": "none",
+    "calibration_state": "uncalibrated",
+    "evaluation_interval": "2022\u20132024 (held-out test set)",
+    "fitting_interval": "2016\u20132021 (full training set)",
+    "model_id": "logistic_regression_plus_collision",
+    "model_name": "Logistic Regression + collision (Uncalibrated)",
+    "notes": "Uncalibrated balanced class weighting inflates probabilities toward 0.50."
+  },
+  {
+    "beats_constant_baseline": true,
+    "brier_constant_baseline": 0.0426,
+    "brier_score": 0.0416,
+    "calibration_method": "sigmoid_platt_3_temporal_folds",
+    "calibration_state": "chronologically_calibrated",
+    "evaluation_interval": "2022\u20132024 (held-out test set)",
+    "fitting_interval": "2016\u20132021 temporal splits (2016-2018 fit / 2019 calib; 2016-2019 fit / 2020 calib; 2016-2020 fit / 2021 calib)",
+    "model_id": "logistic_regression_temporally_calibrated",
+    "model_name": "Logistic Regression (Temporally calibrated)",
+    "notes": "Sigmoid calibration across chronological folds aligns probabilities with base rates."
+  }
+]

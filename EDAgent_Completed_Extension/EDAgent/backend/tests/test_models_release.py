@@ -14,21 +14,28 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
+import sys
 
 import pytest
-from starlette.testclient import TestClient
 
 from app.api.v1.endpoints import models
-from app.main import app
 
 BASE_MODELS = "/api/v1/road-safety/models"
-REPO_ROOT = Path(__file__).resolve().parents[4]
-CANDIDATE_PATH = REPO_ROOT / "data" / "exports" / "models" / "candidate"
 
 
-@pytest.fixture
-def models_client():
-    return TestClient(app)
+def locate_candidate_dir() -> Path:
+    """Robustly locate the candidate derivative directory across varying checkout roots."""
+    search_dirs = [
+        *(p / "data" / "exports" / "models" / "candidate" for p in Path(__file__).resolve().parents),
+        *(p / "data" / "exports" / "models" / "candidate" for p in Path.cwd().parents),
+        Path.cwd() / "data" / "exports" / "models" / "candidate",
+    ]
+    for d in search_dirs:
+        if (d / "manifest.json").exists():
+            return d.resolve()
+    # Default fallback
+    return (Path(__file__).resolve().parents[4] / "data" / "exports" / "models" / "candidate").resolve()
 
 
 def write_models_decision(ledger_path: Path, manifest_sha256: str, decision: str = "APPROVED", reviewer: str = "SCIENTIFIC REVIEW COMMITTEE"):
@@ -43,56 +50,80 @@ def write_models_decision(ledger_path: Path, manifest_sha256: str, decision: str
     ledger_path.write_text(json.dumps(data), encoding="utf-8")
 
 
-def test_models_unapproved_missing_ledger_fails_closed(models_client, monkeypatch):
+@pytest.fixture
+def models_release(tmp_path, monkeypatch):
+    """Isolated, self-contained models release bundle fixture."""
+    bundle_path = tmp_path / "models_bundle"
+    bundle_path.mkdir(parents=True, exist_ok=True)
+    candidate_src = locate_candidate_dir()
+    if candidate_src.exists() and (candidate_src / "manifest.json").exists():
+        for item in candidate_src.iterdir():
+            if item.is_file():
+                shutil.copyfile(item, bundle_path / item.name)
+    else:
+        root_repo = Path(__file__).resolve().parents[4]
+        if str(root_repo) not in sys.path:
+            sys.path.insert(0, str(root_repo))
+        from scripts.build_severity_derivative import build_candidate_derivative
+        build_candidate_derivative(output_dir=bundle_path)
+
+    ledger_path = tmp_path / "approvals.json"
+    write_models_decision(ledger_path, models.MANIFEST_SHA256, decision="APPROVED")
+    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(bundle_path))
+    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger_path))
+    return bundle_path, ledger_path, models.MANIFEST_SHA256
+
+
+def test_models_unapproved_missing_ledger_fails_closed(anon_client, monkeypatch):
     """When ROAD_SAFETY_APPROVALS is not set, must return HTTP 503 MODELS_UNAVAILABLE."""
     monkeypatch.delenv("ROAD_SAFETY_APPROVALS", raising=False)
-    r = models_client.get(f"{BASE_MODELS}/provenance")
+    r = anon_client.get(f"{BASE_MODELS}/provenance")
     assert r.status_code == 503
     assert r.headers["cache-control"] == "no-store"
     assert r.json()["detail"]["code"] == "MODELS_UNAVAILABLE"
 
 
-def test_models_pending_or_withdrawn_decision_fails_closed(tmp_path, models_client, monkeypatch):
+def test_models_pending_or_withdrawn_decision_fails_closed(models_release, anon_client):
     """When decision is PENDING or WITHDRAWN, must return HTTP 503."""
-    ledger = tmp_path / "approvals.json"
-    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
-    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(CANDIDATE_PATH))
+    bundle_path, ledger_path, manifest_hash = models_release
 
     # Test PENDING
-    write_models_decision(ledger, models.MANIFEST_SHA256, decision="PENDING")
-    r = models_client.get(f"{BASE_MODELS}/provenance")
+    write_models_decision(ledger_path, manifest_hash, decision="PENDING")
+    r = anon_client.get(f"{BASE_MODELS}/provenance")
     assert r.status_code == 503
     assert r.headers["cache-control"] == "no-store"
 
     # Test WITHDRAWN
-    write_models_decision(ledger, models.MANIFEST_SHA256, decision="WITHDRAWN")
-    r = models_client.get(f"{BASE_MODELS}/tables/model_comparisons")
+    write_models_decision(ledger_path, manifest_hash, decision="WITHDRAWN")
+    r = anon_client.get(f"{BASE_MODELS}/tables/model_comparisons")
     assert r.status_code == 503
     assert r.headers["cache-control"] == "no-store"
 
 
-def test_models_manifest_digest_mismatch_fails_closed(tmp_path, models_client, monkeypatch):
+def test_models_manifest_digest_mismatch_fails_closed(models_release, anon_client):
     """When ledger references a different manifest hash, must return HTTP 503."""
-    ledger = tmp_path / "approvals.json"
-    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
-    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(CANDIDATE_PATH))
+    bundle_path, ledger_path, _ = models_release
 
     wrong_hash = "0000000000000000000000000000000000000000000000000000000000000000"
-    write_models_decision(ledger, wrong_hash, decision="APPROVED")
-    r = models_client.get(f"{BASE_MODELS}/provenance")
+    write_models_decision(ledger_path, wrong_hash, decision="APPROVED")
+    r = anon_client.get(f"{BASE_MODELS}/provenance")
     assert r.status_code == 503
     assert r.headers["cache-control"] == "no-store"
 
 
-def test_models_approved_serving_provenance_and_tables(tmp_path, models_client, monkeypatch):
-    """When properly approved, serves provenance, 4 tables, downloads, and assets."""
-    ledger = tmp_path / "approvals.json"
-    write_models_decision(ledger, models.MANIFEST_SHA256, decision="APPROVED")
-    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
-    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(CANDIDATE_PATH))
+def test_models_corrupted_artifact_fails_closed(models_release, anon_client):
+    """When an artifact is altered or corrupted, must fail closed with HTTP 503."""
+    bundle_path, ledger_path, _ = models_release
+    (bundle_path / "model_comparisons.json").write_text('{"tampered": true}', encoding="utf-8")
+    r = anon_client.get(f"{BASE_MODELS}/tables/model_comparisons")
+    assert r.status_code == 503
+    assert r.headers["cache-control"] == "no-store"
 
+
+def test_models_approved_serving_provenance_and_tables(models_release, anon_client):
+    """When properly approved, serves provenance, 4 tables, downloads, and assets."""
     # 1. Provenance
-    r_prov = models_client.get(f"{BASE_MODELS}/provenance")
+    r_prov = anon_client.get(f"{BASE_MODELS}/provenance")
     assert r_prov.status_code == 200, r_prov.text
     assert r_prov.headers["cache-control"] == "no-store"
     prov_data = r_prov.json()["data"]
@@ -109,7 +140,7 @@ def test_models_approved_serving_provenance_and_tables(tmp_path, models_client, 
         "calibration_diagnostics",
     ]
     for tid in expected_tables:
-        r_tbl = models_client.get(f"{BASE_MODELS}/tables/{tid}")
+        r_tbl = anon_client.get(f"{BASE_MODELS}/tables/{tid}")
         assert r_tbl.status_code == 200, f"Table {tid} failed: {r_tbl.text}"
         assert r_tbl.headers["cache-control"] == "no-store"
         tbl_data = r_tbl.json()["data"]
@@ -117,25 +148,20 @@ def test_models_approved_serving_provenance_and_tables(tmp_path, models_client, 
         assert len(tbl_data["rows"]) > 0
 
         # Test CSV download
-        r_dl = models_client.get(f"{BASE_MODELS}/downloads/{tid}")
+        r_dl = anon_client.get(f"{BASE_MODELS}/downloads/{tid}")
         assert r_dl.status_code == 200
         assert r_dl.headers["content-type"].startswith("text/csv")
         assert f'filename="{tid}.csv"' in r_dl.headers.get("content-disposition", "")
         assert r_dl.headers["x-manifest-sha256"] == models.MANIFEST_SHA256
 
     # 3. Assets
-    r_dict = models_client.get(f"{BASE_MODELS}/assets/models_data_dictionary.md")
+    r_dict = anon_client.get(f"{BASE_MODELS}/assets/models_data_dictionary.md")
     assert r_dict.status_code == 200
     assert r_dict.headers["content-type"].startswith("text/markdown")
 
 
-def test_models_prohibited_parameters_strictly_rejected(tmp_path, models_client, monkeypatch):
+def test_models_prohibited_parameters_strictly_rejected(models_release, anon_client):
     """Enforce security boundary: query parameters suggesting live crash scoring or site ranking return 400."""
-    ledger = tmp_path / "approvals.json"
-    write_models_decision(ledger, models.MANIFEST_SHA256, decision="APPROVED")
-    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
-    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(CANDIDATE_PATH))
-
     prohibited_queries = [
         {"latitude": "40.4406", "longitude": "-79.9959"},
         {"site_id": "INTERSECTION_42"},
@@ -144,17 +170,12 @@ def test_models_prohibited_parameters_strictly_rejected(tmp_path, models_client,
         {"crn": "20210001"},
     ]
     for q in prohibited_queries:
-        r = models_client.get(f"{BASE_MODELS}/tables/model_comparisons", params=q)
+        r = anon_client.get(f"{BASE_MODELS}/tables/model_comparisons", params=q)
         assert r.status_code == 400
         assert "Prohibited query parameters detected" in r.json()["detail"]
 
 
-def test_models_unsupported_table_fails_closed(tmp_path, models_client, monkeypatch):
+def test_models_unsupported_table_fails_closed(models_release, anon_client):
     """Requesting an unsupported table returns 503."""
-    ledger = tmp_path / "approvals.json"
-    write_models_decision(ledger, models.MANIFEST_SHA256, decision="APPROVED")
-    monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger))
-    monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(CANDIDATE_PATH))
-
-    r = models_client.get(f"{BASE_MODELS}/tables/non_existent_table")
+    r = anon_client.get(f"{BASE_MODELS}/tables/non_existent_table")
     assert r.status_code == 503

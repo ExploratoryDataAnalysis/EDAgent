@@ -53,6 +53,8 @@ pnpm-debug.log*
 !**/data/uploads/.gitkeep
 **/data/exports/*
 !**/data/exports/.gitkeep
+!**/data/exports/models
+!**/data/exports/models/**
 data/parquet/*
 !data/parquet/.gitkeep
 *.duckdb
