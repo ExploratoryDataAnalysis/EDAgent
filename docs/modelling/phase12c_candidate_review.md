@@ -16,24 +16,24 @@ The offline candidate derivative was deterministically built by `scripts/build_s
 - **Derivative Version:** `v3-d5-1`
 - **Schema Version:** `1.0.0`
 - **Builder Version:** `1.0.0`
-- **Candidate Manifest SHA-256:** `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46`
+- **Candidate Manifest SHA-256:** `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b`
 - **Candidate Directory:** `data/exports/models/candidate/`
 
 ### Candidate Artifact Checksums
 
 | Artifact Filename | Format | SHA-256 Checksum | Description |
 | :--- | :--- | :--- | :--- |
-| `manifest.json` | JSON | `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46` | Candidate release manifest, scope, and verification metadata |
-| `model_comparisons.json` | JSON | `de1d771fdfa67ba82420c9b31f28c59bf9b2faf0e8b30fd2a91592f51416e0a8` | Retrospective model comparison metrics on 2022–2024 holdout (N = 27,697) |
-| `model_comparisons.csv` | CSV | `e8dc3b3a6b0a17d8853d3c91949c81f06ce76aa965c866e5dd29ff140652e1f5` | Tabular export of model comparison metrics |
-| `feature_ablation.json` | JSON | `22fff2e167fe8afcc7aa2ba4d79b41bbff4e3ca7356e12ec3cf6c6ad25709fcb` | Categorical associations (Cramér's V) and pre- vs post-crash timing labels |
-| `feature_ablation.csv` | CSV | `c6437f7d2c82d0e814b47afeb6622313cf1b99cddda180871968895c2d729186` | Tabular export of feature timing and ablation |
-| `threshold_performance.json` | JSON | `7da1921bc3a970ca392bebefeeac976f1c9b4b5dd35f092ce42b5d1b9ea5ff85` | Confusion matrix counts and sensitivity/specificity at 0.50 threshold |
-| `threshold_performance.csv` | CSV | `5c26d01e9a2da95e71c9999ae5d0baf0d4b8eefa93dea1b83366c26984d52905` | Tabular export of threshold confusion matrix |
-| `calibration_diagnostics.json` | JSON | `99cd4ff47301aa135ad24f52d86f1b8c2b5c8b71a292f5ace7c6229b19844188` | Brier score calibration contrast and temporal fold details |
-| `calibration_diagnostics.csv` | CSV | `bf852b99f24b47347812c7f168d794e7a37c92ed426cc8d5b88dd854625ac5fe` | Tabular export of calibration diagnostics |
-| `models_data_dictionary.md` | Markdown | `c471fcb9ecc934a58c729738c85302eff05a1323d6c0e2520ec2003ae4119a41` | Field-by-field definitions and semantic types |
-| `validation_report.json` | JSON | `f75e48d7e16ca5a35e69c77e71a2222831f6573c80968259AC855907D941E863` | Builder validation log and reconciliation results |
+| `manifest.json` | JSON | `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b` | Candidate release manifest, scope, and verification metadata |
+| `model_comparisons.json` | JSON | `ffaeffb9a7218ed167f1aae762c0140921609e5390a353e43455c63bd15a0955` | Retrospective model comparison metrics on 2022–2024 holdout (N = 27,697) |
+| `model_comparisons.csv` | CSV | `520ad5c94b5c45de7df759de268f65fe34039e2aafe9b93a9d1a5f0f6cd9d5df` | Tabular export of model comparison metrics |
+| `feature_ablation.json` | JSON | `50788bea7c193f66b7616e11940d02c4233699dee17682cda1e0b918b5951891` | Categorical associations (Cramér's V) and pre- vs post-crash timing labels |
+| `feature_ablation.csv` | CSV | `933df4ccf267f6274f334cacf112f8ab069e0f16cbf6e60daf2fc77b0ff8677a` | Tabular export of feature timing and ablation |
+| `threshold_performance.json` | JSON | `43482e10094c9f4ec2c8ad66a253be4e94a80ed9867d6123f58f15359da2f9b1` | Confusion matrix counts and sensitivity/specificity at 0.50 threshold |
+| `threshold_performance.csv` | CSV | `c077fb535d670bef9af3381059c084a03dc2425d93230b109efa095a4f66cd75` | Tabular export of threshold confusion matrix |
+| `calibration_diagnostics.json` | JSON | `fc650bdcd34da35dd718079de53a2bbedcb13cc7ebdf698502dc35e44c827bf5` | Brier score calibration contrast and temporal fold details |
+| `calibration_diagnostics.csv` | CSV | `6e54b2d7ef371817a6d2d595c4fa6bd28866905a9844b269c5659a314007da66` | Tabular export of calibration diagnostics |
+| `models_data_dictionary.md` | Markdown | `ea24dd72b9a254a93a2751bf1b8f1b713a2efe55278c26608e6cbfbe31197359` | Field-by-field definitions and semantic types |
+| `validation_report.json` | JSON | `f1bddc0f553e07d15f2d4992da6d9518bbd7377db0a50bd0f0eaca877b18ad80` | Builder validation log and reconciliation results |
 
 ---
 
@@ -159,7 +159,7 @@ The candidate derivative is protected by an independent gate in EDAgent's releas
 - **Ledger:** `ROAD_SAFETY_APPROVALS`
 - **Required Kind:** `models`
 - **Required Version:** `v3-d5-1`
-- **Required SHA-256 Digest:** `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46`
+- **Required SHA-256 Digest:** `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b`
 - **Gate Evaluation:** `verify_release_decision("models")` evaluates the ledger at runtime. If the record is missing, has status other than `APPROVED`, or has a mismatched SHA-256 digest, the backend fails closed:
   - Responds with `HTTP 503 Service Unavailable`.
   - Error code: `MODELS_UNAVAILABLE`.
@@ -183,7 +183,7 @@ Derivative Name:    Allegheny County Retrospective Severity Diagnostics
 Derivative Kind:    models
 Derivative Version: v3-d5-1
 Schema Version:     1.0.0
-Manifest SHA-256:   443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46
+Manifest SHA-256:   4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b
 Builder Version:    1.0.0
 
 Review Status:      REVIEW_CANDIDATE (PENDING INDEPENDENT APPROVAL)

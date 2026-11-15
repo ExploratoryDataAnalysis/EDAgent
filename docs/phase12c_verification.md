@@ -63,22 +63,22 @@ The candidate derivative is generated into `data/exports/models/candidate/` unde
 
 ### 3.2 Candidate Manifest & Checksums
 
-- **Candidate Manifest SHA-256:** `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46`
+- **Candidate Manifest SHA-256:** `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b`
 - **Output Artifact Inventory & Hashes:**
 
 | Artifact Name | Format | SHA-256 Digest |
 | :--- | :--- | :--- |
-| `manifest.json` | JSON | `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46` |
-| `model_comparisons.json` | JSON | `de1d771fdfa67ba82420c9b31f28c59bf9b2faf0e8b30fd2a91592f51416e0a8` |
-| `model_comparisons.csv` | CSV | `e8dc3b3a6b0a17d8853d3c91949c81f06ce76aa965c866e5dd29ff140652e1f5` |
-| `feature_ablation.json` | JSON | `22fff2e167fe8afcc7aa2ba4d79b41bbff4e3ca7356e12ec3cf6c6ad25709fcb` |
-| `feature_ablation.csv` | CSV | `c6437f7d2c82d0e814b47afeb6622313cf1b99cddda180871968895c2d729186` |
-| `threshold_performance.json` | JSON | `7da1921bc3a970ca392bebefeeac976f1c9b4b5dd35f092ce42b5d1b9ea5ff85` |
-| `threshold_performance.csv` | CSV | `5c26d01e9a2da95e71c9999ae5d0baf0d4b8eefa93dea1b83366c26984d52905` |
-| `calibration_diagnostics.json` | JSON | `99cd4ff47301aa135ad24f52d86f1b8c2b5c8b71a292f5ace7c6229b19844188` |
-| `calibration_diagnostics.csv` | CSV | `bf852b99f24b47347812c7f168d794e7a37c92ed426cc8d5b88dd854625ac5fe` |
-| `models_data_dictionary.md` | Markdown | `c471fcb9ecc934a58c729738c85302eff05a1323d6c0e2520ec2003ae4119a41` |
-| `validation_report.json` | JSON | `f75e48d7e16ca5a35e69c77e71a2222831f6573c80968259AC855907D941E863` |
+| `manifest.json` | JSON | `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b` |
+| `model_comparisons.json` | JSON | `ffaeffb9a7218ed167f1aae762c0140921609e5390a353e43455c63bd15a0955` |
+| `model_comparisons.csv` | CSV | `520ad5c94b5c45de7df759de268f65fe34039e2aafe9b93a9d1a5f0f6cd9d5df` |
+| `feature_ablation.json` | JSON | `50788bea7c193f66b7616e11940d02c4233699dee17682cda1e0b918b5951891` |
+| `feature_ablation.csv` | CSV | `933df4ccf267f6274f334cacf112f8ab069e0f16cbf6e60daf2fc77b0ff8677a` |
+| `threshold_performance.json` | JSON | `43482e10094c9f4ec2c8ad66a253be4e94a80ed9867d6123f58f15359da2f9b1` |
+| `threshold_performance.csv` | CSV | `c077fb535d670bef9af3381059c084a03dc2425d93230b109efa095a4f66cd75` |
+| `calibration_diagnostics.json` | JSON | `fc650bdcd34da35dd718079de53a2bbedcb13cc7ebdf698502dc35e44c827bf5` |
+| `calibration_diagnostics.csv` | CSV | `6e54b2d7ef371817a6d2d595c4fa6bd28866905a9844b269c5659a314007da66` |
+| `models_data_dictionary.md` | Markdown | `ea24dd72b9a254a93a2751bf1b8f1b713a2efe55278c26608e6cbfbe31197359` |
+| `validation_report.json` | JSON | `f1bddc0f553e07d15f2d4992da6d9518bbd7377db0a50bd0f0eaca877b18ad80` |
 
 ---
 
@@ -98,7 +98,7 @@ The builder was run across multiple independent directories. All output digests,
 ```powershell
 .\.venv\Scripts\python.exe scripts/build_severity_derivative.py
 ```
-Exit code: `0`. Manifest SHA-256: `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46`.
+Exit code: `0`. Manifest SHA-256: `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b`.
 
 ### 4.3 Builder Test Suite (`tests/test_severity_derivative_builder.py`)
 All 6 tests passed:
@@ -130,7 +130,7 @@ The backend release endpoint is implemented in `EDAgent_Completed_Extension/EDAg
 
 ### 6.1 Gated Behavior & Security Guards
 - **Ledger Verification:** Evaluates `ROAD_SAFETY_APPROVALS` for entry `models`. Fails closed (`HTTP 503 MODELS_UNAVAILABLE`) when unapproved, pending, withdrawn, or corrupted.
-- **Manifest Fingerprint Guard:** Verifies manifest hash matches `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46`.
+- **Manifest Fingerprint Guard:** Verifies manifest hash matches `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b`.
 - **Prohibited Parameter Guard:** Any request query containing `latitude`, `longitude`, `site_id`, `intersection_id`, `predict`, `score`, `risk`, or `crn` is rejected immediately with `HTTP 400 Bad Request`.
 - **Headers:** Sets `Cache-Control: no-store` on all responses (both success and error).
 - **Independent from D7:** The `models` release gate and `descriptive_release` (D7) release gate operate completely independently.
@@ -182,7 +182,7 @@ If an external reviewer, auditor, or the Road Safety Review Committee determines
        "decision": "WITHDRAWN",
        "reviewer": "ROAD SAFETY REVIEW COMMITTEE",
        "date": "2026-11-15",
-       "manifest_sha256": "443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46",
+       "manifest_sha256": "4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b",
        "reason": "Administrative supersession or review revocation"
      }
    }
@@ -205,7 +205,7 @@ If an external reviewer, auditor, or the Road Safety Review Committee determines
 | Phase 12A comparator hardening | 21-artifact fixed inventory, deep estimator inspection | 14/14 tests passing | **PASS** |
 | Prediction functional agreement | $N = 27,697$ test records, max diff $\le 1.29 \times 10^{-9}$ | 0 decision diffs at 0.50 | **PASS** |
 | Builder determinism | Byte-identical outputs across runs | SHA-256 match | **PASS** |
-| Derivative manifest checksum | `443344dc7fc8cc5d002a7754a13a08b0c666c4ac4d45c2fa13739f4390a0cd46` | Generated & Verified | **PASS** |
+| Derivative manifest checksum | `4ac5f547d111661c19e5b10291106d5c6ed0709a526a3b03a51732561ad7321b` | Generated & Verified | **PASS** |
 | Case-level or site leakage | No CRN, individual coordinates, or site rankings | 0 leaked fields | **PASS** |
 | Candidate review package | Complete documentation of methodology, timing, limitations | Authored in `docs/modelling/` | **PASS** |
 | Backend release gating | Fails closed (503) without approval; 200 when approved | 6/6 tests passing | **PASS** |

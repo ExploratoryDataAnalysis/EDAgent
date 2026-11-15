@@ -68,10 +68,13 @@ def models_release(tmp_path, monkeypatch):
         build_candidate_derivative(output_dir=bundle_path)
 
     ledger_path = tmp_path / "approvals.json"
-    write_models_decision(ledger_path, models.MANIFEST_SHA256, decision="APPROVED")
+    manifest_bytes = (bundle_path / "manifest.json").read_bytes()
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    monkeypatch.setattr(models, "MANIFEST_SHA256", manifest_sha256)
+    write_models_decision(ledger_path, manifest_sha256, decision="APPROVED")
     monkeypatch.setenv("ROAD_SAFETY_MODELS_ROOT", str(bundle_path))
     monkeypatch.setenv("ROAD_SAFETY_APPROVALS", str(ledger_path))
-    return bundle_path, ledger_path, models.MANIFEST_SHA256
+    return bundle_path, ledger_path, manifest_sha256
 
 
 def test_models_unapproved_missing_ledger_fails_closed(anon_client, monkeypatch):

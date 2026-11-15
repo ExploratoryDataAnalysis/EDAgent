@@ -464,20 +464,21 @@ def build_calibration_diagnostics() -> List[Dict[str, Any]]:
 
 
 def write_table_files(data: List[Dict[str, Any]], base_name: str, out_dir: Path) -> Tuple[Path, Path]:
-    """Write table atomically in both JSON and CSV formats."""
+    """Write table atomically in both JSON and CSV formats using explicit LF newlines."""
     json_path = out_dir / f"{base_name}.json"
     csv_path = out_dir / f"{base_name}.csv"
 
-    json_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    json_bytes = (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    json_path.write_bytes(json_bytes)
 
     if data:
         fieldnames = list(data[0].keys())
         with open(csv_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
             writer.writeheader()
             writer.writerows(data)
     else:
-        csv_path.write_text("", encoding="utf-8")
+        csv_path.write_bytes(b"")
 
     return json_path, csv_path
 
@@ -530,7 +531,8 @@ def build_candidate_derivative(
             "3. `threshold_performance`: Confusion matrix counts at 0.50 decision threshold.\n"
             "4. `calibration_diagnostics`: Brier scores and calibration methods.\n"
         )
-        dict_path.write_text(dict_content, encoding="utf-8")
+        dict_bytes = dict_content.encode("utf-8")
+        dict_path.write_bytes(dict_bytes)
         table_files["models_data_dictionary.md"] = dict_path
 
         # Compute output checksums
@@ -613,7 +615,8 @@ def build_candidate_derivative(
             },
         }
         report_path = temp_dir / "validation_report.json"
-        report_path.write_text(json.dumps(validation_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        report_bytes = (json.dumps(validation_report, indent=2, sort_keys=True) + "\n").encode("utf-8")
+        report_path.write_bytes(report_bytes)
 
         # Atomic replacement: swap temp_dir into target_dir
         if target_dir.exists():
