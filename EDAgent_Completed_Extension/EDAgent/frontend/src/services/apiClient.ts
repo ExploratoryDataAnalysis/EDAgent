@@ -15,6 +15,7 @@ export const tokenStore = {
 };
 
 type UnauthorizedHandler = () => void;
+export type ValidationProblem = { loc: (string | number)[]; msg: string; type: string };
 let onUnauthorized: UnauthorizedHandler | null = null;
 export const setUnauthorizedHandler = (fn: UnauthorizedHandler | null) => {
   onUnauthorized = fn;
@@ -57,10 +58,15 @@ apiClient.interceptors.response.use(
       tokenStore.clear();
       onUnauthorized?.();
     }
-    const body = error.response?.data as { detail?: { code?: string }; errors?: string[] } | undefined;
+    const body = error.response?.data as {
+      detail?: { code?: string } | ValidationProblem[];
+      errors?: string[];
+    } | undefined;
+    const detail = body?.detail;
     return Promise.reject(Object.assign(new Error(errorMessage(error)), {
       status: error.response?.status,
-      code: body?.detail?.code,
+      code: Array.isArray(detail) ? undefined : detail?.code,
+      validation: Array.isArray(detail) ? detail : undefined,
       problems: Array.isArray(body?.errors) ? body.errors : undefined,
     }));
   }

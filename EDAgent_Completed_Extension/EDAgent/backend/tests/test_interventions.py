@@ -93,6 +93,20 @@ def test_factor_bounds(anon_client, baseline, expected):
     assert shown["delta_n"] == dict(zip(("lower", "upper"), expected[1]))
 
 
+def test_phase9_invented_example(anon_client):
+    body = payload("40", "0.80")
+    body["crash_type"] = body["cmf"]["crash_type"] = "ALL"
+    body["analysis_period"]["length"] = 5
+    body["cmf"]["bounds"] = {"lower": "0.70", "upper": "0.95"}
+    response = anon_client.post(SCENARIOS, json=body)
+    assert response.status_code == 200, response.text
+    result = response.json()["data"]
+    assert result["scenario"] == body
+    assert_counts(result, "32", "8", "32.00", "8.00")
+    assert result["display"]["sensitivity"]["after_n"] == {"lower": "28.00", "upper": "38.00"}
+    assert result["display"]["sensitivity"]["delta_n"] == {"lower": "2.00", "upper": "12.00"}
+
+
 @pytest.mark.parametrize("field, value, error_type", [
     ("hypothetical_baseline_n", "-1", "greater_than_equal"),
     ("hypothetical_baseline_n", "NaN", "decimal_text"),

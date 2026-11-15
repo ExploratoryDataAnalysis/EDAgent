@@ -240,7 +240,7 @@ try {
     const factor = page.getByLabel('Hypothetical CMF', { exact: true });
     await factor.fill('1.05');
     await select.selectOption('lighting');
-    assert.equal(await factor.inputValue(), '');
+    assert.equal(await factor.inputValue(), '1.05');
     await page.getByText('REFERENCE_ONLY', { exact: true }).waitFor();
     await page.getByText('General candidate and methodology references. No lighting study or rating is documented.').waitFor();
     const years = page.getByLabel('Analysis period (years)');
@@ -260,7 +260,7 @@ try {
     assert.equal(body.schema_version, '1');
     assert.equal(body.hypothetical_baseline_n, '10');
     assert.equal(body.cmf.value, '0.800000');
-    const result = page.getByRole('status').filter({ hasText: 'Hypothetical results' });
+    const result = page.getByRole('region', { name: 'Hypothetical results', exact: true });
     await result.waitFor();
     assert.match(await result.innerText(), /8\.00[\s\S]+2\.00 \(fewer hypothetical crashes\)[\s\S]+-3\.00 to 4\.00/);
     assert.ok(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth + 1));
@@ -268,7 +268,7 @@ try {
     await factor.fill('0');
     await result.waitFor({ state: 'detached' });
     await calculate.click();
-    await page.getByRole('alert').filter({ hasText: 'greater than 0' }).waitFor();
+    await page.getByRole('alert').filter({ hasText: 'Enter a positive decimal' }).waitFor();
     assert.equal(await result.count(), 0);
 
     // Hold a successful server response while the user changes the inputs.
